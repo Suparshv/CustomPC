@@ -13,13 +13,20 @@ This is the Node.js/Express backend API for the custom PC builder application. I
 
 ## Prerequisites & Environment Variables
 
-Create a `.env` file in the `backend/` directory with the following variables:
+A `.env.example` file is provided. Copy it and fill in your values:
 
-\`\`\`env
+```bash
+cp .env.example .env
+```
+
+Then edit the `.env` file:
+
+```env
+GEMINI_API_KEY=your_gemini_api_key_here   # Get free at https://aistudio.google.com/app/apikey
 PORT=5000
-MONGO_URI=mongodb://localhost:27017/pcbuilder  # Or your MongoDB Atlas URI
-GEMINI_API_KEY=your_gemini_api_key_here
-\`\`\`
+```
+
+> **Note:** MongoDB is hardcoded to connect to a local instance at `mongodb://127.0.0.1:27017/PC`. Make sure MongoDB is running locally before starting the server.
 
 ## Available Scripts
 

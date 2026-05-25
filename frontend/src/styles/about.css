@@ -1,0 +1,37 @@
+@font-face{
+    font-family:"GothamB";
+    src:url('/public/assets/fonts/GothamSSm-Bold.woff') format('woff');
+}
+@font-face{
+    font-family:"GothamBl";
+    src:url('/public/assets/fonts/GothamSSm-Black.woff') format('woff');
+}
+@font-face{
+    font-family:"GothamM";
+    src:url('/public/assets/fonts/GothamSSm-Medium.woff') format('woff');
+}
+.about-page {
+  font-family:"GothamB";
+}
+
+.purple-heart {
+  color: #7d3cff;
+}
+.icon-img{
+    width: fit-content;
+    height: auto;
+}
+.community-section {
+  background-color: #7d3cff;
+  border-radius: 8px;
+  margin-top: 30px;
+}
+.px28{
+    font-family: "GothamB";
+    font-size: 28px;
+}
+.p18{
+    font-family: "GothamM";
+    font-size: 16px;
+    font-weight:lighter;
+}

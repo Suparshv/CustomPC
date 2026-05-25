@@ -1,0 +1,161 @@
+@font-face{
+    font-family:"GothamB";
+    src:url('/public/assets/fonts/GothamSSm-Bold.woff') format('woff');
+}
+@font-face{
+    font-family:"GothamBl";
+    src:url('/public/assets/fonts/GothamSSm-Black.woff') format('woff');
+}
+@font-face{
+    font-family:"GothamM";
+    src:url('/public/assets/fonts/GothamSSm-Medium.woff') format('woff');
+}
+
+.cart-drawer {
+  position: fixed;
+  top: 0;
+  right: -400px;
+  width: 350px;
+  height: 100%;
+  background: white;
+  box-shadow: -2px 0 10px rgba(0,0,0,0.2);
+  transition: right 0.3s ease-in-out;
+  z-index: 1050;
+  display: flex;
+  flex-direction: column;
+}
+.cart-drawer.open {
+  right: 0;
+}
+.text1{
+    font-family: GothamM;
+    font-weight:bold;
+}
+
+
+.button-animate {
+    font-family: 'GothamM';
+	position: relative;
+	overflow: hidden;
+	background: black;
+	color: #fff;
+	border: none;
+	border-radius: 6px;
+	padding: 0.5em 1.5em;
+	font-size: 1rem;
+	cursor: pointer;
+	transition: color 0.3s, transform 0.2s;
+	z-index: 1;
+}
+
+.button-animate::before {
+	content: "";
+	position: absolute;
+	left: 0;
+	top: 0;
+	width: 0%;
+	height: 100%;
+	background: #fff;
+	z-index: 0;
+	transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.button-animate:hover::before {
+	width: 100%;
+}
+
+.button-animate span {
+	position: relative;
+	z-index: 1;
+	transition: color 0.3s;
+}
+
+.button-animate:hover {
+	color: black;
+	transform: translateY(-3px) scale(1.05);
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.button-animate:hover span {
+	color:black
+}
+
+.cart-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 15px;
+}
+
+.cart-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 0;
+  border-bottom: 1px solid #eaeaea;
+  background: white;
+  transition: all 0.3s ease;
+  gap: 15px;
+}
+
+.cart-item.removing {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.cart-item-image {
+  width: 60px;
+  height: 60px;
+  object-fit: contain;
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 5px;
+}
+
+.cart-item-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.cart-item-info-name {
+  font-family: "GothamM";
+  font-size: 14px;
+  color: #333;
+  line-height: 1.2;
+}
+
+.cart-item-info-price {
+  font-family: "GothamB";
+  font-size: 14px;
+  margin-top: 5px;
+}
+
+.cart-item-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.cart-item-actions input {
+  width: 60px;
+  padding: 4px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  text-align: center;
+  font-family: "GothamM";
+}
+
+cart-icon {
+  position: relative;
+  font-size: 24px;
+  cursor: pointer;
+}
+.cart-count {
+  position:relative;
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  border-radius: 50%;
+  padding: 2px 6px;
+}

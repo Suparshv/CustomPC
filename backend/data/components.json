@@ -1,0 +1,44 @@
+{
+  "processor": [
+    { "id": "p1", "name": "Intel i5 12400", "price": 10500 },
+    { "id": "p2", "name": "Intel i5 12400F", "price": 13500 },
+    { "id": "p3", "name": "AMD Ryzen 5 5600", "price": 10200 },
+    { "id": "p4", "name": "AMD Ryzen 5 5600X", "price": 11800 }
+  ],
+  "motherboard": [
+    { "id": "m1", "name": "MSI PRO B760M-E DDR5", "price": 9125 },
+    { "id": "m2", "name": "MSI PRO B660M-E DDR4", "price": 8500 },
+    { "id": "m3", "name": "MSI B550M-A Pro Motherboard(DDR4)", "price": 6000 },
+    { "id": "m4", "name": "B550M PRO-VDH WIFI(DDR4)", "price": 9500 }
+  ],
+  "cooling": [
+    { "id": "c1", "name": "Cooler Master Liquid 240L ARGB (White)", "price": 6500 },
+    { "id": "c2", "name": "Cooler Master Liquid 240L ARGB (Black)", "price": 6100 }
+  ],
+  "gpu": [
+    { "id": "g1", "name": "Gigabyte RTX 4060 OC 8GB", "price": 25000 },
+    { "id": "g2", "name": "Inno3d RTX 3060 12GB", "price": 24500 },
+    { "id": "g3", "name": "MSI RTX 5080 OC 16GB GDDR7 White", "price": 192500 },
+    { "id": "g4", "name": "GALAX RTX 5070Ti 16gb GDDR7", "price": 105000 }
+  ],
+  "ps": [
+    { "id": "ps1", "name": "Adata Legend 710 256GB M.2 NVMe Internal SSD", "price": 1800 },
+    { "id": "ps2", "name": "Adata Legend 710 512GB M.2 NVMe Internal SSD", "price": 2700 }
+  ],
+  "ss": [
+    { "id": "ss1", "name": "Western Digital HDD 1TB", "price": 3600 },
+    { "id": "ss2", "name": "Western Digital HDD 1TB 5400RPM (Purple)", "price": 4000 }
+  ],
+  "ram": [
+    { "id": "r1", "name": "Adata XPG Gammix D30 8GB DDR4 3200MHz (Red)", "price": 1490 },
+    { "id": "r2", "name": "Adata XPG Gammix D30 16GB DDR4 3200MHz (Red)", "price": 2490 }
+  ],
+  "psu": [
+    { "id": "psu1", "name": "MSI MAG A650BN PSU-650W 80 Plus Bronze", "price": 4500 },
+    { "id": "psu2", "name": "MSI MAG A550BN PSU-550W 80 Plus Bronze", "price": 3700 }
+  ],
+  "cabinet": [
+    { "id": "cab1", "name": "Deepcool Macube 110 Cabinet(White)", "price": 4500 },
+    { "id": "cab2", "name": "GALAX Revolution-06 Mesh RGB (ATX) Mid-tower", "price": 4480 }
+  ]
+}

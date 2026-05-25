@@ -1,0 +1,169 @@
+.checkout-container {
+  max-width: 800px;
+  margin: 40px auto;
+  padding: 20px;
+  font-family: "GothamM", sans-serif;
+}
+
+.checkout-header {
+  text-align: center;
+  font-family: "GothamB", sans-serif;
+  margin-bottom: 30px;
+  font-size: 32px;
+}
+
+.accordion-section {
+  background: white;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+  border: 1px solid #eaeaea;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.accordion-header {
+  padding: 20px;
+  background: #fdfdfd;
+  border-bottom: 1px solid #eaeaea;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.accordion-header h4 {
+  margin: 0;
+  font-family: "GothamB", sans-serif;
+  font-size: 18px;
+  color: #333;
+}
+
+.accordion-body {
+  padding: 20px;
+  background: white;
+}
+
+.checkout-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.checkout-item:last-child {
+  border-bottom: none;
+}
+
+.checkout-item-image {
+  width: 60px;
+  height: 60px;
+  object-fit: contain;
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 5px;
+}
+
+.checkout-item-info {
+  flex: 1;
+  margin-left: 15px;
+}
+
+.checkout-item-name {
+  font-family: "GothamM", sans-serif;
+  font-size: 14px;
+  color: #333;
+}
+
+.checkout-item-price {
+  font-family: "GothamB", sans-serif;
+  font-size: 14px;
+  margin-top: 5px;
+}
+
+.checkout-summary {
+  margin-top: 20px;
+  padding: 15px;
+  background: #f9f9f9;
+  border-radius: 8px;
+}
+
+.checkout-summary-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+
+.checkout-summary-total {
+  display: flex;
+  justify-content: space-between;
+  font-family: "GothamB", sans-serif;
+  font-size: 18px;
+  border-top: 1px solid #ddd;
+  padding-top: 10px;
+  margin-top: 10px;
+}
+
+.btn-checkout-next {
+  background: #5a32d1;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 12px 24px;
+  font-family: "GothamM", sans-serif;
+  font-size: 16px;
+  cursor: pointer;
+  width: 100%;
+  margin-top: 20px;
+  transition: background 0.3s;
+}
+
+.btn-checkout-next:hover {
+  background: #4626a6;
+}
+
+.checkout-form-group {
+  margin-bottom: 15px;
+}
+
+.checkout-form-group label {
+  display: block;
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 5px;
+}
+
+.checkout-input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-family: "GothamM", sans-serif;
+  outline: none;
+}
+
+.checkout-input:focus {
+  border-color: #5a32d1;
+}
+
+.payment-options {
+  display: flex;
+  gap: 15px;
+}
+
+.payment-option {
+  flex: 1;
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.payment-option.selected {
+  border-color: #5a32d1;
+  background: #f4f1fa;
+  font-family: "GothamB", sans-serif;
+}

@@ -1,0 +1,625 @@
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <nav id="navbar1"></nav>
+    <script>
+        fetch("navbar.html")
+            .then(response => response.text())
+            .then(data => { document.getElementById("navbar1").innerHTML = data; })
+    </script>
+    <section class="product-categories py-1">
+        <div class="container">
+            <div class="row justify-content-center text-center">
+                <div class="col-md-3 col-6">
+                    <img src="win11.avif">
+                </div>
+                <div class="col-md-3 col-6">
+                    <img src="nvidia.avif">
+                </div>
+                <div class="col-md-3 col-6">
+                    <img src="amd.avif">
+                </div>
+                <div class="col-md-3 col-6 ">
+                    <img src="intel.avif">
+                </div>
+            </div>
+        </div>
+    </section>
+    <div class="container mt-5">
+        <div class="position-relative text-white">
+            <img src="custompc1.avif" class="img-fluid" style="min-width: 100% !important;">
+            <div class="position-absolute top-50 end-0 text-center  ml-5 translate-middle">
+                <h1 class="text-black" style="font-family: GothamB;font-size:40px;color:black">Build A Custom PC</h1>
+                <p style="font-family: GothamM;font-size :16px;color:black;text-align:left">Custom PCs designed by you,
+                    built by us.</p>
+            </div>
+        </div>
+        <div class="row pt-5">
+            <div class="col-md">
+                <div class="product-card position-relative p-3">
+                    <h5 class="px18">Processor</h5>
+                    <p class="px12" id="selectprocessor"></p>
+                    <div class="d-flex justify-content-end">
+                        <button class="btn plus-btn btn-sm text-white" data-bs-toggle="modal"
+                            data-bs-target="#processor">+</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row pt-5">
+            <div class="col-md">
+                <div class="product-card position-relative p-3">
+                    <h5 class="px18">Motherboard</h5>
+                    <p class="px12" id="selectmotherboard"></p>
+                    <div class="d-flex justify-content-end">
+                        <button class="btn plus-btn text-white" data-bs-toggle="modal"
+                            data-bs-target="#motherboard">+</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row pt-5">
+            <div class="col-md">
+                <div class="product-card position-relative p-3">
+                    <h5 class="px18">Cooling system</h5>
+                    <p class="px12" id="selectcooling"></p>
+                    <div class="d-flex justify-content-end">
+                        <button class="btn plus-btn text-white" data-bs-toggle="modal"
+                            data-bs-target="#cooling">+</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row pt-5">
+            <div class="col-md">
+                <div class="product-card position-relative p-3">
+                    <h5 class="px18">GPU</h5>
+                    <p class="px12" id="selectgpu"></p>
+                    <div class="d-flex justify-content-end">
+                        <button class="btn plus-btn text-white" data-bs-toggle="modal" data-bs-target="#gpu">+</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row pt-5">
+            <div class="col-md">
+                <div class="product-card position-relative p-3">
+                    <h5 class="px18">Primary Storage(OS) SSD</h5>
+                    <p class="px12" id="selectps"></p>
+                    <div class="d-flex justify-content-end">
+                        <button class="btn plus-btn text-white" data-bs-toggle="modal" data-bs-target="#ps">+</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row pt-5">
+            <div class="col-md">
+                <div class="product-card position-relative p-3">
+                    <h5 class="px18">Secondary Storage</h5>
+                    <p class="px12" id="selectss"></p>
+                    <div class="d-flex justify-content-end">
+                        <button class="btn plus-btn text-white" data-bs-toggle="modal" data-bs-target="#ss">+</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row pt-5">
+            <div class="col-md">
+                <div class="product-card position-relative p-3">
+                    <h5 class="px18">RAM</h5>
+                    <p class="px12" id="selectram"></p>
+                    <div class="d-flex justify-content-end">
+                        <button class="btn plus-btn text-white" data-bs-toggle="modal" data-bs-target="#ram">+</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row pt-5">
+            <div class="col-md">
+                <div class="product-card position-relative p-3">
+                    <h5 class="px18">PSU</h5>
+                    <p class="px12" id="selectpsu"></p>
+                    <div class="d-flex justify-content-end">
+                        <button class="btn plus-btn text-white" data-bs-toggle="modal" data-bs-target="#psu">+</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row pt-5">
+            <div class="col-md">
+                <div class="product-card position-relative p-3">
+                    <h5 class="px18">Cabinet</h5>
+                    <p class="px12" id="selectcab"></p>
+                    <div class="d-flex justify-content-end">
+                        <button class="btn plus-btn text-white" data-bs-toggle="modal"
+                            data-bs-target="#cabinet">+</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row pt-5">
+            <div class="col-md">
+                <div class="product-card position-relative p-3">
+                    <h5 class="px18">Total:(Including GST)<span id="totalAmount"
+                            class="d-flex justify-content-end">₹0</span></h5>
+                    <div>
+                        <button class="btn shop-btn text-white">Payment</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal" id="processor">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <div class="d-flex justify-content-end"><button type="button" class="btn-close"
+                            data-bs-dismiss="modal"></button></div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="product-card position-relative p-3">
+                                <img src="i5.webp" class="img-fluid shop">
+                                <p class="px18">Intel i5 12400</p>
+                                <p class="px12">QTY</p>
+                                <input type="number" id="p1" value="1" min="1">
+                                <p class="px12 pt-1">₹10,500</p>
+                                <button class="btn shop-btn text-white"
+                                    onclick="selectProcessor('Intel i5 12400',10500,'p1')">Select</button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="product-card position-relative p-3">
+                                <img src="i5.webp" class="img-fluid shop">
+                                <p class="px18">Intel i5 12400F</p>
+                                <p class="px12">QTY</p>
+                                <input type="number" id="p2" value="1" min="1">
+                                <p class="px12 pt-1">₹13,500</p>
+                                <button class="btn shop-btn text-white"
+                                    onclick="selectProcessor('Intel i5 12400F',13500,'p2')">Select</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row pt-2">
+                        <div class="col-md-6">
+                            <div class="product-card position-relative p-3">
+                                <img src="ryzen5.webp" class="img-fluid shop">
+                                <p class="px18">AMD Ryzen 5 5600</p>
+                                <p class="px12">QTY</p>
+                                <input type="number" id="p3" value="1" min="1">
+                                <p class="px12 pt-1">₹10,200</p>
+                                <button class="btn shop-btn text-white"
+                                    onclick="selectProcessor('AMD Ryzen 5 5600',10200,'p3')">Select</button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="product-card position-relative p-3">
+                                <img src="ryzen5.webp" class="img-fluid shop">
+                                <p class="px18">AMD Ryzen 5 5600X</p>
+                                <p class="px12">QTY</p>
+                                <input type="number" id="p4" value="1" min="1">
+                                <p class="px12 pt-1">₹11,800</p>
+                                <button class="btn shop-btn text-white"
+                                    onclick="selectProcessor('AMD Ryzen 5 5600X',11800,'p4')">Select</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal" id="motherboard">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <div class="d-flex justify-content-end"><button type="button" class="btn-close"
+                            data-bs-dismiss="modal"></button></div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="product-card position-relative p-3">
+                                <img src="b760ME.png" class="img-fluid shop">
+                                <p class="px18">MSI B760M-E DDR5</p>
+                                <p class="px12">QTY</p>
+                                <input type="number" id="m1" value="1" min="1">
+                                <p class="px12 pt-1">₹9125</p>
+                                <button class="btn shop-btn text-white"
+                                    onclick="selectMotherboard('MSI PRO B760M-E',9125,'m1')">Select</button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="product-card position-relative p-3">
+                                <img src="b660ME.png" class="img-fluid shop">
+                                <p class="px18">MSI B660M-E DDR4</p>
+                                <p class="px12">QTY</p>
+                                <input type="number" id="m2" value="1" min="1">
+                                <p class="px12 pt-1">₹8500</p>
+                                <button class="btn shop-btn text-white"
+                                    onclick="selectMotherboard('MSI PRO B660M-E',8500,'m2')">Select</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row pt-2">
+                        <div class="col-md-6">
+                            <div class="product-card position-relative p-3">
+                                <img src="b760ME.png" class="img-fluid shop">
+                                <p class="px18">MSI B550M-A Pro Motherboard(DDR4)</p>
+                                <p class="px12">QTY</p>
+                                <input type="number" id="m3" value="1" min="1">
+                                <p class="px12 pt-1">₹6000</p>
+                                <button class="btn shop-btn text-white"
+                                    onclick="selectMotherboard('MSI B550M-A Pro Motherboard DDR4',6000,'m3')">Select</button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="product-card position-relative p-3">
+                                <img src="b660ME.png" class="img-fluid shop">
+                                <p class="px18">B550M PRO-VDH WIFI(DDR4)</p>
+                                <p class="px12">QTY</p>
+                                <input type="number" id="m4" value="1" min="1">
+                                <p class="px12 pt-1">₹9500</p>
+                                <button class="btn shop-btn text-white"
+                                    onclick="selectMotherboard('B550M PRO-VDH WIFI(DDR4)',9500,'m4')">Select</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal" id="cooling">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <div class="d-flex justify-content-end"><button type="button" class="btn-close"
+                            data-bs-dismiss="modal"></button></div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="product-card position-relative p-3">
+                                <img src="coolermaster(1).webp" class="img-fluid shop">
+                                <p class="px18">Cooler Master LiquidCooler 240L ARGB(White)</p>
+                                <p class="px12">QTY</p>
+                                <input type="number" id="c1" value="1" min="1">
+                                <p class="px12 pt-1">₹6500</p>
+                                <button class="btn shop-btn text-white"
+                                    onclick="selectCooling('Cooler Master LiquidCooler 240L ARGB(White)',6500,'c1')">Select</button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="product-card position-relative p-3">
+                                <img src="coolermaster(2).webp" class="img-fluid shop">
+                                <p class="px18">Cooler Master Liquid Cooler 240L ARGB(Black)</p>
+                                <p class="px12">QTY</p>
+                                <input type="number" id="c2" value="1" min="1">
+                                <p class="px12 pt-1">₹6100</p>
+                                <button class="btn shop-btn text-white"
+                                    onclick="selectCooling('Cooler Master LiquidCooler 240L ARGB(Black)',6100,'c2')">Select</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal" id="gpu">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <div class="d-flex justify-content-end"><button type="button" class="btn-close"
+                            data-bs-dismiss="modal"></button></div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="product-card position-relative p-3">
+                                <img src="rtx4060.webp" class="img-fluid shop">
+                                <p class="px18">Gigabyte RTX 4060 OC 8GB</p>
+                                <p class="px12">QTY</p>
+                                <input type="number" id="g1" value="1" min="1">
+                                <p class="px12 pt-2">₹25,000</p>
+                                <button class="btn shop-btn text-white"
+                                    onclick="selectGPU('Gigabyte NVIDIA RTX 4060 OC 8GB',25000,'g1')">Select</button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="product-card position-relative p-3">
+                                <img src="rtx3060.webp" class="img-fluid shop">
+                                <p class="px18">Inno3d RTX 3060 12gb</p>
+                                <p class="px12">QTY</p>
+                                <input type="number" id="g2" value="1" min="1">
+                                <p class="px12 pt-2">₹24,500</p>
+                                <button class="btn shop-btn text-white"
+                                    onclick="selectGPU('Inno3d RTX 3060 12gb',24500,'g2')">Select</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row pt-2">
+                        <div class="col-md-6">
+                            <div class="product-card position-relative p-3">
+                                <img src="rtx5080.webp" class="img-fluid shop">
+                                <p class="px18 pt-2">MSI RTX 5080 OC 16GB GDDR7 White</p>
+                                <p class="px12">QTY</p>
+                                <input type="number" id="g3" value="1" min="1">
+                                <p class="px12 pt-1">₹1,92,500</p>
+                                <button class="btn shop-btn text-white"
+                                    onclick="selectGPU('MSI RTX 5080 OC 16GB GDDR7 White',192500,'g3')">Select</button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="product-card position-relative p-3">
+                                <img src="rtx5070ti.webp" class="img-fluid shop">
+                                <p class="px18 pt-2">GALAX RTX 5070Ti 16gb GDDR7</p>
+                                <p class="px12">QTY</p>
+                                <input type="number" id="g4" value="1" min="1">
+                                <p class="px12 pt-1">₹1,05,000</p>
+                                <button class="btn shop-btn text-white"
+                                    onclick="selectGPU('GALAX RTX 5070Ti 16gb GDDR7',105000,'g4')">Select</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal" id="ps">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <div class="d-flex justify-content-end"><button type="button" class="btn-close"
+                            data-bs-dismiss="modal"></button></div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="product-card position-relative p-3">
+                                <img src="adata710.webp" class="img-fluid shop">
+                                <p class="px18 pt-1">Adata Legend 710 256GB M.2 NVMe Internal SSD</p>
+                                <p class="px12">QTY</p>
+                                <input type="number" id="ps1" value="1" min="1">
+                                <p class="px12 pt-1">₹1800</p>
+                                <button class="btn shop-btn text-white"
+                                    onclick="selectps('Adata Legend 710 256GB M.2 NVMe Internal SSD',1800,'ps1')">Select</button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="product-card position-relative p-3">
+                                <img src="adata710(2).webp" class="img-fluid shop">
+                                <p class="px18 pt-1">Adata Legend 710 512GB M.2 NVMe Internal SSD</p>
+                                <p class="px12">QTY</p>
+                                <input type="number" id="ps2" value="1" min="1">
+                                <p class="px12 pt-1">₹2700</p>
+                                <button class="btn shop-btn text-white"
+                                    onclick="selectps('Adata Legend 710 512GB M.2 NVMe Internal SSD',2700,'ps2')">Select</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal" id="ss">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <div class="d-flex justify-content-end"><button type="button" class="btn-close"
+                            data-bs-dismiss="modal"></button></div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="product-card position-relative p-3">
+                                <img src="wd1tb.webp" class="img-fluid shop">
+                                <p class="px18 pt-1">Western Digital HDD 1TB</p>
+                                <p class="px12">QTY</p>
+                                <input type="number" id="ss1" value="1" min="1">
+                                <p class="px12 pt-1">₹3600</p>
+                                <button class="btn shop-btn text-white"
+                                    onclick="selectss('Western Digital HDD 1TB',3600,'ss1')">Select</button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="product-card position-relative p-3">
+                                <img src="wd1p.webp" class="img-fluid shop">
+                                <p class="px18 pt-1">Western Digital HDD 1TB 5400RPM (Purple)</p>
+                                <p class="px12">QTY</p>
+                                <input type="number" id="ss2" value="1" min="1">
+                                <p class="px12 pt-1">₹4000</p>
+                                <button class="btn shop-btn text-white"
+                                    onclick="selectss('Western Digital HDD 1TB 5400RPM (Purple)',4000,'ss2')">Select</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal" id="ram">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <div class="d-flex justify-content-end"><button type="button" class="btn-close"
+                            data-bs-dismiss="modal"></button></div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="product-card position-relative p-3">
+                                <img src="d308.webp" class="img-fluid shop">
+                                <p class="px18 pt-1">Adata XPG Gammix D30 8GB DDR4 3200MHz (Red)</p>
+                                <p class="px12">QTY</p>
+                                <input type="number" id="r1" value="1" min="1">
+                                <p class="px12 pt-1">₹1490</p>
+                                <button class="btn shop-btn text-white"
+                                    onclick="selectRam('Adata XPG Gammix D30 8GB DDR4 3200MHz (Red)',1490,'r1')">Select</button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="product-card position-relative p-3">
+                                <img src="d308.webp" class="img-fluid shop">
+                                <p class="px18 pt-1">Adata XPG Gammix D30 16GB DDR4 3200MHz (Red)</p>
+                                <p class="px12">QTY</p>
+                                <input type="number" id="r2" value="1" min="1">
+                                <p class="px12 pt-1">₹2490</p>
+                                <button class="btn shop-btn text-white"
+                                    onclick="selectRam('Adata XPG Gammix D30 8GB DDR4 3200MHz (Red)',2490,'r2')">Select</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal" id="psu">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <div class="d-flex justify-content-end"><button type="button" class="btn-close"
+                            data-bs-dismiss="modal"></button></div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="product-card position-relative p-3">
+                                <img src="psu650.webp" class="img-fluid shop">
+                                <p class="px18 pt-1">MSI MAG A650BN PSU-650W 80 Plus Bronze</p>
+                                <p class="px12">QTY</p>
+                                <input type="number" id="pu1" value="1" min="1">
+                                <p class="px12 pt-2">₹4500</p>
+                                <button class="btn shop-btn text-white"
+                                    onclick="selectPSU('MSI MAG A650BN PSU-650W 80 Plus Bronze',4500,'pu1')">Select</button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="product-card position-relative p-3">
+                                <img src="psu550.webp" class="img-fluid shop">
+                                <p class="px18 pt-1">MSI MAG A550BN PSU-550W 80 Plus Bronze</p>
+                                <p class="px12">QTY</p>
+                                <input type="number" id="pu2" value="1" min="1">
+                                <p class="px12 pt-2">₹3700</p>
+                                <button class="btn shop-btn text-white"
+                                    onclick="selectPSU('MSI MAG A650BN PSU-650W 80 Plus Bronze',3700,'pu2')">Select</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal" id="cabinet">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <div class="d-flex justify-content-end"><button type="button" class="btn-close"
+                            data-bs-dismiss="modal"></button></div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="product-card position-relative p-3">
+                                <img src="cab(1).webp" class="img-fluid shop">
+                                <p class="px18 pt-1">Deepcool Macube 110 Cabinet(White)</p>
+                                <p class="px12">QTY</p>
+                                <input type="number" id="ca1" value="1" min="1">
+                                <p class="px12 pt-2">₹4500</p>
+                                <button class="btn shop-btn text-white"
+                                    onclick="selectCab('Deepcool Macube 110 Cabinet(White)',4500,'ca1')">Select</button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="product-card position-relative p-3">
+                                <img src="cab(2).webp" class="img-fluid shop">
+                                <p class="px18 pt-1">GALAX Revolution-06 Mesh RGB (ATX) Mid-tower</p>
+                                <p class="px12">QTY</p>
+                                <input type="number" id="ca2" value="1" min="1">
+                                <p class="px12 pt-2">₹4480</p>
+                                <button class="btn shop-btn text-white"
+                                    onclick="selectCab('GALAX Revolution-06 Mesh RGB (ATX) Mid-tower',4480,'ca2')">Select</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        let totalAmounts = {
+            processor: 0,
+            motherboard: 0,
+            cooling: 0,
+            gpu: 0,
+            ps: 0,
+            ss: 0,
+            ram: 0,
+            psu: 0,
+            cabinet: 0
+        };
+
+        let selectedItems = {
+            processor: { name: "", price: 0, qty: 1 },
+            motherboard: { name: "", price: 0, qty: 1 },
+            cooling: { name: "", price: 0, qty: 1 },
+            gpu: { name: "", price: 0, qty: 1 },
+            ps: { name: "", price: 0, qty: 1 },
+            ss: { name: "", price: 0, qty: 1 },
+            ram: { name: "", price: 0, qty: 1 },
+            psu: { name: "", price: 0, qty: 1 },
+            cabinet: { name: "", price: 0, qty: 1 }
+        };
+
+        function selectProduct(productType, name, price, qtyId) {
+            let qty = parseInt(document.getElementById(qtyId).value);
+            document.getElementById(`select${productType}`).innerText = name;
+            selectedItems[productType].name = name;
+            selectedItems[productType].price = price;
+            selectedItems[productType].qty = qty;
+            totalAmounts[productType] = price * qty;
+
+            let modalElement = document.getElementById(productType);
+            let modalInstance = bootstrap.Modal.getInstance(modalElement);
+            modalInstance.hide();
+
+            // Add remove and quantity update buttons
+            let productElement = document.getElementById(`select${productType}`);
+            if (!productElement.querySelector('button')) {
+                productElement.innerHTML += `
+                    <button onclick="updateQty('${productType}', -1)">-</button>
+                    <span id="qty${productType}">${qty}</span>
+                    <button onclick="updateQty('${productType}', 1)">+</button>
+                    <button onclick="removeProduct('${productType}')">Remove</button>`;
+            }
+
+            updateTotal();
+        }
+
+        function updateQty(productType, change) {
+            let newQty = selectedItems[productType].qty + change;
+            if (newQty < 1) newQty = 1; //for quantity not going below 1
+            selectedItems[productType].qty = newQty;
+            totalAmounts[productType] = selectedItems[productType].price * newQty;
+
+            // Update the displayed quantity
+            document.getElementById(`qty${productType}`).innerText = newQty;
+
+            updateTotal();
+        }
+
+        function removeProduct(productType) {
+            document.getElementById(`select${productType}`).innerText = "";
+            totalAmounts[productType] = 0;
+            selectedItems[productType] = { name: "", price: 0, qty: 1 };
+            updateTotal();
+        }
+
+        function updateTotal() {
+            let total = Object.values(totalAmounts).reduce((sum, amount) => sum + amount, 0);
+            document.getElementById('totalAmount').innerText = `₹${total}`;
+        }
+
+        // Assign each select function to the specific product type
+        function selectProcessor(name, price, qtyId) { selectProduct('processor', name, price, qtyId); }
+        function selectMotherboard(name, price, qtyId) { selectProduct('motherboard', name, price, qtyId); }
+        function selectCooling(name, price, qtyId) { selectProduct('cooling', name, price, qtyId); }
+        function selectGPU(name, price, qtyId) { selectProduct('gpu', name, price, qtyId); }
+        function selectps(name, price, qtyId) { selectProduct('ps', name, price, qtyId); }
+        function selectss(name, price, qtyId) { selectProduct('ss', name, price, qtyId); }
+        function selectRam(name, price, qtyId) { selectProduct('ram', name, price, qtyId); }
+        function selectPSU(name, price, qtyId) { selectProduct('psu', name, price, qtyId); }
+        function selectCab(name, price, qtyId) { selectProduct('cabinet', name, price, qtyId); }
+    </script>
+</body>
+
+</html>

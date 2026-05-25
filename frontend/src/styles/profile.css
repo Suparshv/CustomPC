@@ -1,0 +1,163 @@
+.profile-container {
+  max-width: 1200px;
+  margin: 40px auto;
+  padding: 20px;
+  font-family: "GothamM", sans-serif;
+  display: flex;
+  gap: 30px;
+}
+
+.profile-sidebar {
+  flex: 1;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+  border: 1px solid #eaeaea;
+  padding: 30px 20px;
+  text-align: center;
+  height: fit-content;
+}
+
+.profile-avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 20px;
+  border: 3px solid #5a32d1;
+  padding: 3px;
+}
+
+.profile-sidebar h3 {
+  font-family: "GothamB", sans-serif;
+  margin-bottom: 5px;
+}
+
+.profile-sidebar p {
+  color: #666;
+  font-size: 14px;
+}
+
+.profile-content {
+  flex: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.profile-card {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+  border: 1px solid #eaeaea;
+  padding: 30px;
+}
+
+.profile-card h4 {
+  font-family: "GothamB", sans-serif;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 15px;
+  margin-bottom: 25px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.btn-edit-profile {
+  background: transparent;
+  color: #5a32d1;
+  border: 1px solid #5a32d1;
+  padding: 5px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s;
+}
+
+.btn-edit-profile:hover {
+  background: #5a32d1;
+  color: white;
+}
+
+.form-group-profile {
+  margin-bottom: 15px;
+}
+
+.form-group-profile label {
+  display: block;
+  font-size: 13px;
+  color: #555;
+  margin-bottom: 5px;
+}
+
+.profile-input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-family: "GothamM", sans-serif;
+}
+
+.order-item {
+  border: 1px solid #eaeaea;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.order-header {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid #f0f0f0;
+  padding-bottom: 15px;
+  margin-bottom: 15px;
+}
+
+.order-id {
+  font-family: "GothamB", sans-serif;
+  font-size: 14px;
+}
+
+.order-date {
+  font-size: 13px;
+  color: #777;
+}
+
+.order-status {
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-family: "GothamB", sans-serif;
+}
+
+.status-processing { background: #fff3cd; color: #856404; }
+.status-shipped { background: #cce5ff; color: #004085; }
+.status-delivered { background: #d4edda; color: #155724; }
+
+.order-body {
+  display: flex;
+  justify-content: space-between;
+}
+
+.order-components {
+  flex: 2;
+  font-size: 14px;
+}
+
+.order-component-item {
+  margin-bottom: 5px;
+  color: #555;
+}
+
+.order-total {
+  flex: 1;
+  text-align: right;
+  font-family: "GothamB", sans-serif;
+  font-size: 18px;
+}
+
+@media (max-width: 768px) {
+  .profile-container {
+    flex-direction: column;
+  }
+}

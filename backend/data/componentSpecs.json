@@ -1,0 +1,233 @@
+{
+  "p1": {
+    "name": "Intel i5 12400",
+    "price": 10500,
+    "category": "processor",
+    "socket": "LGA1700",
+    "cores": 6,
+    "threads": 12,
+    "tdp": 65,
+    "ramType": "DDR4/DDR5",
+    "benchmark": "Cinebench R23 Multi: ~12400 | Blender BMW: ~3m 15s | Houdini Pyro Sim: Good for light sims",
+    "bestFor": ["gaming", "budget editing", "office"]
+  },
+  "p2": {
+    "name": "Intel i5 12400F",
+    "price": 13500,
+    "category": "processor",
+    "socket": "LGA1700",
+    "cores": 6,
+    "threads": 12,
+    "tdp": 65,
+    "ramType": "DDR4/DDR5",
+    "benchmark": "Cinebench R23 Multi: ~12400 | Blender BMW: ~3m 15s | Houdini Pyro Sim: Good for light sims (Requires Dedicated GPU)",
+    "bestFor": ["gaming", "budget editing"]
+  },
+  "p3": {
+    "name": "AMD Ryzen 5 5600",
+    "price": 10200,
+    "category": "processor",
+    "socket": "AM4",
+    "cores": 6,
+    "threads": 12,
+    "tdp": 65,
+    "ramType": "DDR4",
+    "benchmark": "Cinebench R23 Multi: ~11200 | Blender BMW: ~3m 30s | Houdini Pyro Sim: Moderate performance",
+    "bestFor": ["gaming", "budget builds"]
+  },
+  "p4": {
+    "name": "AMD Ryzen 5 5600X",
+    "price": 11800,
+    "category": "processor",
+    "socket": "AM4",
+    "cores": 6,
+    "threads": 12,
+    "tdp": 65,
+    "ramType": "DDR4",
+    "benchmark": "Cinebench R23 Multi: ~11500 | Blender BMW: ~3m 20s | Houdini Pyro Sim: Moderate performance",
+    "bestFor": ["gaming", "1080p high fps"]
+  },
+  "m1": {
+    "name": "MSI PRO B760M-E DDR5",
+    "price": 9125,
+    "category": "motherboard",
+    "socket": "LGA1700",
+    "ramType": "DDR5",
+    "formFactor": "mATX",
+    "bestFor": ["gaming", "modern intel builds", "future proofing"]
+  },
+  "m2": {
+    "name": "MSI PRO B660M-E DDR4",
+    "price": 8500,
+    "category": "motherboard",
+    "socket": "LGA1700",
+    "ramType": "DDR4",
+    "formFactor": "mATX",
+    "bestFor": ["budget intel builds"]
+  },
+  "m3": {
+    "name": "MSI B550M-A Pro Motherboard(DDR4)",
+    "price": 6000,
+    "category": "motherboard",
+    "socket": "AM4",
+    "ramType": "DDR4",
+    "formFactor": "mATX",
+    "bestFor": ["budget amd builds"]
+  },
+  "m4": {
+    "name": "B550M PRO-VDH WIFI(DDR4)",
+    "price": 9500,
+    "category": "motherboard",
+    "socket": "AM4",
+    "ramType": "DDR4",
+    "formFactor": "mATX",
+    "features": ["WiFi built-in"],
+    "bestFor": ["wireless amd builds"]
+  },
+  "c1": {
+    "name": "Cooler Master Liquid 240L ARGB (White)",
+    "price": 6500,
+    "category": "cooling",
+    "type": "AIO Liquid Cooler",
+    "size": "240mm",
+    "bestFor": [
+      "white themed builds",
+      "overclocking",
+      "heavy rendering sessions"
+    ]
+  },
+  "c2": {
+    "name": "Cooler Master Liquid 240L ARGB (Black)",
+    "price": 6100,
+    "category": "cooling",
+    "type": "AIO Liquid Cooler",
+    "size": "240mm",
+    "bestFor": [
+      "black themed builds",
+      "overclocking",
+      "heavy rendering sessions"
+    ]
+  },
+  "g1": {
+    "name": "Gigabyte RTX 4060 OC 8GB",
+    "price": 25000,
+    "category": "gpu",
+    "vram": "8GB",
+    "tdp": 115,
+    "benchmark": "Cyberpunk 1080p Ultra: ~75fps | Blender Classroom: ~28s | Houdini Vellum: Fast viewport updates",
+    "bestFor": ["1080p gaming", "entry 3D rendering", "video editing"]
+  },
+  "g2": {
+    "name": "Inno3d RTX 3060 12GB",
+    "price": 24500,
+    "category": "gpu",
+    "vram": "12GB",
+    "tdp": 170,
+    "benchmark": "Cyberpunk 1080p Ultra: ~60fps | Blender Classroom: ~35s | Houdini FLIP: Great VRAM for large fluid sims",
+    "bestFor": ["budget 3D rendering", "VRAM heavy tasks", "1080p gaming"]
+  },
+  "g3": {
+    "name": "MSI RTX 5080 OC 16GB GDDR7 White",
+    "price": 192500,
+    "category": "gpu",
+    "vram": "16GB GDDR7",
+    "tdp": 320,
+    "benchmark": "Cyberpunk 4K Path Tracing: ~90fps | Blender Classroom: ~8s | Houdini: Flawless heavy simulation caching",
+    "bestFor": ["4K extreme gaming", "professional 3D animation", "heavy VFX"]
+  },
+  "g4": {
+    "name": "GALAX RTX 5070Ti 16gb GDDR7",
+    "price": 105000,
+    "category": "gpu",
+    "vram": "16GB GDDR7",
+    "tdp": 285,
+    "benchmark": "Cyberpunk 1440p Path Tracing: ~80fps | Blender Classroom: ~12s | Houdini: Excellent for high-res sims",
+    "bestFor": ["1440p extreme gaming", "advanced 3D work", "machine learning"]
+  },
+  "ps1": {
+    "name": "Adata Legend 710 256GB M.2 NVMe Internal SSD",
+    "price": 1800,
+    "category": "ps",
+    "type": "NVMe Gen3",
+    "capacity": "256GB",
+    "benchmark": "Read: 2400MB/s | Write: 1000MB/s",
+    "bestFor": ["boot drive", "budget office builds"]
+  },
+  "ps2": {
+    "name": "Adata Legend 710 512GB M.2 NVMe Internal SSD",
+    "price": 2700,
+    "category": "ps",
+    "type": "NVMe Gen3",
+    "capacity": "512GB",
+    "benchmark": "Read: 2400MB/s | Write: 1600MB/s",
+    "bestFor": ["budget gaming storage", "OS + few games"]
+  },
+  "ss1": {
+    "name": "Western Digital HDD 1TB",
+    "price": 3600,
+    "category": "ss",
+    "type": "HDD",
+    "capacity": "1TB",
+    "speed": "7200RPM",
+    "bestFor": ["mass storage", "archiving project files"]
+  },
+  "ss2": {
+    "name": "Western Digital HDD 1TB 5400RPM (Purple)",
+    "price": 4000,
+    "category": "ss",
+    "type": "HDD",
+    "capacity": "1TB",
+    "speed": "5400RPM",
+    "bestFor": ["surveillance", "quiet mass storage"]
+  },
+  "r1": {
+    "name": "Adata XPG Gammix D30 8GB DDR4 3200MHz (Red)",
+    "price": 1490,
+    "category": "ram",
+    "ramType": "DDR4",
+    "speed": "3200MHz",
+    "capacity": "8GB",
+    "bestFor": ["budget gaming", "office work"]
+  },
+  "r2": {
+    "name": "Adata XPG Gammix D30 16GB DDR4 3200MHz (Red)",
+    "price": 2490,
+    "category": "ram",
+    "ramType": "DDR4",
+    "speed": "3200MHz",
+    "capacity": "16GB",
+    "bestFor": ["standard gaming", "3D modeling", "video editing"]
+  },
+  "psu1": {
+    "name": "MSI MAG A650BN PSU-650W 80 Plus Bronze",
+    "price": 4500,
+    "category": "psu",
+    "wattage": 650,
+    "rating": "80 Plus Bronze",
+    "bestFor": ["mid-range builds", "RTX 4060 / 3060 builds"]
+  },
+  "psu2": {
+    "name": "MSI MAG A550BN PSU-550W 80 Plus Bronze",
+    "price": 3700,
+    "category": "psu",
+    "wattage": 550,
+    "rating": "80 Plus Bronze",
+    "bestFor": ["budget builds", "office PCs", "low TDP gaming"]
+  },
+  "cab1": {
+    "name": "Deepcool Macube 110 Cabinet(White)",
+    "price": 4500,
+    "category": "cabinet",
+    "formFactor": "mATX",
+    "color": "White",
+    "bestFor": ["white themed micro-ATX builds"]
+  },
+  "cab2": {
+    "name": "GALAX Revolution-06 Mesh RGB (ATX) Mid-tower",
+    "price": 4480,
+    "category": "cabinet",
+    "formFactor": "ATX",
+    "color": "Black",
+    "bestFor": ["airflow focused builds", "ATX setups"]
+  }
+}

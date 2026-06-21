@@ -6,5 +6,6 @@ const aiController = require('../controllers/aiController');
 router.post('/builder', aiController.chatBuilder);
 router.post('/support', aiController.chatSupport);
 router.post('/compatibility', aiController.checkCompatibility);
+router.get('/history/:sessionId', aiController.getChatHistory);
 
 module.exports = router;

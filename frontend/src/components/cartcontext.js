@@ -1,19 +1,33 @@
 import { createContext, useContext, useState, useEffect } from "react";
+import { useAuth } from "./AuthContext";
 
 const CartContext = createContext();
 
 export function CartProvider({ children }) {
+  const { user } = useAuth();
+  
   const [selected, setSelected] = useState({});
   const [total, setTotal] = useState(0);
 
+  // Switch cart when user logs in/out
   useEffect(() => {
+    const key = `pc_cart_${user ? user.email : 'guest'}`;
+    const saved = localStorage.getItem(key);
+    setSelected(saved ? JSON.parse(saved) : {});
+  }, [user]);
+
+  // Save cart changes to localStorage for the active user
+  useEffect(() => {
+    const key = `pc_cart_${user ? user.email : 'guest'}`;
+    localStorage.setItem(key, JSON.stringify(selected));
+    
     let sum = 0;
     for (const k of Object.keys(selected)) {
       const s = selected[k];
       if (s) sum += s.price * (s.qty || 1);
     }
     setTotal(sum);
-  }, [selected]);
+  }, [selected, user]);
 
   const addOrUpdateItem = (category, item, qty) => {
     setSelected((prev) => ({

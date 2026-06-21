@@ -4,7 +4,7 @@ const cors = require("cors");
 const mongoose = require("mongoose");
 const v = require("validator");
 const aiRoutes = require('./routes/aiRoutes');
-
+const { initializeVectorStore } = require("./services/ragService");
 const app = express();
 app.use(cors({ origin: "http://localhost:3000", credentials: true }));
 app.use(express.json());
@@ -23,6 +23,7 @@ mongoose
   .catch((err) => console.error(err));
 
 mongoose.pluralize(null);
+initializeVectorStore();
 
 // User Schema
 const userSchema = new mongoose.Schema({
@@ -75,6 +76,24 @@ const orderSchema = new mongoose.Schema({
   date: { type: Date, default: Date.now },
 });
 const Order = mongoose.model("Order", orderSchema);
+
+// AI Conversation Schema (Phase 3)
+const conversationSchema = new mongoose.Schema({
+  sessionId: { type: String, required: true, unique: true },
+  messages: { type: Array, default: [] },
+  lastActive: { type: Date, default: Date.now }
+});
+const Conversation = mongoose.model("Conversation", conversationSchema);
+
+// AI Guardrail Logs Schema (Phase 5)
+const agentLogSchema = new mongoose.Schema({
+  sessionId: { type: String },
+  userPrompt: { type: String },
+  route: { type: String },
+  success: { type: Boolean },
+  timestamp: { type: Date, default: Date.now }
+});
+const AgentLog = mongoose.model("AgentLog", agentLogSchema);
 
 // AI Routes
 app.use('/api/chat', aiRoutes);

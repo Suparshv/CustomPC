@@ -191,27 +191,18 @@ def rule_formfactor_fit(build):
 
 # ─── Rule 6: Total price is within budget ────────────────────────────────────
 def rule_within_budget(build, budget):
-    """Check that the total price of all parts does not exceed the user's budget."""
+    """
+    Check that the total price of all parts listed in the build does not exceed the user's budget.
+    Prices exactly what the AI lists (consistent 1x price per item).
+    """
     if budget is None:
         return "UNKNOWN", "No budget specified."
-
-    # Count how many RAM parts are present
-    ram_count = 0
-    for part in build:
-        spec = find_spec(part)
-        if spec and spec.get("category") == "ram":
-            ram_count += 1
 
     total = 0
     for part in build:
         spec = find_spec(part)
         if spec:
-            price = spec.get("price", 0)
-            # If exactly 1 RAM is selected in build, count x2 (dual channel standard)
-            if spec.get("category") == "ram" and ram_count == 1:
-                total += price * 2
-            else:
-                total += price
+            total += spec.get("price", 0)
         else:
             return "UNKNOWN", f"Part '{part}' not found in database. Cannot calculate total."
 

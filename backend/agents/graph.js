@@ -6,6 +6,7 @@ const { comparatorAgent } = require("./comparatorAgent");
 const { GoogleGenAI } = require("@google/genai");
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const MODEL_NAME = process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
 
 // 1. Define the LangGraph "State" (The memory that gets passed between agents)
 const GraphState = Annotation.Root({
@@ -23,6 +24,10 @@ const GraphState = Annotation.Root({
   reviews: Annotation({ reducer: (x, y) => y ?? x, default: () => null }),
   comparison: Annotation({ reducer: (x, y) => y ?? x, default: () => null }),
   nextStep: Annotation({ reducer: (x, y) => y ?? x, default: () => null }),
+  tokenLog: Annotation({
+    reducer: (x, y) => x.concat(y),
+    default: () => [],
+  }),
 });
 
 // 2. The Supervisor Agent - Decides who does the work
@@ -38,7 +43,7 @@ async function supervisorAgent(state) {
     `;
 
   const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
+    model: MODEL_NAME,
     contents: `User request: ${lastMessage}`,
     config: { 
       systemInstruction,
@@ -74,8 +79,12 @@ async function supervisorAgent(state) {
 
   const route = call.args.route;
   console.log(` Supervisor decided to route to: ${route}`);
+  console.log(`  [Tokens] Supervisor: ${JSON.stringify(response.usageMetadata)}`);
 
-  return { nextStep: route };
+  return {
+    nextStep: route,
+    tokenLog: [{ agent: "supervisor", tokens: response.usageMetadata }],
+  };
 }
 
 // 3. Router logic

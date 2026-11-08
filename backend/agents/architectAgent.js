@@ -2,6 +2,7 @@ const { retrieveRelevantComponents } = require("../services/ragService");
 const { GoogleGenAI } = require("@google/genai");
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const MODEL_NAME = process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
 
 // every agent is a function that receives the current "state"
 async function architectAgent(state) {
@@ -33,7 +34,7 @@ async function architectAgent(state) {
 
   // 4. Send to Gemini
   const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
+    model: MODEL_NAME,
     contents: `User request: ${userMessage}`,
     config: {
       systemInstruction,
@@ -78,6 +79,7 @@ async function architectAgent(state) {
   }
   
   const parsedResponse = call.args;
+  console.log(`  [Tokens] Architect: ${JSON.stringify(response.usageMetadata)}`);
 
   // 5. Update the LangGraph State
   // We return an object containing the fields we want to update in the state
@@ -87,6 +89,7 @@ async function architectAgent(state) {
     userBudget: parsedResponse.budget,
     // Add an internal message to the chat history so the next agent can see what happened
     messages: [{ role: "assistant", content: parsedResponse.reply }],
+    tokenLog: [{ agent: "architect", tokens: response.usageMetadata }],
   };
 }
 

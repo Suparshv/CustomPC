@@ -262,7 +262,7 @@ export default function AIAssistant() {
           Build PC with AI
         </button>
       )}
-      )}
+    
 
       {/* DETAILED REPORT MODAL */}
       {activeReport && createPortal(

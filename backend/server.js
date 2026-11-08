@@ -97,6 +97,7 @@ const AgentLog = mongoose.model("AgentLog", agentLogSchema);
 
 // AI Routes
 app.use('/api/chat', aiRoutes);
+app.use('/api/ai', aiRoutes);
 
 // Signup route
 app.post("/api/signup", async (req, res) => {

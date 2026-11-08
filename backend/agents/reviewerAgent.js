@@ -3,6 +3,7 @@ const fs = require("fs");
 const path = require("path");
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const MODEL_NAME = process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
 
 const specsPath = path.join(__dirname, "../data/componentSpecs.json");
 const allSpecs = JSON.parse(fs.readFileSync(specsPath, "utf8"));
@@ -31,7 +32,7 @@ async function reviewerAgent(state) {
     `;
 
   const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
+    model: MODEL_NAME,
     contents: `Drafted Build:\n${JSON.stringify(draftedItemsWithSpecs, null, 2)}`,
     config: {
       systemInstruction,
@@ -76,9 +77,11 @@ async function reviewerAgent(state) {
   }
   
   const reviewsData = call.args;
+  console.log(`  [Tokens] Reviewer: ${JSON.stringify(response.usageMetadata)}`);
 
   return {
     reviews: reviewsData.reviews,
+    tokenLog: [{ agent: "reviewer", tokens: response.usageMetadata }],
   };
 }
 

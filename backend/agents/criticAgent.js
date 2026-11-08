@@ -3,6 +3,7 @@ const fs = require("fs");
 const path = require("path");
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const MODEL_NAME = process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
 
 // We load the full specs JSON so the critic can cross-reference sockets/TDP
 const specsPath = path.join(__dirname, "../data/componentSpecs.json");
@@ -36,7 +37,7 @@ async function criticAgent(state) {
   const prompt = `Drafted Build Specs:\n${JSON.stringify(draftedItemsWithSpecs, null, 2)}`;
 
   const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
+    model: MODEL_NAME,
     contents: prompt,
     config: {
       systemInstruction,
@@ -74,6 +75,7 @@ async function criticAgent(state) {
   }
   
   const critique = call.args;
+  console.log(`  [Tokens] Critic: ${JSON.stringify(response.usageMetadata)}`);
 
   // Update the LangGraph State
   return {
@@ -82,6 +84,7 @@ async function criticAgent(state) {
     messages: [
       { role: "assistant", content: `[Critic Verdict]: ${critique.reply}` },
     ],
+    tokenLog: [{ agent: "critic", tokens: response.usageMetadata }],
   };
 }
 

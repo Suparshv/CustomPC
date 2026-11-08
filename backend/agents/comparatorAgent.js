@@ -2,6 +2,7 @@ const { GoogleGenAI } = require("@google/genai");
 const { retrieveRelevantComponents } = require("../services/ragService");
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const MODEL_NAME = process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
 
 async function comparatorAgent(state) {
   console.log("Agent 4 (Comparator): Generating side-by-side comparison...");
@@ -25,7 +26,7 @@ async function comparatorAgent(state) {
     ${partsText}
     `;
   const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
+    model: MODEL_NAME,
     contents: `User request: ${lastMessage}`,
     config: {
       systemInstruction,
@@ -66,10 +67,12 @@ async function comparatorAgent(state) {
   }
   
   const comparison = call.args;
+  console.log(`  [Tokens] Comparator: ${JSON.stringify(response.usageMetadata)}`);
 
   return {
     comparison: comparison,
     messages: [{ role: "assistant", content: comparison.reply }],
+    tokenLog: [{ agent: "comparator", tokens: response.usageMetadata }],
   };
 }
 

@@ -4,6 +4,7 @@ const aiController = require('../controllers/aiController');
 
 // Define AI endpoints
 router.post('/builder', aiController.chatBuilder);
+router.post('/chat-builder', aiController.chatBuilder);
 router.post('/support', aiController.chatSupport);
 router.post('/compatibility', aiController.checkCompatibility);
 router.get('/history/:sessionId', aiController.getChatHistory);

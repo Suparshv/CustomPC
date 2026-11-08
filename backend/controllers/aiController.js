@@ -81,6 +81,7 @@ exports.chatBuilder = async (req, res) => {
       critique: finalState.critique || null,
       reviews: finalState.reviews || null,
       comparisonData: finalState.comparison?.comparisonData || null,
+      tokenLog: finalState.tokenLog || [],
     });
   } catch (error) {
     console.error("Multi-Agent Error:", error);
@@ -89,7 +90,8 @@ exports.chatBuilder = async (req, res) => {
       const AgentLog = mongoose.model("AgentLog");
       await AgentLog.create({ sessionId: req.body.sessionId, userPrompt: message, route: "ERROR", success: false });
     }
-    res.status(500).json({ error: "Failed to process AI response." });
+    const errMsg = error.message || (typeof error === 'string' ? error : "Failed to process AI response.");
+    res.status(500).json({ error: errMsg });
   }
 };
 
@@ -125,7 +127,7 @@ Current Chat History: ${JSON.stringify(chatHistory || [])}
 `;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite',
       contents: prompt,
       config: {
         systemInstruction,

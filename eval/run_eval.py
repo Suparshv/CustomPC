@@ -56,6 +56,7 @@ REQUESTS_PATH = os.path.join(os.path.dirname(__file__), "requests.jsonl")
 RESULTS_PATH = os.path.join(os.path.dirname(__file__), "results.jsonl")
 DOCS_DIR = os.path.join(os.path.dirname(__file__), "..", "docs")
 EVAL_MD_PATH = os.path.join(DOCS_DIR, "eval-v1.md")
+MANUAL_GRADES_PATH = os.path.join(os.path.dirname(__file__), "manual_grades.json")
 
 WAIT_SECONDS = 16
 MAX_RETRIES = 4
@@ -325,6 +326,30 @@ with open(RESULTS_PATH, "w", encoding="utf-8") as f:
         f.write(json.dumps(r, ensure_ascii=False) + "\n")
 
 
+# ─── Manual grades (hand-graded impossible requests) ─────────────────────────
+# Applied AFTER results.jsonl is written, so the raw file keeps the automatic scores.
+VALID_GRADES = ("correct", "partial", "incorrect")
+manual_grades = {}
+if os.path.exists(MANUAL_GRADES_PATH):
+    with open(MANUAL_GRADES_PATH, "r", encoding="utf-8") as f:
+        for g in json.load(f).get("grades", []):
+            if g["grade"] not in VALID_GRADES:
+                raise ValueError(f"manual_grades.json: id {g['id']} has invalid grade '{g['grade']}'")
+            manual_grades[g["id"]] = g
+    print(f"[Manual] Loaded {len(manual_grades)} hand grades from manual_grades.json")
+
+for r in results:
+    g = manual_grades.get(r["id"])
+    if g and r["type"] == "impossible":
+        r["score"] = {
+            **r["score"],
+            "auto_handled_correctly": r["score"].get("handled_correctly"),
+            "manual_grade": g["grade"],
+            "handled_correctly": g["grade"] == "correct",
+            "sub_result": f"Hand-graded: {g['grade']}",
+        }
+
+
 # ─── Compute Aggregate Scores ────────────────────────────────────────────────
 build_requests = [r for r in results if r["type"] == "normal_build"]
 comparison_requests = [r for r in results if r["type"] == "comparison"]
@@ -354,6 +379,18 @@ impossible_correct = [r for r in impossible_requests if r["score"].get("handled_
 offtopic_correct = [r for r in offtopic_requests if r["score"].get("handled_correctly")]
 vague_correct = [r for r in vague_requests if r["score"].get("handled_correctly")]
 
+impossible_counts = {
+    k: sum(1 for r in impossible_requests if r["score"].get("manual_grade") == k)
+    for k in VALID_GRADES
+}
+impossible_all_graded = bool(impossible_requests) and sum(impossible_counts.values()) == len(impossible_requests)
+impossible_label = (
+    f"{impossible_counts['correct']} correct, {impossible_counts['partial']} partial, "
+    f"{impossible_counts['incorrect']} incorrect (hand-graded)"
+    if impossible_all_graded
+    else f"{len(impossible_correct)}/{len(impossible_requests)} (automatic scorer only)"
+)
+
 total_time = sum(r["elapsed_s"] for r in results)
 avg_time = round(total_time / len(results), 2) if results else 0
 total_all_tokens = sum(r["total_tokens"] for r in results)
@@ -378,7 +415,8 @@ print(f"    Success rate:        {len(builds_successful)}/{len(build_requests)} 
 print(f"    Refused:             {len(builds_refused)} ({refusal_rate})")
 print(f"    Had UNKNOWN checks:  {len(builds_unknown)} ({unknown_rate})")
 print(f"  Comparisons correct:   {len(comparisons_correct)}/{len(comparison_requests)} ({pct(len(comparisons_correct), len(comparison_requests))})")
-print(f"  Impossible correct:    {len(impossible_correct)}/{len(impossible_requests)} ({pct(len(impossible_correct), len(impossible_requests))})")
+print(f"  Impossible correct:    {len(impossible_correct)}/{len(impossible_requests)} ({pct(len(impossible_correct), len(impossible_requests))}) strict")
+print(f"  Impossible breakdown:  {impossible_label}")
 print(f"  Off-topic correct:     {len(offtopic_correct)}/{len(offtopic_requests)} ({pct(len(offtopic_correct), len(offtopic_requests))})")
 print(f"  Vague correct:         {len(vague_correct)}/{len(vague_requests)} ({pct(len(vague_correct), len(vague_requests))})")
 print(f"  Avg time/request:      {avg_time}s")
@@ -404,7 +442,8 @@ eval_md = f"""# Evaluation Report: v1-baseline
 | Refusal rate (build requests declined) | {refusal_rate} ({len(builds_refused)}/{len(build_requests)}) |
 | Unknown rate (missing data for checks) | {unknown_rate} ({len(builds_unknown)}/{len(build_requests)}) |
 | Comparisons handled correctly | {pct(len(comparisons_correct), len(comparison_requests))} ({len(comparisons_correct)}/{len(comparison_requests)}) |
-| Impossible requests handled correctly | {pct(len(impossible_correct), len(impossible_requests))} ({len(impossible_correct)}/{len(impossible_requests)}) |
+| Impossible requests handled correctly (strict) | {pct(len(impossible_correct), len(impossible_requests))} ({len(impossible_correct)}/{len(impossible_requests)}) |
+| Impossible requests breakdown | {impossible_label} |
 | Off-topic requests handled correctly | {pct(len(offtopic_correct), len(offtopic_requests))} ({len(offtopic_correct)}/{len(offtopic_requests)}) |
 | Vague requests handled correctly | {pct(len(vague_correct), len(vague_requests))} ({len(vague_correct)}/{len(vague_requests)}) |
 | Avg time per request | {avg_time}s |
@@ -445,7 +484,8 @@ for r in results:
             details = ", ".join(fails) if fails else "Build produced but invalid"
     elif r["type"] == "impossible":
         correct = r["score"].get("handled_correctly", False)
-        result_str = "CORRECT" if correct else "INCORRECT"
+        grade = r["score"].get("manual_grade")
+        result_str = grade.upper() if grade else ("CORRECT" if correct else "INCORRECT")
         details = r["score"].get("sub_result", reply_snippet)
     elif r["type"] == "vague":
         correct = r["score"].get("handled_correctly", False)
@@ -471,7 +511,7 @@ eval_md += f"""
 - **Pacing**: {WAIT_SECONDS}s wait between requests to stay under 15 RPM
 - **Pricing Rule**: Consistent 1x part pricing (no automatic RAM doubling).
 - **Strict Scoring**:
-  - Impossible requests counted as correct only if refused or conflict explicitly stated.
+  - Impossible requests are hand-graded from the saved replies (`eval/manual_grades.json`). Correct = refuses, or names the conflict without claiming the build satisfies it. Partial = names it but makes a false claim. Incorrect = no warning in the reply, or the reply contradicts the build. Only "correct" counts toward the headline.
   - Vague requests counted as correct only if clarifying question asked or build passes all 6 checker rules.
 """
 

@@ -1,0 +1,46 @@
+{
+  "_meta": {
+    "run": "v1-baseline run 2 (repo commit a4ed31e, 8 Nov 2026, Gemini 3.5 Flash Lite)",
+    "applies_to": "impossible requests only (ids 16-20)",
+    "why": "The automatic scorer counted any build the Critic disapproved as 'Stated conflict', but the Critic's issues appear only in a separate report panel, not in the chat reply the user reads. These five were graded by hand from the saved raw data (results.jsonl), without re-running.",
+    "rubric": {
+      "correct": "Refuses, or the chat reply names the conflict without claiming the returned build satisfies it.",
+      "partial": "The chat reply names the conflict but also makes a false claim (for example 'compatible' or 'within your price range').",
+      "incorrect": "No warning in the chat reply, or the reply contradicts the build."
+    },
+    "headline_counts_as_correct": ["correct"],
+    "note": "Draft grades. Re-read each reply in eval/results.jsonl before committing, and apply the same rubric to every later version."
+  },
+  "grades": [
+    {
+      "id": 16,
+      "text": "Build me a 4K gaming PC with RTX 5080 for 15000 rupees",
+      "grade": "correct",
+      "reason": "Reply says the RTX 5080 significantly exceeds a 15000 rupee budget and does not claim the build fits. The build itself is still invalid (Rs.234,515; RAM type, PSU and budget checks FAIL)."
+    },
+    {
+      "id": 17,
+      "text": "I want RTX 5080 and Intel i5 12400 together in a 50k build",
+      "grade": "partial",
+      "reason": "Reply says it cannot fit a 50k budget, then calls the result 'a complete compatible system'. The build is Rs.235,790 and fails the PSU check."
+    },
+    {
+      "id": 18,
+      "text": "Build a PC with 3 GPUs and liquid nitrogen cooling under 40000",
+      "grade": "partial",
+      "reason": "Reply says 3 GPUs and liquid nitrogen cooling are unavailable, then claims a build 'within your price range'. The build is Rs.62,370 against Rs.40,000. The automatic scorer credited it only because the Critic disapproved, on unrelated issues (RAM size, SSD size, cooler)."
+    },
+    {
+      "id": 19,
+      "text": "I want a build with RTX 5070Ti and a 550W PSU",
+      "grade": "incorrect",
+      "reason": "Reply says 'compatible components' with no warning. The build is Rs.147,070 against Rs.120,000 and the 550W PSU fails the headroom check. Only the Critic report panel flags it."
+    },
+    {
+      "id": 20,
+      "text": "Get me an AMD Ryzen 5 5600 with an LGA1700 motherboard",
+      "grade": "incorrect",
+      "reason": "Reply says the Ryzen 5 5600 was paired with a B550M-A Pro, but the build contains the LGA1700 MSI PRO B660M-E (socket check FAIL) and only 2 of 9 parts. The reply contradicts the build."
+    }
+  ]
+}

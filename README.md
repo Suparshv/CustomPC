@@ -76,9 +76,21 @@ flowchart LR
    ```
    More detail in [`frontend/README.md`](./frontend/README.md).
 
-## Evaluation of v1 (baseline)
+## Evaluation of Baseline (Run 2)
 
 **Why:** you cannot show an upgrade without measuring the starting point.
+
+### Evaluation Terminology & Versions
+To ensure clear before-and-after comparisons without confusion:
+
+| Name | What it is | Role |
+|---|---|---|
+| **Baseline run 1** | Original run of the old JS agent system without saved part IDs or raw reply bodies. | Kept in `eval/archive/` for historical record only. Cannot be re-scored. |
+| **Baseline run 2** | Old JS system run with full replies, builds, part IDs, and critiques saved. | **Official comparison baseline.** *(Note: the repository commit titled `"v2-test-results"` refers to this baseline run).* |
+| **Upgraded system** | New Python agent service (`agent-service/`) with tools, code compatibility checker, hybrid search, and validated output schemas. | The target system under development. |
+
+> [!NOTE]
+> **Temperature Gap Note:** Baseline run 2 ran at Gemini's default non-zero temperature, whereas the upgraded system explicitly locks `temperature: 0` for consistent schema adherence. Keeping Baseline run 2 as the baseline avoids an extra re-run, and the advance hand-grades for impossible requests 16–20 remain fully valid since they evaluate Baseline run 2's saved replies. The upgraded system will be scored with fresh runs and grades on the 30 frozen requests upon completion.
 
 **Method**
 - **Test set:** [`eval/requests.jsonl`](./eval/requests.jsonl) has 30 requests, frozen after the first run: 10 normal builds, 5 comparisons, 5 impossible requests, 5 off-topic or trick requests and 5 vague requests.
@@ -86,7 +98,7 @@ flowchart LR
 - **Runner:** [`eval/run_eval.py`](./eval/run_eval.py) sends each request to the running backend, waits 16 s between requests (free-tier limit), and saves the full reply, build part IDs, critique and token counts to `eval/results.jsonl`.
 - **Run details:** 8 Nov 2026, Gemini 3.5 Flash Lite, repo commit `a4ed31e`.
 
-**Results (run 2, 30 requests, 0 errors)**
+**Results (Baseline run 2, 30 requests, 0 errors)**
 
 | Metric | Result |
 |---|---|
@@ -147,7 +159,7 @@ To re-run from scratch, move the old `eval/results.jsonl` into `eval/archive/` f
 - [ ] Tracing with Langfuse
 - [ ] Before/after results table, architecture diagram and demo video
 
-## Agent service (v2 progress)
+## Upgraded Agent Service Progress
 
 The Python agent service ([`agent-service/`](./agent-service)) adds a single config switch (`LLM_PROVIDER=gemini|ollama`), Pydantic output validation for all agents, catalogue ID verification, and an error retry loop.
 

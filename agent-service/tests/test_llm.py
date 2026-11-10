@@ -8,14 +8,11 @@ def test_get_llm_unknown_provider(monkeypatch):
         get_llm()
 
 
-def test_get_llm_ollama_stub(monkeypatch):
+def test_get_llm_ollama(monkeypatch):
     monkeypatch.setenv("LLM_PROVIDER", "ollama")
     llm = get_llm()
     assert isinstance(llm, OllamaLLM)
     assert llm.provider == "ollama"
-
-    with pytest.raises(NotImplementedError, match="Ollama is added on Day 4"):
-        llm.generate("system prompt", "user query", None)
 
 
 def test_gemini_missing_api_key(monkeypatch):

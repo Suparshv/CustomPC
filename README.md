@@ -10,7 +10,7 @@ A full-stack web app where users browse PC components, build a custom PC, chat w
 |---|---|
 | [`frontend/`](./frontend) | React app (port 3000) |
 | [`backend/`](./backend) | Node.js / Express API and the LangGraph agents (port 5000) |
-| [`agent-service/`](./agent-service) | Plain-code compatibility checker (`compat.py`), used to score builds |
+| [`agent-service/`](./agent-service) | FastAPI agent microservice with Gemini & local Ollama (GPU) support, Pydantic schemas, catalogue checks, and retry loop |
 | [`eval/`](./eval) | 30 fixed test requests, the runner, raw results and manual grades |
 | [`docs/`](./docs) | Evaluation reports (`eval-v1.md`) |
 
@@ -136,8 +136,8 @@ To re-run from scratch, move the old `eval/results.jsonl` into `eval/archive/` f
 
 - [x] 30 fixed test requests and a code-based compatibility judge
 - [x] Baseline of the current system (this README)
-- [ ] One setting to switch between Gemini and a local Ollama model
-- [ ] Validated schemas for every agent output, with retries
+- [x] One setting to switch between Gemini and a local Ollama model
+- [x] Validated schemas for every agent output, with retries
 - [ ] A catalogue of about 3,000 real parts (instead of 24)
 - [ ] Code-based compatibility checker as the decision-maker; the AI only proposes and explains
 - [ ] Agent tools: `search_parts`, `check_compatibility`, `price_total`
@@ -146,6 +146,27 @@ To re-run from scratch, move the old `eval/results.jsonl` into `eval/archive/` f
 - [ ] Approval step before add-to-cart
 - [ ] Tracing with Langfuse
 - [ ] Before/after results table, architecture diagram and demo video
+
+## Day 4 Milestone: Local Model (Ollama) & Validation Retry Loop
+
+### Overview
+- **Local Model Execution:** Ollama running `llama3.1:8b` (4-bit quantized) with 100% offload onto the local NVIDIA RTX 4060 GPU and context window expanded to 8,192 tokens (`OLLAMA_NUM_CTX=8192`).
+- **Two-Layer Architecture:**
+  - **Provider Layer (`_complete`):** Handles model connection and token streaming (Gemini via `@google/genai`, Ollama via `ollama.Client` with structured schema enforcement).
+  - **Shared Orchestration Layer (`generate`):** Enforces a uniform retry loop (up to 2 retries / 3 attempts total) that feeds back Pydantic validation errors and catalogue mismatches directly into the model's next prompt.
+- **Catalogue Verification (`catalog.py`):** Rejects hallucinated component IDs (e.g., `g99`) and category mismatches (e.g., a CPU listed under the `gpu` category) before returning to the caller.
+- **Error Serialization Fix:** Cleaned up Pydantic validation errors using `e.errors(include_url=False, include_context=False)`, resolving the HTTP 500 regression on custom validator errors and reliably returning HTTP 422.
+
+### 20-Prompt Smoke Test Results
+Tested on 20 independent, un-frozen prompts (10 full builds with budgets, 4 single-part requests, 3 vague, 3 edge cases):
+
+| Provider | Model | Processor | Valid Output (<= 3 tries) | First-Try Valid | Avg Attempts | Avg Tokens | Avg Seconds |
+|---|---|---|---|---|---|---|---|
+| **Gemini** | `gemini-3.5-flash-lite` | Cloud API | **20/20 (100.0%)** | 20/20 (100.0%) | 1.00 | 1,111.2 | 2.06 s |
+| **Ollama** | `llama3.1:8b` | 100% RTX 4060 GPU | **20/20 (100.0%)** | 20/20 (100.0%) | 1.00 | 918.3 | 3.04 s |
+
+*Regression and unit tests:* 23/23 tests pass (`pytest -q`).
+
 
 ## Known issues
 

@@ -1,0 +1,317 @@
+{
+  "timestamp": "2026-11-10T12:16:03.683487+00:00",
+  "provider": "ollama",
+  "model": "llama3.1:8b",
+  "total_prompts": 20,
+  "well_formed_count": 20,
+  "well_formed_rate": 100.0,
+  "first_try_valid_count": 20,
+  "first_try_rate": 100.0,
+  "avg_attempts": 1.0,
+  "total_tokens": 18244,
+  "avg_tokens": 912.2,
+  "total_seconds": 64.35,
+  "avg_seconds": 3.22,
+  "results": [
+    {
+      "id": 1,
+      "prompt": "Assemble a balanced gaming rig under 75000 INR for esports titles",
+      "valid": true,
+      "first_try_valid": true,
+      "attempts": 1,
+      "tokens": 945,
+      "seconds": 11.75,
+      "output": {
+        "reply": "I recommend the following build: p1 (Intel i5 12400) m1 (MSI PRO B760M-E DDR5) g2 (Inno3d RTX 3060 12GB) r2 (Adata XPG Gammix D30 16GB DDR4 3200MHz) ps1 (Adata Legend 710 256GB M.2 NVMe Internal SSD) ss1 (Western Digital HDD 1TB) psu1 (MSI MAG A650BN PSU-650W 80 Plus Bronze) cab1 (Deepcool Macube 110 Cabinet(White)) c1 (Cooler Master Liquid 240L ARGB (White))",
+        "build": [],
+        "budget": null
+      },
+      "error": null
+    },
+    {
+      "id": 2,
+      "prompt": "Build a photo editing desktop for Lightroom and Photoshop under 85000 rupees",
+      "valid": true,
+      "first_try_valid": true,
+      "attempts": 1,
+      "tokens": 835,
+      "seconds": 1.16,
+      "output": {
+        "reply": "I recommend the following build: p1, m1, g2, r2, ps2, ss1, psu1, cab1, c2",
+        "build": [],
+        "budget": null
+      },
+      "error": null
+    },
+    {
+      "id": 3,
+      "prompt": "I need an entry level computer for coding and web development under 50000",
+      "valid": true,
+      "first_try_valid": true,
+      "attempts": 1,
+      "tokens": 945,
+      "seconds": 3.38,
+      "output": {
+        "reply": "I recommend the following build: p3 (AMD Ryzen 5 5600) m2 (MSI PRO B660M-E DDR4) r1 (Adata XPG Gammix D30 8GB DDR4 3200MHz) ps1 (Adata Legend 710 256GB M.2 NVMe Internal SSD) ss1 (Western Digital HDD 1TB) psu1 (MSI MAG A550BN PSU-550W 80 Plus Bronze) cab1 (Deepcool Macube 110 Cabinet(White)) g2 (Inno3d RTX 3060 12GB) c2 (Cooler Master Liquid 240L ARGB (Black))",
+        "build": [],
+        "budget": null
+      },
+      "error": null
+    },
+    {
+      "id": 4,
+      "prompt": "Design a creator workstation for DaVinci Resolve with a 110000 budget",
+      "valid": true,
+      "first_try_valid": true,
+      "attempts": 1,
+      "tokens": 955,
+      "seconds": 3.61,
+      "output": {
+        "reply": "For a DaVinci Resolve workstation, I recommend the following build: p4 | AMD Ryzen 5 5600X, m1 | MSI PRO B760M-E DDR5, g3 | MSI RTX 5080 OC 16GB GDDR7 White, ps2 | Adata Legend 710 512GB M.2 NVMe Internal SSD, ss1 | Western Digital HDD 1TB, r2 | Adata XPG Gammix D30 16GB DDR4 3200MHz, psu1 | MSI MAG A650BN PSU-650W 80 Plus Bronze, cab1 | Deepcool Macube 110 Cabinet(White), c1 | Cooler Master Liquid 240L ARGB (White)",
+        "build": [],
+        "budget": null
+      },
+      "error": null
+    },
+    {
+      "id": 5,
+      "prompt": "Can you configure a solid 1080p gaming machine for 65000?",
+      "valid": true,
+      "first_try_valid": true,
+      "attempts": 1,
+      "tokens": 945,
+      "seconds": 3.35,
+      "output": {
+        "reply": "I recommend the following build: p1 (Intel i5 12400) m1 (MSI PRO B760M-E DDR5) g2 (Inno3d RTX 3060 12GB) ps1 (Adata Legend 710 256GB M.2 NVMe Internal SSD) ss1 (Western Digital HDD 1TB) r2 (Adata XPG Gammix D30 16GB DDR4 3200MHz) psu1 (MSI MAG A650BN PSU-650W 80 Plus Bronze) cab1 (Deepcool Macube 110 Cabinet(White)) c1 (Cooler Master Liquid 240L ARGB (White))",
+        "build": [],
+        "budget": null
+      },
+      "error": null
+    },
+    {
+      "id": 6,
+      "prompt": "Need a silent desktop tower for music production under 90000 rupees",
+      "valid": true,
+      "first_try_valid": true,
+      "attempts": 1,
+      "tokens": 930,
+      "seconds": 3.12,
+      "output": {
+        "reply": "I recommend the following build: p1 (Intel i5 12400), m1 (MSI PRO B760M-E DDR5), g2 (Inno3d RTX 3060 12GB), ps1 (Adata Legend 710 256GB M.2 NVMe), ss1 (Western Digital HDD 1TB), r2 (Adata XPG Gammix D30 16GB DDR4), psu1 (MSI MAG A650BN PSU-650W), c1 (Cooler Master Liquid 240L ARGB), cab1 (Deepcool Macube 110 Cabinet)",
+        "build": [],
+        "budget": null
+      },
+      "error": null
+    },
+    {
+      "id": 7,
+      "prompt": "Build an all-around family desktop for light casual gaming under 60000",
+      "valid": true,
+      "first_try_valid": true,
+      "attempts": 1,
+      "tokens": 943,
+      "seconds": 3.36,
+      "output": {
+        "reply": "I recommend the following build: p1 (Intel i5 12400) m1 (MSI PRO B760M-E DDR5) g2 (Inno3d RTX 3060 12GB) ps1 (Adata Legend 710 256GB M.2 NVMe Internal SSD) ss1 (Western Digital HDD 1TB) r2 (Adata XPG Gammix D30 16GB DDR4 3200MHz) psu1 (MSI MAG A650BN PSU-650W 80 Plus Bronze) cab1 (Deepcool Macube 110 Cabinet(White)) c2 (Cooler Master Liquid 240L ARGB (Black))",
+        "build": [],
+        "budget": null
+      },
+      "error": null
+    },
+    {
+      "id": 8,
+      "prompt": "I want an Intel based gaming PC under 105000 rupees",
+      "valid": true,
+      "first_try_valid": true,
+      "attempts": 1,
+      "tokens": 951,
+      "seconds": 3.57,
+      "output": {
+        "reply": "I recommend the following build: p1 (Intel i5 12400) + m1 (MSI PRO B760M-E DDR5) + g1 (Gigabyte RTX 4060 OC 8GB) + ps1 (Adata Legend 710 256GB M.2 NVMe Internal SSD) + ss1 (Western Digital HDD 1TB) + r2 (Adata XPG Gammix D30 16GB DDR4 3200MHz) + psu1 (MSI MAG A650BN PSU-650W 80 Plus Bronze) + cab1 (Deepcool Macube 110 Cabinet(White)) + c1 (Cooler Master Liquid 240L ARGB (White))",
+        "build": [],
+        "budget": null
+      },
+      "error": null
+    },
+    {
+      "id": 9,
+      "prompt": "Assemble an everyday multitasking workstation with a 45000 budget",
+      "valid": true,
+      "first_try_valid": true,
+      "attempts": 1,
+      "tokens": 943,
+      "seconds": 3.42,
+      "output": {
+        "reply": "I recommend the following build: p1 (Intel i5 12400) m1 (MSI PRO B760M-E DDR5) g2 (Inno3d RTX 3060 12GB) ps1 (Adata Legend 710 256GB M.2 NVMe Internal SSD) ss1 (Western Digital HDD 1TB) r2 (Adata XPG Gammix D30 16GB DDR4 3200MHz) psu1 (MSI MAG A650BN PSU-650W 80 Plus Bronze) cab1 (Deepcool Macube 110 Cabinet(White)) c1 (Cooler Master Liquid 240L ARGB (White))",
+        "build": [],
+        "budget": null
+      },
+      "error": null
+    },
+    {
+      "id": 10,
+      "prompt": "Build a durable home office tower under 70000 INR",
+      "valid": true,
+      "first_try_valid": true,
+      "attempts": 1,
+      "tokens": 941,
+      "seconds": 3.37,
+      "output": {
+        "reply": "I recommend the following build: p1 (Intel i5 12400) m1 (MSI PRO B760M-E DDR5) g2 (Inno3d RTX 3060 12GB) ps1 (Adata Legend 710 256GB M.2 NVMe Internal SSD) ss1 (Western Digital HDD 1TB) r2 (Adata XPG Gammix D30 16GB DDR4 3200MHz) psu1 (MSI MAG A650BN PSU-650W 80 Plus Bronze) cab1 (Deepcool Macube 110 Cabinet(White)) c1 (Cooler Master Liquid 240L ARGB (White))",
+        "build": [],
+        "budget": null
+      },
+      "error": null
+    },
+    {
+      "id": 11,
+      "prompt": "I just need a compatible graphics card recommendation",
+      "valid": true,
+      "first_try_valid": true,
+      "attempts": 1,
+      "tokens": 822,
+      "seconds": 1.0,
+      "output": {
+        "reply": "Based on the available parts, I recommend the Gigabyte RTX 4060 OC 8GB (g1) for a compatible graphics card.",
+        "build": [],
+        "budget": null
+      },
+      "error": null
+    },
+    {
+      "id": 12,
+      "prompt": "Recommend a good processor from the catalog",
+      "valid": true,
+      "first_try_valid": true,
+      "attempts": 1,
+      "tokens": 813,
+      "seconds": 0.82,
+      "output": {
+        "reply": "I recommend the AMD Ryzen 5 5600X (p4) for its high performance and efficiency.",
+        "build": [],
+        "budget": null
+      },
+      "error": null
+    },
+    {
+      "id": 13,
+      "prompt": "Suggest a power supply unit for my setup",
+      "valid": true,
+      "first_try_valid": true,
+      "attempts": 1,
+      "tokens": 825,
+      "seconds": 1.02,
+      "output": {
+        "reply": "Based on the available parts, I recommend the MSI MAG A650BN PSU-650W 80 Plus Bronze (psu1) for a stable power supply.",
+        "build": [],
+        "budget": null
+      },
+      "error": null
+    },
+    {
+      "id": 14,
+      "prompt": "I only need a cooling solution for an Intel CPU",
+      "valid": true,
+      "first_try_valid": true,
+      "attempts": 1,
+      "tokens": 827,
+      "seconds": 1.04,
+      "output": {
+        "reply": "Cooler Master Liquid 240L ARGB (White) (c1) is compatible with Intel CPUs. It is a suitable cooling solution for an Intel CPU.",
+        "build": [],
+        "budget": null
+      },
+      "error": null
+    },
+    {
+      "id": 15,
+      "prompt": "Can you make a computer for me?",
+      "valid": true,
+      "first_try_valid": true,
+      "attempts": 1,
+      "tokens": 943,
+      "seconds": 3.53,
+      "output": {
+        "reply": "Based on the provided parts, I recommend the following build: p1 (Intel i5 12400), m1 (MSI PRO B760M-E DDR5), g1 (Gigabyte RTX 4060 OC 8GB), ps1 (Adata Legend 710 256GB M.2 NVMe Internal SSD), ss1 (Western Digital HDD 1TB), r2 (Adata XPG Gammix D30 16GB DDR4 3200MHz), psu1 (MSI MAG A650BN PSU-650W 80 Plus Bronze), c1 (Cooler Master Liquid 240L ARGB (White)), cab1 (Deepcool Macube 110 Cabinet(White))",
+        "build": [],
+        "budget": null
+      },
+      "error": null
+    },
+    {
+      "id": 16,
+      "prompt": "Give me a build recommendation",
+      "valid": true,
+      "first_try_valid": true,
+      "attempts": 1,
+      "tokens": 911,
+      "seconds": 2.93,
+      "output": {
+        "reply": "Based on the provided parts, I recommend the following build: Intel i5 12400, MSI PRO B760M-E DDR5, Adata XPG Gammix D30 16GB DDR4 3200MHz, Adata Legend 710 512GB M.2 NVMe Internal SSD, Western Digital HDD 1TB, MSI MAG A650BN PSU-650W 80 Plus Bronze, Cooler Master Liquid 240L ARGB (White), GALAX RTX 5070Ti 16gb GDDR7, and Deepcool Macube 110 Cabinet(White).",
+        "build": [],
+        "budget": null
+      },
+      "error": null
+    },
+    {
+      "id": 17,
+      "prompt": "Looking for a fast PC setup",
+      "valid": true,
+      "first_try_valid": true,
+      "attempts": 1,
+      "tokens": 940,
+      "seconds": 3.51,
+      "output": {
+        "reply": "I recommend the following build: p4 (AMD Ryzen 5 5600X), m1 (MSI PRO B760M-E DDR5), g3 (MSI RTX 5080 OC 16GB GDDR7 White), ps2 (Adata Legend 710 512GB M.2 NVMe Internal SSD), ss1 (Western Digital HDD 1TB), r2 (Adata XPG Gammix D30 16GB DDR4 3200MHz), psu1 (MSI MAG A650BN PSU-650W 80 Plus Bronze), c1 (Cooler Master Liquid 240L ARGB (White)), cab1 (Deepcool Macube 110 Cabinet(White))",
+        "build": [],
+        "budget": null
+      },
+      "error": null
+    },
+    {
+      "id": 18,
+      "prompt": "I need a computer to calculate digits of pi all day",
+      "valid": true,
+      "first_try_valid": true,
+      "attempts": 1,
+      "tokens": 941,
+      "seconds": 3.43,
+      "output": {
+        "reply": "I recommend the following build: p1 (Intel i5 12400), m1 (MSI PRO B760M-E DDR5), g1 (Gigabyte RTX 4060 OC 8GB), ps1 (Adata Legend 710 256GB M.2 NVMe Internal SSD), ss1 (Western Digital HDD 1TB), r2 (Adata XPG Gammix D30 16GB DDR4 3200MHz), psu1 (MSI MAG A650BN PSU-650W 80 Plus Bronze), c1 (Cooler Master Liquid 240L ARGB (White)), cab1 (Deepcool Macube 110 Cabinet(White))",
+        "build": [],
+        "budget": null
+      },
+      "error": null
+    },
+    {
+      "id": 19,
+      "prompt": "Can you build a machine that survives a desert climate?",
+      "valid": true,
+      "first_try_valid": true,
+      "attempts": 1,
+      "tokens": 942,
+      "seconds": 3.42,
+      "output": {
+        "reply": "To build a machine that survives a desert climate, I recommend the following build: Intel i5 12400 (p1), MSI PRO B760M-E DDR5 (m1), Adata XPG Gammix D30 16GB DDR4 3200MHz (r2), Adata Legend 710 512GB M.2 NVMe Internal SSD (ps2), Western Digital HDD 1TB (ss2), Cooler Master Liquid 240L ARGB (c2), MSI MAG A650BN PSU-650W 80 Plus Bronze (psu1), GALAX Revolution-06 Mesh RGB (cab2), and Gigabyte RTX 4060 OC 8GB (g1).",
+        "build": [],
+        "budget": null
+      },
+      "error": null
+    },
+    {
+      "id": 20,
+      "prompt": "Make a gaming rig specifically for retro arcade emulation",
+      "valid": true,
+      "first_try_valid": true,
+      "attempts": 1,
+      "tokens": 947,
+      "seconds": 3.56,
+      "output": {
+        "reply": "For a retro arcade emulation gaming rig, I recommend the following build: p3 (AMD Ryzen 5 5600), m2 (MSI PRO B660M-E DDR4), g2 (Inno3d RTX 3060 12GB), ps1 (Adata Legend 710 256GB M.2 NVMe Internal SSD), ss1 (Western Digital HDD 1TB), r1 (Adata XPG Gammix D30 8GB DDR4 3200MHz), psu1 (MSI MAG A650BN PSU-650W 80 Plus Bronze), cab1 (Deepcool Macube 110 Cabinet(White)), c2 (Cooler Master Liquid 240L ARGB (Black))",
+        "build": [],
+        "budget": null
+      },
+      "error": null
+    }
+  ]
+}

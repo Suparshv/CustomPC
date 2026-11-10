@@ -47,7 +47,7 @@ flowchart LR
 
 - **Frontend:** React, React Router, Bootstrap, axios, framer-motion
 - **Backend:** Node.js, Express, Mongoose
-- **AI:** `@google/genai` (model set by `GEMINI_MODEL`, default `gemini-3.5-flash-lite`), `@langchain/langgraph` 1.4.x
+- **AI:** Node backend uses `@google/genai` (model set by `GEMINI_MODEL`, default `gemini-3.5-flash-lite`), `@langchain/langgraph` 1.4.x; Python agent service uses `google-genai` and `ollama` with Pydantic schemas
 - **Data:** MongoDB (users, cart, chat history), ChromaDB via Docker (vectors)
 - **Evaluation:** Python (`requests`)
 
@@ -147,25 +147,23 @@ To re-run from scratch, move the old `eval/results.jsonl` into `eval/archive/` f
 - [ ] Tracing with Langfuse
 - [ ] Before/after results table, architecture diagram and demo video
 
-## Day 4 Milestone: Local Model (Ollama) & Validation Retry Loop
+## Agent service (v2 progress)
 
-### Overview
-- **Local Model Execution:** Ollama running `llama3.1:8b` (4-bit quantized) with 100% offload onto the local NVIDIA RTX 4060 GPU and context window expanded to 8,192 tokens (`OLLAMA_NUM_CTX=8192`).
-- **Two-Layer Architecture:**
-  - **Provider Layer (`_complete`):** Handles model connection and token streaming (Gemini via `@google/genai`, Ollama via `ollama.Client` with structured schema enforcement).
-  - **Shared Orchestration Layer (`generate`):** Enforces a uniform retry loop (up to 2 retries / 3 attempts total) that feeds back Pydantic validation errors and catalogue mismatches directly into the model's next prompt.
-- **Catalogue Verification (`catalog.py`):** Rejects hallucinated component IDs (e.g., `g99`) and category mismatches (e.g., a CPU listed under the `gpu` category) before returning to the caller.
-- **Error Serialization Fix:** Cleaned up Pydantic validation errors using `e.errors(include_url=False, include_context=False)`, resolving the HTTP 500 regression on custom validator errors and reliably returning HTTP 422.
+The Python agent service ([`agent-service/`](./agent-service)) adds a single config switch (`LLM_PROVIDER=gemini|ollama`), Pydantic output validation for all agents, catalogue ID verification, and an error retry loop.
 
-### 20-Prompt Smoke Test Results
-Tested on 20 independent, un-frozen prompts (10 full builds with budgets, 4 single-part requests, 3 vague, 3 edge cases):
+### 20-prompt smoke test (Day 4)
 
-| Provider | Model | Processor | Valid Output (<= 3 tries) | First-Try Valid | Avg Attempts | Avg Tokens | Avg Seconds |
-|---|---|---|---|---|---|---|---|
-| **Gemini** | `gemini-3.5-flash-lite` | Cloud API | **20/20 (100.0%)** | 20/20 (100.0%) | 1.00 | 1,111.2 | 2.06 s |
-| **Ollama** | `llama3.1:8b` | 100% RTX 4060 GPU | **20/20 (100.0%)** | 20/20 (100.0%) | 1.00 | 918.3 | 3.04 s |
+Tested on 20 un-frozen prompts across Gemini and local Ollama (Llama 3.1 8B on RTX 4060 GPU):
 
-*Regression and unit tests:* 23/23 tests pass (`pytest -q`).
+| Provider | Model | Execution | Well-formed output ($\le 3$ tries) | First-try valid | Avg latency | Raw audit |
+|---|---|---|---|---|---|---|
+| **Gemini** | `gemini-3.5-flash-lite` | Cloud API | 19/20 (95.0%) | 19/20 (95.0%) | 3.47 s | [`smoke_results_gemini.json`](./agent-service/tests/smoke_results_gemini.json) |
+| **Ollama** | `llama3.1:8b` | Local RTX 4060 GPU | 20/20 (100.0%) | 20/20 (100.0%) | 3.22 s | [`smoke_results_ollama.json`](./agent-service/tests/smoke_results_ollama.json) |
+
+*Note on validation:* "Well-formed output" means the model output strictly adhered to the Pydantic schema and referenced real component IDs from the catalogue; it does not check hardware compatibility (socket/RAM/power), which is enforced by code tools on Day 7. Both models scored 100% on the first try on these 20 prompts, so the retry loop was verified through unit tests rather than triggering during the smoke test.
+
+Full technical write-up: [`docs/day4-milestone.md`](./docs/day4-milestone.md).
+
 
 
 ## Known issues

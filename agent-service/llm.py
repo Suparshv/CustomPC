@@ -16,10 +16,20 @@ class LLMError(Exception):
 
 class LLMValidationError(Exception):
     """Still invalid after all retries."""
-    def __init__(self, problems: list[str], attempts: int):
+    def __init__(
+        self,
+        problems: list[str],
+        attempts: int,
+        prompt_tokens: int = 0,
+        output_tokens: int = 0,
+        seconds: float = 0.0,
+    ):
         super().__init__(f"AI answer invalid after {attempts} attempts")
         self.problems = problems
         self.attempts = attempts
+        self.prompt_tokens = prompt_tokens
+        self.output_tokens = output_tokens
+        self.seconds = seconds
 
 
 @dataclass
@@ -48,23 +58,32 @@ class BaseLLM:
         # Each provider implements this
         raise NotImplementedError
 
+    def check_health(self) -> dict:
+        raise NotImplementedError
+
     def generate(self, system: str, user: str, schema: type[BaseModel], check=None, max_retries: int = 2) -> LLMResult:
         start = time.perf_counter()
         tok_in, tok_out = 0, 0
         prompt = user
+        problems = []
         for attempt in range(1, max_retries + 2):
             raw = self._complete(system, prompt, schema)
             tok_in += raw.prompt_tokens
             tok_out += raw.output_tokens
             parsed = None
-            try:
-                parsed = schema.model_validate_json(raw.text)
-                problems = check(parsed) if check else []
-            except ValidationError as e:
-                problems = [
-                    f"{'.'.join(map(str, x['loc']))}: {x['msg']}"
-                    for x in e.errors(include_url=False, include_context=False)
-                ]
+
+            if not raw.text or not raw.text.strip():
+                problems = ["Provider returned empty response (no text)"]
+            else:
+                try:
+                    parsed = schema.model_validate_json(raw.text)
+                    problems = check(parsed) if check else []
+                except ValidationError as e:
+                    problems = [
+                        f"{'.'.join(map(str, x['loc']))}: {x['msg']}"
+                        for x in e.errors(include_url=False, include_context=False)
+                    ]
+
             if not problems:
                 return LLMResult(
                     parsed=parsed,
@@ -75,12 +94,20 @@ class BaseLLM:
                     seconds=round(time.perf_counter() - start, 2),
                     attempts=attempt,
                 )
+
             prompt = (
                 f"{user}\n\nYour previous answer was rejected:\n- "
                 + "\n- ".join(problems)
                 + f"\n\nPrevious answer:\n{raw.text[:1500]}\n\nReturn a corrected JSON answer."
             )
-        raise LLMValidationError(problems, max_retries + 1)
+
+        raise LLMValidationError(
+            problems=problems,
+            attempts=max_retries + 1,
+            prompt_tokens=tok_in,
+            output_tokens=tok_out,
+            seconds=round(time.perf_counter() - start, 2),
+        )
 
 
 class GeminiLLM(BaseLLM):
@@ -93,6 +120,12 @@ class GeminiLLM(BaseLLM):
             raise ValueError("GEMINI_API_KEY environment variable is missing")
         self.client = genai.Client(api_key=key)
 
+    def check_health(self) -> dict:
+        key = os.getenv("GEMINI_API_KEY")
+        if not key:
+            raise ValueError("GEMINI_API_KEY environment variable is missing")
+        return {"status": "ok", "provider": self.provider, "model": self.model}
+
     def _complete(self, system: str, user: str, schema: type[BaseModel]) -> Raw:
         resp = self.client.models.generate_content(
             model=self.model,
@@ -104,20 +137,17 @@ class GeminiLLM(BaseLLM):
                 "temperature": 0,
             },
         )
-        if not resp.text:
-            finish_reason = "UNKNOWN"
-            try:
-                if resp.candidates and len(resp.candidates) > 0:
-                    finish_reason = getattr(resp.candidates[0], "finish_reason", "UNKNOWN")
-            except Exception:
-                pass
-            raise LLMError(f"Gemini returned no text (blocked or cut off). Finish reason: {finish_reason}")
-
         u = resp.usage_metadata
+        prompt_tokens = getattr(u, "prompt_token_count", 0) or 0
+        output_tokens = getattr(u, "candidates_token_count", 0) or 0
+
+        if not resp.text:
+            return Raw(text="", prompt_tokens=prompt_tokens, output_tokens=output_tokens)
+
         return Raw(
             text=resp.text,
-            prompt_tokens=getattr(u, "prompt_token_count", 0) or 0,
-            output_tokens=getattr(u, "candidates_token_count", 0) or 0,
+            prompt_tokens=prompt_tokens,
+            output_tokens=output_tokens,
         )
 
 
@@ -129,24 +159,29 @@ class OllamaLLM(BaseLLM):
         self.num_ctx = int(os.getenv("OLLAMA_NUM_CTX", "8192"))
         self.client = Client(host=os.getenv("OLLAMA_HOST", "http://localhost:11434"))
 
+    def check_health(self) -> dict:
+        # Actually contact the Ollama server and verify the model is pulled
+        models_info = self.client.list()
+        pulled = [m.model for m in getattr(models_info, "models", [])]
+        found = any(self.model in name or name in self.model for name in pulled)
+        if not found:
+            raise ValueError(f"Model '{self.model}' is not pulled in Ollama. Available: {pulled}")
+        return {"status": "ok", "provider": self.provider, "model": self.model}
+
     def _complete(self, system: str, user: str, schema: type[BaseModel]) -> Raw:
-        try:
-            resp = self.client.chat(
-                model=self.model,
-                messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
-                format=schema.model_json_schema(),
-                think=False,
-                options={"temperature": 0, "num_ctx": self.num_ctx},
-            )
-        except TypeError:
-            resp = self.client.chat(
-                model=self.model,
-                messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
-                format=schema.model_json_schema(),
-                options={"temperature": 0, "num_ctx": self.num_ctx},
-            )
+        # Issue 5: Removed 'think' option and try/except TypeError
+        resp = self.client.chat(
+            model=self.model,
+            messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
+            format=schema.model_json_schema(),
+            options={"temperature": 0, "num_ctx": self.num_ctx},
+        )
         if not resp.message or not resp.message.content:
-            raise LLMError("Ollama returned no text")
+            return Raw(
+                text="",
+                prompt_tokens=resp.prompt_eval_count or 0,
+                output_tokens=resp.eval_count or 0,
+            )
         return Raw(
             text=resp.message.content,
             prompt_tokens=resp.prompt_eval_count or 0,

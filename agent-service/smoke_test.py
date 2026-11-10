@@ -1,6 +1,8 @@
 import os
 import sys
 import time
+import json
+from datetime import datetime, timezone
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -53,6 +55,7 @@ def run_smoke_test(prompts_path: Path = None):
         attempts = 1
         tokens = 0
         error_msg = None
+        reply_content = None
 
         try:
             res = llm.generate(
@@ -66,12 +69,14 @@ def run_smoke_test(prompts_path: Path = None):
             first_try = (attempts == 1)
             tokens = res.prompt_tokens + res.output_tokens
             elapsed = res.seconds
+            reply_content = res.parsed.model_dump()
             print(f"-> VALID (attempts: {attempts}, tokens: {tokens}, time: {elapsed}s)")
         except LLMValidationError as e:
-            elapsed = round(time.perf_counter() - start_time, 2)
+            elapsed = e.seconds if e.seconds > 0 else round(time.perf_counter() - start_time, 2)
             attempts = e.attempts
+            tokens = e.prompt_tokens + e.output_tokens
             error_msg = f"Validation failed after {e.attempts} attempts: {e.problems}"
-            print(f"-> FAILED (attempts: {attempts}, error: {e.problems[:1]})")
+            print(f"-> FAILED (attempts: {attempts}, tokens: {tokens}, error: {e.problems[:1]})")
         except LLMError as e:
             elapsed = round(time.perf_counter() - start_time, 2)
             error_msg = f"LLM Error: {str(e)}"
@@ -98,6 +103,7 @@ def run_smoke_test(prompts_path: Path = None):
             "attempts": attempts,
             "tokens": tokens,
             "seconds": elapsed,
+            "output": reply_content,
             "error": error_msg,
         })
 
@@ -118,28 +124,38 @@ def run_smoke_test(prompts_path: Path = None):
     print("=" * 60)
     print(f"Provider:                {provider}")
     print(f"Model:                   {model}")
-    print(f"Valid Build Rate:        {valid_count}/{total_prompts} ({valid_rate:.1f}%)")
+    print(f"Well-Formed Output Rate: {valid_count}/{total_prompts} ({valid_rate:.1f}%)")
     print(f"First-Try Valid Rate:    {first_try_valid_count}/{total_prompts} ({first_try_rate:.1f}%)")
     print(f"Average Attempts:        {avg_attempts:.2f}")
     print(f"Total Tokens:            {total_tokens} (avg {avg_tokens:.1f}/req)")
     print(f"Total Elapsed Time:      {total_seconds:.2f}s (avg {avg_seconds:.2f}s/req)")
     print("=" * 60)
 
-    return {
+    summary = {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "provider": provider,
         "model": model,
         "total_prompts": total_prompts,
-        "valid_count": valid_count,
-        "valid_rate": valid_rate,
+        "well_formed_count": valid_count,
+        "well_formed_rate": valid_rate,
         "first_try_valid_count": first_try_valid_count,
         "first_try_rate": first_try_rate,
         "avg_attempts": avg_attempts,
         "total_tokens": total_tokens,
         "avg_tokens": avg_tokens,
-        "total_seconds": total_seconds,
-        "avg_seconds": avg_seconds,
+        "total_seconds": round(total_seconds, 2),
+        "avg_seconds": round(avg_seconds, 2),
         "results": results,
     }
+
+    output_dir = current_dir / "tests"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output_file = output_dir / f"smoke_results_{provider}.json"
+    with open(output_file, "w", encoding="utf-8") as f:
+        json.dump(summary, f, indent=2)
+    print(f"Raw results saved to: {output_file}")
+
+    return summary
 
 
 if __name__ == "__main__":

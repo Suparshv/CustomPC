@@ -1,5 +1,8 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
+import httpx
+
 from llm import get_llm, LLMError, LLMValidationError
 from schemas import DraftBuild
 from catalog import check_build
@@ -26,16 +29,17 @@ class Ask(BaseModel):
 def health():
     try:
         llm = get_current_llm()
-        return {
-            "status": "ok",
-            "provider": llm.provider,
-            "model": getattr(llm, "model", None),
-        }
-    except Exception as e:
-        return {
-            "status": "error",
-            "error": str(e),
-        }
+        health_info = llm.check_health()
+        return health_info
+    except (httpx.ConnectError, httpx.ConnectTimeout, ConnectionError, Exception) as e:
+        return JSONResponse(
+            status_code=503,
+            content={
+                "status": "error",
+                "provider": getattr(_llm, "provider", "unknown") if _llm else "unknown",
+                "error": str(e),
+            },
+        )
 
 
 @app.post("/debug/draft-build")
@@ -66,18 +70,18 @@ def draft_build(ask: Ask):
                 "attempts": e.attempts,
             },
         )
+    except (httpx.ConnectError, httpx.ConnectTimeout, ConnectionError) as e:
+        raise HTTPException(
+            status_code=503,
+            detail={"error": "ServiceUnavailable", "message": f"Cannot connect to LLM provider: {str(e)}"},
+        )
     except LLMError as e:
         raise HTTPException(
             status_code=502,
             detail={"error": "LLMError", "message": str(e)},
         )
-    except NotImplementedError as e:
-        raise HTTPException(
-            status_code=501,
-            detail={"error": "NotImplementedError", "message": str(e)},
-        )
-    except Exception as e:
+    except Exception:
         raise HTTPException(
             status_code=500,
-            detail={"error": type(e).__name__, "message": str(e)},
+            detail={"error": "InternalServerError", "message": "An unexpected server error occurred."},
         )

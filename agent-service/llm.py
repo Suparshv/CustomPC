@@ -44,7 +44,13 @@ class GeminiLLM:
             },
         )
         if not resp.text:
-            raise LLMError("Gemini returned no text (blocked or cut off)")
+            finish_reason = "UNKNOWN"
+            try:
+                if resp.candidates and len(resp.candidates) > 0:
+                    finish_reason = getattr(resp.candidates[0], "finish_reason", "UNKNOWN")
+            except Exception:
+                pass
+            raise LLMError(f"Gemini returned no text (blocked or cut off). Finish reason: {finish_reason}")
 
         parsed = schema.model_validate_json(resp.text)  # runs YOUR validators
         u = resp.usage_metadata

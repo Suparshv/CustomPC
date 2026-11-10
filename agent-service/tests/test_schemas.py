@@ -92,3 +92,54 @@ def test_comparison_valid_matches_headers():
     )
     assert len(comp.rows) == 2
     assert comp.verdict.startswith("RTX 4060")
+
+
+def test_valid_reviews_parses():
+    rev = Reviews(
+        reviews=[
+            ComponentReview(
+                component="Intel Core i5-13600K",
+                rating="4.5/5",
+                pros=["Great gaming performance", "Strong multicore"],
+                cons=["Runs warm under load"],
+                summary="Solid mid-range CPU for gaming and workstation tasks.",
+            )
+        ]
+    )
+    assert len(rev.reviews) == 1
+    assert rev.reviews[0].component == "Intel Core i5-13600K"
+
+
+def test_component_review_rejects_missing_field():
+    with pytest.raises(ValidationError):
+        ComponentReview(
+            component="RTX 4070",
+            rating="4/5",
+            # missing pros, cons, summary
+        )
+
+
+def test_valid_comparison_parses():
+    comp = Comparison(
+        comparisonData=ComparisonData(
+            headers=["Feature", "RTX 4060", "RX 7600"],
+            rows=[["VRAM", "8GB", "8GB"], ["Price", "₹28,000", "₹26,000"]],
+            verdict="RTX 4060 has better power efficiency and DLSS support.",
+        ),
+        reply="Here is the side-by-side comparison you requested.",
+    )
+    assert comp.reply.startswith("Here is")
+    assert len(comp.comparisonData.rows) == 2
+
+
+def test_comparison_rejects_mismatched_row_counts():
+    with pytest.raises(ValidationError):
+        Comparison(
+            comparisonData=ComparisonData(
+                headers=["Feature", "A", "B"],
+                rows=[["OnlyOneColumn"]],
+                verdict="A",
+            ),
+            reply="Comparison result",
+        )
+

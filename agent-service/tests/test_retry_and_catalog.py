@@ -98,3 +98,41 @@ def test_health_endpoint_closed_port_returns_503(monkeypatch):
     data = response.json()
     assert data["status"] == "error"
     assert "Connection refused" in data["error"]
+
+
+def test_catalog_check_rejects_empty_build():
+    EMPTY_BUILD = DraftBuild(reply="I recommend nothing", build=[])
+    problems = check_build(EMPTY_BUILD)
+    assert any("build is empty" in p for p in problems)
+
+
+def test_catalog_check_catches_hidden_ids_in_reply():
+    from schemas import BuildItem
+    # Mentions p1 and g1 in reply, but only includes p1 in build
+    draft = DraftBuild(
+        reply="I recommend p1 and g1 for your system.",
+        build=[BuildItem(category="processor", id="p1")],
+    )
+    problems = check_build(draft)
+    assert any("part id 'g1' was mentioned in reply but missing from build list" in p for p in problems)
+    assert not any("part id 'p1'" in p for p in problems)
+
+
+def test_extract_budget_various_formats():
+    from catalog import extract_budget
+    assert extract_budget("Gaming PC under 75000 INR") == 75000.0
+    assert extract_budget("Video editing under 1 lakh") == 100000.0
+    assert extract_budget("Workstation under 1.5 lakhs") == 150000.0
+    assert extract_budget("Budget 50k") == 50000.0
+    assert extract_budget("Setup for 60,000 rupees") == 60000.0
+    assert extract_budget("No budget specified") is None
+
+
+def test_model_matches_exact_tag_rejection():
+    from llm import _model_matches
+    assert _model_matches("llama3.1:8b", "llama3.1:8b") is True
+    assert _model_matches("llama3.1:8b", "llama3.1:8b:latest") is True
+    assert _model_matches("llama3.1:8b:latest", "llama3.1:8b") is True
+    assert _model_matches("llama3.1:8b", "llama3.1:8b-instruct-q4_0") is False
+    assert _model_matches("llama3.1:8b", "llama3.1:70b") is False
+

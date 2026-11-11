@@ -1,17 +1,17 @@
 {
-  "timestamp": "2026-11-10T12:19:54.225657+00:00",
+  "timestamp": "2026-11-11T04:52:04.288058+00:00",
   "provider": "gemini",
   "model": "gemini-3.5-flash-lite",
   "total_prompts": 20,
-  "well_formed_count": 19,
-  "well_formed_rate": 95.0,
-  "first_try_valid_count": 19,
-  "first_try_rate": 95.0,
+  "well_formed_count": 20,
+  "well_formed_rate": 100.0,
+  "first_try_valid_count": 20,
+  "first_try_rate": 100.0,
   "avg_attempts": 1.0,
-  "total_tokens": 20912,
-  "avg_tokens": 1045.6,
-  "total_seconds": 69.31,
-  "avg_seconds": 3.47,
+  "total_tokens": 26651,
+  "avg_tokens": 1332.55,
+  "total_seconds": 41.33,
+  "avg_seconds": 2.07,
   "results": [
     {
       "id": 1,
@@ -19,10 +19,10 @@
       "valid": true,
       "first_try_valid": true,
       "attempts": 1,
-      "tokens": 1181,
-      "seconds": 2.48,
+      "tokens": 1342,
+      "seconds": 1.32,
       "output": {
-        "reply": "I have created a balanced gaming PC build using the AMD Ryzen 5 5600 and RTX 3060 to fit your budget. All components are fully compatible and optimized for esports titles.",
+        "reply": "Here is a balanced gaming PC configured within your budget.",
         "build": [
           {
             "category": "processor",
@@ -71,10 +71,10 @@
       "valid": true,
       "first_try_valid": true,
       "attempts": 1,
-      "tokens": 1174,
-      "seconds": 2.11,
+      "tokens": 1350,
+      "seconds": 1.68,
       "output": {
-        "reply": "I have created a balanced photo editing PC featuring an AMD Ryzen 5 processor, RTX 4060 GPU, and DDR4 RAM to stay under your budget.",
+        "reply": "Here is a balanced and compatible photo editing desktop configured for Lightroom and Photoshop within your budget.",
         "build": [
           {
             "category": "processor",
@@ -86,7 +86,7 @@
           },
           {
             "category": "gpu",
-            "id": "g1"
+            "id": "g2"
           },
           {
             "category": "ram",
@@ -106,7 +106,7 @@
           },
           {
             "category": "cabinet",
-            "id": "cab1"
+            "id": "cab2"
           },
           {
             "category": "cooling",
@@ -123,10 +123,10 @@
       "valid": true,
       "first_try_valid": true,
       "attempts": 1,
-      "tokens": 1172,
-      "seconds": 2.1,
+      "tokens": 1351,
+      "seconds": 1.56,
       "output": {
-        "reply": "I have created a balanced entry-level build for your coding and web development needs within your budget. All selected components are fully compatible and ensure reliable performance.",
+        "reply": "Here is an entry-level PC build tailored for coding and web development within your budget.",
         "build": [
           {
             "category": "processor",
@@ -158,7 +158,7 @@
           },
           {
             "category": "cabinet",
-            "id": "cab1"
+            "id": "cab2"
           },
           {
             "category": "cooling",
@@ -175,10 +175,10 @@
       "valid": true,
       "first_try_valid": true,
       "attempts": 1,
-      "tokens": 1173,
-      "seconds": 8.64,
+      "tokens": 1351,
+      "seconds": 1.69,
       "output": {
-        "reply": "I have created a balanced creator workstation PC build featuring an AMD processor and a powerful RTX 5070Ti graphics card tailored to your budget.",
+        "reply": "Here is a balanced creator workstation built for DaVinci Resolve within your budget.",
         "build": [
           {
             "category": "processor",
@@ -227,10 +227,10 @@
       "valid": true,
       "first_try_valid": true,
       "attempts": 1,
-      "tokens": 1166,
-      "seconds": 2.1,
+      "tokens": 1355,
+      "seconds": 1.18,
       "output": {
-        "reply": "I have configured a balanced 1080p gaming PC within your budget utilizing compatible and reliable components.",
+        "reply": "Here is a balanced and compatible 1080p gaming PC build within your budget.",
         "build": [
           {
             "category": "processor",
@@ -279,10 +279,10 @@
       "valid": true,
       "first_try_valid": true,
       "attempts": 1,
-      "tokens": 1057,
-      "seconds": 2.0,
+      "tokens": 1348,
+      "seconds": 1.53,
       "output": {
-        "reply": "I have selected a balanced AMD Ryzen 5 configuration for your music production setup within your budget.",
+        "reply": "Here is a balanced PC build tailored for your music production needs within your budget.",
         "build": [
           {
             "category": "processor",
@@ -328,13 +328,54 @@
     {
       "id": 7,
       "prompt": "Build an all-around family desktop for light casual gaming under 60000",
-      "valid": false,
-      "first_try_valid": false,
+      "valid": true,
+      "first_try_valid": true,
       "attempts": 1,
-      "tokens": 0,
-      "seconds": 1.95,
-      "output": null,
-      "error": "Unexpected Error: 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}"
+      "tokens": 1350,
+      "seconds": 1.19,
+      "output": {
+        "reply": "Here is a balanced and reliable family desktop build for light casual gaming within your budget.",
+        "build": [
+          {
+            "category": "processor",
+            "id": "p3"
+          },
+          {
+            "category": "motherboard",
+            "id": "m3"
+          },
+          {
+            "category": "gpu",
+            "id": "g2"
+          },
+          {
+            "category": "ram",
+            "id": "r2"
+          },
+          {
+            "category": "ps",
+            "id": "ps2"
+          },
+          {
+            "category": "ss",
+            "id": "ss1"
+          },
+          {
+            "category": "psu",
+            "id": "psu2"
+          },
+          {
+            "category": "cabinet",
+            "id": "cab2"
+          },
+          {
+            "category": "cooling",
+            "id": "c2"
+          }
+        ],
+        "budget": 60000.0
+      },
+      "error": null
     },
     {
       "id": 8,
@@ -342,10 +383,10 @@
       "valid": true,
       "first_try_valid": true,
       "attempts": 1,
-      "tokens": 1156,
-      "seconds": 1.76,
+      "tokens": 1345,
+      "seconds": 2.24,
       "output": {
-        "reply": "I have created an Intel-based gaming PC build for you using compatible components.",
+        "reply": "Here is an Intel based gaming PC build configured within your budget.",
         "build": [
           {
             "category": "processor",
@@ -381,7 +422,7 @@
           },
           {
             "category": "cooling",
-            "id": "c1"
+            "id": "c2"
           }
         ],
         "budget": 105000.0
@@ -394,10 +435,10 @@
       "valid": true,
       "first_try_valid": true,
       "attempts": 1,
-      "tokens": 1050,
-      "seconds": 2.53,
+      "tokens": 1346,
+      "seconds": 1.14,
       "output": {
-        "reply": "I have selected a balanced workstation build utilizing compatible components within your budget.",
+        "reply": "Here is a balanced workstation build configured within your 45000 budget.",
         "build": [
           {
             "category": "processor",
@@ -425,7 +466,7 @@
           },
           {
             "category": "psu",
-            "id": "psu1"
+            "id": "psu2"
           },
           {
             "category": "cabinet",
@@ -446,10 +487,10 @@
       "valid": true,
       "first_try_valid": true,
       "attempts": 1,
-      "tokens": 1163,
-      "seconds": 2.44,
+      "tokens": 1344,
+      "seconds": 1.49,
       "output": {
-        "reply": "I have created a balanced and durable home office PC build utilizing compatible components well within your 70000 INR budget.",
+        "reply": "Here is a balanced and reliable home office PC build tailored to your budget.",
         "build": [
           {
             "category": "processor",
@@ -498,14 +539,46 @@
       "valid": true,
       "first_try_valid": true,
       "attempts": 1,
-      "tokens": 952,
-      "seconds": 4.26,
+      "tokens": 1327,
+      "seconds": 1.62,
       "output": {
-        "reply": "I recommend the Gigabyte RTX 4060 OC 8GB for your build.",
+        "reply": "Here is the recommended graphics card based on your request.",
         "build": [
+          {
+            "category": "processor",
+            "id": "p3"
+          },
+          {
+            "category": "motherboard",
+            "id": "m3"
+          },
           {
             "category": "gpu",
             "id": "g1"
+          },
+          {
+            "category": "ram",
+            "id": "r2"
+          },
+          {
+            "category": "ps",
+            "id": "ps2"
+          },
+          {
+            "category": "ss",
+            "id": "ss1"
+          },
+          {
+            "category": "psu",
+            "id": "psu1"
+          },
+          {
+            "category": "cabinet",
+            "id": "cab2"
+          },
+          {
+            "category": "cooling",
+            "id": "c2"
           }
         ],
         "budget": null
@@ -518,11 +591,48 @@
       "valid": true,
       "first_try_valid": true,
       "attempts": 1,
-      "tokens": 939,
-      "seconds": 3.9,
+      "tokens": 1330,
+      "seconds": 4.86,
       "output": {
-        "reply": "I recommend the AMD Ryzen 5 5600 for its excellent value and performance. If you need a full PC build, please let me know.",
-        "build": [],
+        "reply": "Here is a compatible full PC build featuring the recommended processor from the catalog.",
+        "build": [
+          {
+            "category": "processor",
+            "id": "p3"
+          },
+          {
+            "category": "motherboard",
+            "id": "m3"
+          },
+          {
+            "category": "gpu",
+            "id": "g2"
+          },
+          {
+            "category": "ram",
+            "id": "r2"
+          },
+          {
+            "category": "ps",
+            "id": "ps2"
+          },
+          {
+            "category": "ss",
+            "id": "ss1"
+          },
+          {
+            "category": "psu",
+            "id": "psu2"
+          },
+          {
+            "category": "cabinet",
+            "id": "cab2"
+          },
+          {
+            "category": "cooling",
+            "id": "c2"
+          }
+        ],
         "budget": null
       },
       "error": null
@@ -533,14 +643,46 @@
       "valid": true,
       "first_try_valid": true,
       "attempts": 1,
-      "tokens": 961,
-      "seconds": 4.02,
+      "tokens": 1327,
+      "seconds": 1.6,
       "output": {
-        "reply": "Here is a reliable power supply unit for your setup. It provides sufficient wattage and stable power delivery.",
+        "reply": "Here is the recommended power supply unit for your setup.",
         "build": [
+          {
+            "category": "processor",
+            "id": "p3"
+          },
+          {
+            "category": "motherboard",
+            "id": "m3"
+          },
+          {
+            "category": "gpu",
+            "id": "g2"
+          },
+          {
+            "category": "ram",
+            "id": "r1"
+          },
+          {
+            "category": "ps",
+            "id": "ps1"
+          },
+          {
+            "category": "ss",
+            "id": "ss1"
+          },
           {
             "category": "psu",
             "id": "psu1"
+          },
+          {
+            "category": "cabinet",
+            "id": "cab1"
+          },
+          {
+            "category": "cooling",
+            "id": "c1"
           }
         ],
         "budget": null
@@ -553,10 +695,10 @@
       "valid": true,
       "first_try_valid": true,
       "attempts": 1,
-      "tokens": 956,
-      "seconds": 4.99,
+      "tokens": 1205,
+      "seconds": 4.8,
       "output": {
-        "reply": "I have selected the Cooler Master Liquid 240L ARGB cooling solution for your Intel CPU.",
+        "reply": "Here is the cooling solution for your Intel CPU.",
         "build": [
           {
             "category": "cooling",
@@ -573,10 +715,10 @@
       "valid": true,
       "first_try_valid": true,
       "attempts": 1,
-      "tokens": 1140,
-      "seconds": 3.02,
+      "tokens": 1329,
+      "seconds": 1.46,
       "output": {
-        "reply": "I have created a balanced PC build for you using compatible components. All nine required categories are included.",
+        "reply": "Here is a balanced and fully compatible PC build for your needs.",
         "build": [
           {
             "category": "processor",
@@ -625,10 +767,10 @@
       "valid": true,
       "first_try_valid": true,
       "attempts": 1,
-      "tokens": 1164,
-      "seconds": 3.51,
+      "tokens": 1326,
+      "seconds": 4.78,
       "output": {
-        "reply": "I have created a balanced mid-range PC build featuring the AMD Ryzen 5 5600 and RTX 4060. All components are fully compatible and chosen from the available list.",
+        "reply": "Here is a balanced and compatible mid-range gaming PC build.",
         "build": [
           {
             "category": "processor",
@@ -640,7 +782,7 @@
           },
           {
             "category": "gpu",
-            "id": "g1"
+            "id": "g2"
           },
           {
             "category": "ram",
@@ -677,14 +819,14 @@
       "valid": true,
       "first_try_valid": true,
       "attempts": 1,
-      "tokens": 1161,
-      "seconds": 1.92,
+      "tokens": 1327,
+      "seconds": 2.26,
       "output": {
-        "reply": "Here is a fast and balanced PC build for your needs, featuring the Ryzen 5 5600X and RTX 4060. All components are fully compatible and selected from the available inventory.",
+        "reply": "Here is a fast and balanced PC setup configured using compatible components.",
         "build": [
           {
             "category": "processor",
-            "id": "p4"
+            "id": "p3"
           },
           {
             "category": "motherboard",
@@ -729,22 +871,22 @@
       "valid": true,
       "first_try_valid": true,
       "attempts": 1,
-      "tokens": 1057,
-      "seconds": 7.04,
+      "tokens": 1334,
+      "seconds": 1.58,
       "output": {
-        "reply": "I have selected a balanced AMD Ryzen 5 system optimized for heavy computational tasks like calculating digits of pi. All components are fully compatible and balanced.",
+        "reply": "Here is a balanced and capable PC build suitable for all your computational tasks.",
         "build": [
           {
             "category": "processor",
-            "id": "p3"
+            "id": "p1"
           },
           {
             "category": "motherboard",
-            "id": "m3"
+            "id": "m1"
           },
           {
             "category": "gpu",
-            "id": "g2"
+            "id": "g1"
           },
           {
             "category": "ram",
@@ -760,15 +902,15 @@
           },
           {
             "category": "psu",
-            "id": "psu2"
+            "id": "psu1"
           },
           {
             "category": "cabinet",
-            "id": "cab2"
+            "id": "cab1"
           },
           {
             "category": "cooling",
-            "id": "c2"
+            "id": "c1"
           }
         ],
         "budget": null
@@ -781,10 +923,10 @@
       "valid": true,
       "first_try_valid": true,
       "attempts": 1,
-      "tokens": 1147,
-      "seconds": 3.95,
+      "tokens": 1335,
+      "seconds": 1.86,
       "output": {
-        "reply": "I have selected a reliable PC build using the available compatible parts suitable for your needs.",
+        "reply": "Here is a reliable custom PC build equipped with liquid cooling to handle warm environments.",
         "build": [
           {
             "category": "processor",
@@ -833,10 +975,10 @@
       "valid": true,
       "first_try_valid": true,
       "attempts": 1,
-      "tokens": 1143,
-      "seconds": 4.59,
+      "tokens": 1329,
+      "seconds": 1.49,
       "output": {
-        "reply": "I have created a balanced gaming rig tailored for retro arcade emulation using compatible parts.",
+        "reply": "Here is a balanced PC build tailored for retro arcade emulation.",
         "build": [
           {
             "category": "processor",

@@ -169,10 +169,10 @@ Tested on 20 un-frozen prompts across Gemini and local Ollama (Llama 3.1 8B on R
 
 | Provider | Model | Execution | Well-formed output ($\le 3$ tries) | First-try valid | Avg latency | Raw audit |
 |---|---|---|---|---|---|---|
-| **Gemini** | `gemini-3.5-flash-lite` | Cloud API | 19/20 (95.0%) | 19/20 (95.0%) | 3.47 s | [`smoke_results_gemini.json`](./agent-service/tests/smoke_results_gemini.json) |
-| **Ollama** | `llama3.1:8b` | Local RTX 4060 GPU | 20/20 (100.0%) | 20/20 (100.0%) | 3.22 s | [`smoke_results_ollama.json`](./agent-service/tests/smoke_results_ollama.json) |
+| **Gemini** | `gemini-3.5-flash-lite` | Cloud API | 20/20 (100.0%) | 20/20 (100.0%) | 2.07 s | [`smoke_results_gemini.json`](./agent-service/tests/smoke_results_gemini.json) |
+| **Ollama** | `llama3.1:8b` | Local RTX 4060 GPU | 20/20 (100.0%) | 20/20 (100.0%) | 3.11 s | [`smoke_results_ollama.json`](./agent-service/tests/smoke_results_ollama.json) |
 
-*Note on validation:* "Well-formed output" means the model output strictly adhered to the Pydantic schema and referenced real component IDs from the catalogue; it does not check hardware compatibility (socket/RAM/power), which is enforced by code tools on Day 7. Both models scored 100% on the first try on these 20 prompts, so the retry loop was verified through unit tests rather than triggering during the smoke test.
+*Note on validation:* "Well-formed output" means the model strictly adhered to the Pydantic schema, populated the `build` list with actual component IDs (empty builds are rejected), kept part IDs out of the reply text, and extracted budgets accurately via code. It does not check hardware compatibility (socket/RAM/power), which is enforced by code tools on Day 7. Both models scored 100% on the first try on these 20 prompts; the self-correction retry loop is exercised and verified via offline unit tests in `test_retry_and_catalog.py`.
 
 Full technical write-up: [`docs/day4-milestone.md`](./docs/day4-milestone.md).
 

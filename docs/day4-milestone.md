@@ -23,14 +23,14 @@ Tested on 20 newly authored, independent prompts (10 full builds with budgets, 4
 
 | Provider | Model | Execution Environment | Well-Formed Output ($\le 3$ tries) | First-Try Valid | Avg Attempts | Avg Tokens | Avg Latency |
 |---|---|---|---|---|---|---|---|
-| **Gemini** | `gemini-3.5-flash-lite` | Cloud API | **19/20 (95.0%)** | 19/20 (95.0%) | 1.00 | 1,045.6 | 3.47 s |
-| **Ollama** | `llama3.1:8b` | Local RTX 4060 (100% GPU) | **20/20 (100.0%)** | 20/20 (100.0%) | 1.00 | 912.2 | 3.22 s |
+| **Gemini** | `gemini-3.5-flash-lite` | Cloud API | **20/20 (100.0%)** | 20/20 (100.0%) | 1.00 | 1,332.5 | 2.07 s |
+| **Ollama** | `llama3.1:8b` | Local RTX 4060 (100% GPU) | **20/20 (100.0%)** | 20/20 (100.0%) | 1.00 | 1,173.0 | 3.11 s |
 
 > [!NOTE]
 > **Clarification on "Well-Formed Output" vs "Valid Build":**
-> "Well-formed output" means the model output strictly adhered to the Pydantic schema and only referenced real component IDs from the catalogue without category errors. **It does NOT mean the build is hardware-compatible or within budget.** Deep hardware compatibility (CPU socket matching, DDR generation matching, PSU headroom) will be enforced by plain-code tools on Day 7.
+> "Well-formed output" means the model strictly adhered to the Pydantic schema, populated the `build` list with actual component IDs (empty builds are rejected), kept part IDs out of the reply text, and extracted budgets accurately via deterministic regex code. **It does NOT mean the build is hardware-compatible or within budget.** Deep hardware compatibility (CPU socket matching, DDR generation matching, PSU headroom) will be enforced by plain-code tools on Day 7.
 >
-> Furthermore, because both models scored 100% on the first attempt on these 20 smoke prompts (Gemini prompt 7 experienced a cloud 503 overload), the self-correction retry loop was not triggered during this smoke run. The retry mechanism and token-accumulation logic are verified via unit tests in `test_retry_and_catalog.py`.
+> Both models scored 100% on the first attempt across all 20 prompts. The self-correction retry loop and token-accumulation logic are verified via unit tests in `test_retry_and_catalog.py`.
 
 ### Raw Per-Prompt Audit Files
 - Gemini: [`agent-service/tests/smoke_results_gemini.json`](../agent-service/tests/smoke_results_gemini.json)
@@ -40,9 +40,11 @@ Tested on 20 newly authored, independent prompts (10 full builds with budgets, 4
 
 ## Unit & Regression Tests
 
-All 26 unit and regression tests pass offline:
+All 30 unit and regression tests pass offline:
 ```powershell
 .\agent-service\.venv\Scripts\pytest -q
+..............................                                           [100%]
+30 passed in 0.88s
 ..........................                                               [100%]
 26 passed in 0.86s
 ```

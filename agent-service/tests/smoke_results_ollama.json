@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-11-10T12:16:03.683487+00:00",
+  "timestamp": "2026-11-11T04:48:21.855234+00:00",
   "provider": "ollama",
   "model": "llama3.1:8b",
   "total_prompts": 20,
@@ -8,10 +8,10 @@
   "first_try_valid_count": 20,
   "first_try_rate": 100.0,
   "avg_attempts": 1.0,
-  "total_tokens": 18244,
-  "avg_tokens": 912.2,
-  "total_seconds": 64.35,
-  "avg_seconds": 3.22,
+  "total_tokens": 23459,
+  "avg_tokens": 1172.95,
+  "total_seconds": 62.23,
+  "avg_seconds": 3.11,
   "results": [
     {
       "id": 1,
@@ -19,12 +19,49 @@
       "valid": true,
       "first_try_valid": true,
       "attempts": 1,
-      "tokens": 945,
-      "seconds": 11.75,
+      "tokens": 1202,
+      "seconds": 5.79,
       "output": {
-        "reply": "I recommend the following build: p1 (Intel i5 12400) m1 (MSI PRO B760M-E DDR5) g2 (Inno3d RTX 3060 12GB) r2 (Adata XPG Gammix D30 16GB DDR4 3200MHz) ps1 (Adata Legend 710 256GB M.2 NVMe Internal SSD) ss1 (Western Digital HDD 1TB) psu1 (MSI MAG A650BN PSU-650W 80 Plus Bronze) cab1 (Deepcool Macube 110 Cabinet(White)) c1 (Cooler Master Liquid 240L ARGB (White))",
-        "build": [],
-        "budget": null
+        "reply": "Here is a balanced gaming PC build for esports titles within your target budget.",
+        "build": [
+          {
+            "category": "processor",
+            "id": "p3"
+          },
+          {
+            "category": "motherboard",
+            "id": "m1"
+          },
+          {
+            "category": "gpu",
+            "id": "g2"
+          },
+          {
+            "category": "ram",
+            "id": "r2"
+          },
+          {
+            "category": "ps",
+            "id": "ps2"
+          },
+          {
+            "category": "ss",
+            "id": "ss1"
+          },
+          {
+            "category": "psu",
+            "id": "psu1"
+          },
+          {
+            "category": "cabinet",
+            "id": "cab1"
+          },
+          {
+            "category": "cooling",
+            "id": "c2"
+          }
+        ],
+        "budget": 75000.0
       },
       "error": null
     },
@@ -34,12 +71,49 @@
       "valid": true,
       "first_try_valid": true,
       "attempts": 1,
-      "tokens": 835,
-      "seconds": 1.16,
+      "tokens": 1201,
+      "seconds": 3.5,
       "output": {
-        "reply": "I recommend the following build: p1, m1, g2, r2, ps2, ss1, psu1, cab1, c2",
-        "build": [],
-        "budget": null
+        "reply": "Here is a photo editing desktop build configured within your target budget.",
+        "build": [
+          {
+            "category": "processor",
+            "id": "p3"
+          },
+          {
+            "category": "motherboard",
+            "id": "m2"
+          },
+          {
+            "category": "gpu",
+            "id": "g2"
+          },
+          {
+            "category": "ram",
+            "id": "r2"
+          },
+          {
+            "category": "ps",
+            "id": "ps2"
+          },
+          {
+            "category": "ss",
+            "id": "ss1"
+          },
+          {
+            "category": "psu",
+            "id": "psu2"
+          },
+          {
+            "category": "cabinet",
+            "id": "cab2"
+          },
+          {
+            "category": "cooling",
+            "id": "c2"
+          }
+        ],
+        "budget": 85000.0
       },
       "error": null
     },
@@ -49,12 +123,49 @@
       "valid": true,
       "first_try_valid": true,
       "attempts": 1,
-      "tokens": 945,
-      "seconds": 3.38,
+      "tokens": 1202,
+      "seconds": 3.53,
       "output": {
-        "reply": "I recommend the following build: p3 (AMD Ryzen 5 5600) m2 (MSI PRO B660M-E DDR4) r1 (Adata XPG Gammix D30 8GB DDR4 3200MHz) ps1 (Adata Legend 710 256GB M.2 NVMe Internal SSD) ss1 (Western Digital HDD 1TB) psu1 (MSI MAG A550BN PSU-550W 80 Plus Bronze) cab1 (Deepcool Macube 110 Cabinet(White)) g2 (Inno3d RTX 3060 12GB) c2 (Cooler Master Liquid 240L ARGB (Black))",
-        "build": [],
-        "budget": null
+        "reply": "Here is a basic PC build for coding and web development within your budget.",
+        "build": [
+          {
+            "category": "processor",
+            "id": "p3"
+          },
+          {
+            "category": "motherboard",
+            "id": "m3"
+          },
+          {
+            "category": "gpu",
+            "id": "g2"
+          },
+          {
+            "category": "ram",
+            "id": "r1"
+          },
+          {
+            "category": "ps",
+            "id": "ps1"
+          },
+          {
+            "category": "ss",
+            "id": "ss1"
+          },
+          {
+            "category": "psu",
+            "id": "psu2"
+          },
+          {
+            "category": "cabinet",
+            "id": "cab2"
+          },
+          {
+            "category": "cooling",
+            "id": "c2"
+          }
+        ],
+        "budget": 50000.0
       },
       "error": null
     },
@@ -64,12 +175,49 @@
       "valid": true,
       "first_try_valid": true,
       "attempts": 1,
-      "tokens": 955,
-      "seconds": 3.61,
+      "tokens": 1202,
+      "seconds": 3.53,
       "output": {
-        "reply": "For a DaVinci Resolve workstation, I recommend the following build: p4 | AMD Ryzen 5 5600X, m1 | MSI PRO B760M-E DDR5, g3 | MSI RTX 5080 OC 16GB GDDR7 White, ps2 | Adata Legend 710 512GB M.2 NVMe Internal SSD, ss1 | Western Digital HDD 1TB, r2 | Adata XPG Gammix D30 16GB DDR4 3200MHz, psu1 | MSI MAG A650BN PSU-650W 80 Plus Bronze, cab1 | Deepcool Macube 110 Cabinet(White), c1 | Cooler Master Liquid 240L ARGB (White)",
-        "build": [],
-        "budget": null
+        "reply": "Here is a balanced, compatible creator workstation build configured within your target budget.",
+        "build": [
+          {
+            "category": "processor",
+            "id": "p4"
+          },
+          {
+            "category": "motherboard",
+            "id": "m1"
+          },
+          {
+            "category": "gpu",
+            "id": "g4"
+          },
+          {
+            "category": "ram",
+            "id": "r2"
+          },
+          {
+            "category": "ps",
+            "id": "ps2"
+          },
+          {
+            "category": "ss",
+            "id": "ss1"
+          },
+          {
+            "category": "psu",
+            "id": "psu1"
+          },
+          {
+            "category": "cabinet",
+            "id": "cab1"
+          },
+          {
+            "category": "cooling",
+            "id": "c1"
+          }
+        ],
+        "budget": 110000.0
       },
       "error": null
     },
@@ -79,12 +227,49 @@
       "valid": true,
       "first_try_valid": true,
       "attempts": 1,
-      "tokens": 945,
-      "seconds": 3.35,
+      "tokens": 1203,
+      "seconds": 3.51,
       "output": {
-        "reply": "I recommend the following build: p1 (Intel i5 12400) m1 (MSI PRO B760M-E DDR5) g2 (Inno3d RTX 3060 12GB) ps1 (Adata Legend 710 256GB M.2 NVMe Internal SSD) ss1 (Western Digital HDD 1TB) r2 (Adata XPG Gammix D30 16GB DDR4 3200MHz) psu1 (MSI MAG A650BN PSU-650W 80 Plus Bronze) cab1 (Deepcool Macube 110 Cabinet(White)) c1 (Cooler Master Liquid 240L ARGB (White))",
-        "build": [],
-        "budget": null
+        "reply": "Here is a balanced, compatible gaming PC build configured within your target budget.",
+        "build": [
+          {
+            "category": "processor",
+            "id": "p3"
+          },
+          {
+            "category": "motherboard",
+            "id": "m2"
+          },
+          {
+            "category": "gpu",
+            "id": "g2"
+          },
+          {
+            "category": "ram",
+            "id": "r1"
+          },
+          {
+            "category": "ps",
+            "id": "ps1"
+          },
+          {
+            "category": "ss",
+            "id": "ss1"
+          },
+          {
+            "category": "psu",
+            "id": "psu2"
+          },
+          {
+            "category": "cabinet",
+            "id": "cab2"
+          },
+          {
+            "category": "cooling",
+            "id": "c2"
+          }
+        ],
+        "budget": 65000.0
       },
       "error": null
     },
@@ -94,12 +279,49 @@
       "valid": true,
       "first_try_valid": true,
       "attempts": 1,
-      "tokens": 930,
-      "seconds": 3.12,
+      "tokens": 1199,
+      "seconds": 3.49,
       "output": {
-        "reply": "I recommend the following build: p1 (Intel i5 12400), m1 (MSI PRO B760M-E DDR5), g2 (Inno3d RTX 3060 12GB), ps1 (Adata Legend 710 256GB M.2 NVMe), ss1 (Western Digital HDD 1TB), r2 (Adata XPG Gammix D30 16GB DDR4), psu1 (MSI MAG A650BN PSU-650W), c1 (Cooler Master Liquid 240L ARGB), cab1 (Deepcool Macube 110 Cabinet)",
-        "build": [],
-        "budget": null
+        "reply": "Here is a silent desktop tower for music production within your budget.",
+        "build": [
+          {
+            "category": "processor",
+            "id": "p3"
+          },
+          {
+            "category": "motherboard",
+            "id": "m3"
+          },
+          {
+            "category": "gpu",
+            "id": "g2"
+          },
+          {
+            "category": "ram",
+            "id": "r2"
+          },
+          {
+            "category": "ps",
+            "id": "ps2"
+          },
+          {
+            "category": "ss",
+            "id": "ss1"
+          },
+          {
+            "category": "psu",
+            "id": "psu2"
+          },
+          {
+            "category": "cabinet",
+            "id": "cab2"
+          },
+          {
+            "category": "cooling",
+            "id": "c2"
+          }
+        ],
+        "budget": 90000.0
       },
       "error": null
     },
@@ -109,12 +331,49 @@
       "valid": true,
       "first_try_valid": true,
       "attempts": 1,
-      "tokens": 943,
-      "seconds": 3.36,
+      "tokens": 1204,
+      "seconds": 3.57,
       "output": {
-        "reply": "I recommend the following build: p1 (Intel i5 12400) m1 (MSI PRO B760M-E DDR5) g2 (Inno3d RTX 3060 12GB) ps1 (Adata Legend 710 256GB M.2 NVMe Internal SSD) ss1 (Western Digital HDD 1TB) r2 (Adata XPG Gammix D30 16GB DDR4 3200MHz) psu1 (MSI MAG A650BN PSU-650W 80 Plus Bronze) cab1 (Deepcool Macube 110 Cabinet(White)) c2 (Cooler Master Liquid 240L ARGB (Black))",
-        "build": [],
-        "budget": null
+        "reply": "Here is a balanced, compatible family desktop build for light casual gaming within your target budget.",
+        "build": [
+          {
+            "category": "processor",
+            "id": "p3"
+          },
+          {
+            "category": "motherboard",
+            "id": "m2"
+          },
+          {
+            "category": "gpu",
+            "id": "g2"
+          },
+          {
+            "category": "ram",
+            "id": "r1"
+          },
+          {
+            "category": "ps",
+            "id": "ps1"
+          },
+          {
+            "category": "ss",
+            "id": "ss1"
+          },
+          {
+            "category": "psu",
+            "id": "psu2"
+          },
+          {
+            "category": "cabinet",
+            "id": "cab2"
+          },
+          {
+            "category": "cooling",
+            "id": "c2"
+          }
+        ],
+        "budget": 60000.0
       },
       "error": null
     },
@@ -124,12 +383,49 @@
       "valid": true,
       "first_try_valid": true,
       "attempts": 1,
-      "tokens": 951,
-      "seconds": 3.57,
+      "tokens": 1200,
+      "seconds": 3.51,
       "output": {
-        "reply": "I recommend the following build: p1 (Intel i5 12400) + m1 (MSI PRO B760M-E DDR5) + g1 (Gigabyte RTX 4060 OC 8GB) + ps1 (Adata Legend 710 256GB M.2 NVMe Internal SSD) + ss1 (Western Digital HDD 1TB) + r2 (Adata XPG Gammix D30 16GB DDR4 3200MHz) + psu1 (MSI MAG A650BN PSU-650W 80 Plus Bronze) + cab1 (Deepcool Macube 110 Cabinet(White)) + c1 (Cooler Master Liquid 240L ARGB (White))",
-        "build": [],
-        "budget": null
+        "reply": "Here is a balanced, compatible gaming PC build configured within your target budget.",
+        "build": [
+          {
+            "category": "processor",
+            "id": "p1"
+          },
+          {
+            "category": "motherboard",
+            "id": "m1"
+          },
+          {
+            "category": "gpu",
+            "id": "g2"
+          },
+          {
+            "category": "ram",
+            "id": "r2"
+          },
+          {
+            "category": "ps",
+            "id": "ps2"
+          },
+          {
+            "category": "ss",
+            "id": "ss1"
+          },
+          {
+            "category": "psu",
+            "id": "psu1"
+          },
+          {
+            "category": "cabinet",
+            "id": "cab1"
+          },
+          {
+            "category": "cooling",
+            "id": "c2"
+          }
+        ],
+        "budget": 105000.0
       },
       "error": null
     },
@@ -139,12 +435,49 @@
       "valid": true,
       "first_try_valid": true,
       "attempts": 1,
-      "tokens": 943,
-      "seconds": 3.42,
+      "tokens": 1202,
+      "seconds": 3.54,
       "output": {
-        "reply": "I recommend the following build: p1 (Intel i5 12400) m1 (MSI PRO B760M-E DDR5) g2 (Inno3d RTX 3060 12GB) ps1 (Adata Legend 710 256GB M.2 NVMe Internal SSD) ss1 (Western Digital HDD 1TB) r2 (Adata XPG Gammix D30 16GB DDR4 3200MHz) psu1 (MSI MAG A650BN PSU-650W 80 Plus Bronze) cab1 (Deepcool Macube 110 Cabinet(White)) c1 (Cooler Master Liquid 240L ARGB (White))",
-        "build": [],
-        "budget": null
+        "reply": "Here is a balanced, compatible everyday multitasking workstation build configured within your target budget.",
+        "build": [
+          {
+            "category": "processor",
+            "id": "p3"
+          },
+          {
+            "category": "motherboard",
+            "id": "m2"
+          },
+          {
+            "category": "gpu",
+            "id": "g2"
+          },
+          {
+            "category": "ram",
+            "id": "r2"
+          },
+          {
+            "category": "ps",
+            "id": "ps2"
+          },
+          {
+            "category": "ss",
+            "id": "ss1"
+          },
+          {
+            "category": "psu",
+            "id": "psu2"
+          },
+          {
+            "category": "cabinet",
+            "id": "cab2"
+          },
+          {
+            "category": "cooling",
+            "id": "c2"
+          }
+        ],
+        "budget": 45000.0
       },
       "error": null
     },
@@ -154,12 +487,49 @@
       "valid": true,
       "first_try_valid": true,
       "attempts": 1,
-      "tokens": 941,
-      "seconds": 3.37,
+      "tokens": 1200,
+      "seconds": 3.52,
       "output": {
-        "reply": "I recommend the following build: p1 (Intel i5 12400) m1 (MSI PRO B760M-E DDR5) g2 (Inno3d RTX 3060 12GB) ps1 (Adata Legend 710 256GB M.2 NVMe Internal SSD) ss1 (Western Digital HDD 1TB) r2 (Adata XPG Gammix D30 16GB DDR4 3200MHz) psu1 (MSI MAG A650BN PSU-650W 80 Plus Bronze) cab1 (Deepcool Macube 110 Cabinet(White)) c1 (Cooler Master Liquid 240L ARGB (White))",
-        "build": [],
-        "budget": null
+        "reply": "Here is a balanced, compatible home office PC build configured within your target budget.",
+        "build": [
+          {
+            "category": "processor",
+            "id": "p3"
+          },
+          {
+            "category": "motherboard",
+            "id": "m3"
+          },
+          {
+            "category": "gpu",
+            "id": "g2"
+          },
+          {
+            "category": "ram",
+            "id": "r1"
+          },
+          {
+            "category": "ps",
+            "id": "ps1"
+          },
+          {
+            "category": "ss",
+            "id": "ss1"
+          },
+          {
+            "category": "psu",
+            "id": "psu2"
+          },
+          {
+            "category": "cabinet",
+            "id": "cab2"
+          },
+          {
+            "category": "cooling",
+            "id": "c2"
+          }
+        ],
+        "budget": 70000.0
       },
       "error": null
     },
@@ -169,11 +539,16 @@
       "valid": true,
       "first_try_valid": true,
       "attempts": 1,
-      "tokens": 822,
-      "seconds": 1.0,
+      "tokens": 1061,
+      "seconds": 0.8,
       "output": {
-        "reply": "Based on the available parts, I recommend the Gigabyte RTX 4060 OC 8GB (g1) for a compatible graphics card.",
-        "build": [],
+        "reply": "Here is a compatible graphics card recommendation.",
+        "build": [
+          {
+            "category": "gpu",
+            "id": "g1"
+          }
+        ],
         "budget": null
       },
       "error": null
@@ -184,11 +559,24 @@
       "valid": true,
       "first_try_valid": true,
       "attempts": 1,
-      "tokens": 813,
-      "seconds": 0.82,
+      "tokens": 1090,
+      "seconds": 1.4,
       "output": {
-        "reply": "I recommend the AMD Ryzen 5 5600X (p4) for its high performance and efficiency.",
-        "build": [],
+        "reply": "Here are some good processor options from the catalog.",
+        "build": [
+          {
+            "category": "processor",
+            "id": "p1"
+          },
+          {
+            "category": "processor",
+            "id": "p3"
+          },
+          {
+            "category": "processor",
+            "id": "p4"
+          }
+        ],
         "budget": null
       },
       "error": null
@@ -199,11 +587,16 @@
       "valid": true,
       "first_try_valid": true,
       "attempts": 1,
-      "tokens": 825,
-      "seconds": 1.02,
+      "tokens": 1067,
+      "seconds": 0.88,
       "output": {
-        "reply": "Based on the available parts, I recommend the MSI MAG A650BN PSU-650W 80 Plus Bronze (psu1) for a stable power supply.",
-        "build": [],
+        "reply": "Here is a suitable power supply unit for your setup.",
+        "build": [
+          {
+            "category": "psu",
+            "id": "psu1"
+          }
+        ],
         "budget": null
       },
       "error": null
@@ -214,12 +607,17 @@
       "valid": true,
       "first_try_valid": true,
       "attempts": 1,
-      "tokens": 827,
-      "seconds": 1.04,
+      "tokens": 1075,
+      "seconds": 1.01,
       "output": {
-        "reply": "Cooler Master Liquid 240L ARGB (White) (c1) is compatible with Intel CPUs. It is a suitable cooling solution for an Intel CPU.",
-        "build": [],
-        "budget": null
+        "reply": "Here is a cooling solution for an Intel CPU.",
+        "build": [
+          {
+            "category": "cooling",
+            "id": "c2"
+          }
+        ],
+        "budget": 0.0
       },
       "error": null
     },
@@ -229,12 +627,49 @@
       "valid": true,
       "first_try_valid": true,
       "attempts": 1,
-      "tokens": 943,
-      "seconds": 3.53,
+      "tokens": 1191,
+      "seconds": 3.43,
       "output": {
-        "reply": "Based on the provided parts, I recommend the following build: p1 (Intel i5 12400), m1 (MSI PRO B760M-E DDR5), g1 (Gigabyte RTX 4060 OC 8GB), ps1 (Adata Legend 710 256GB M.2 NVMe Internal SSD), ss1 (Western Digital HDD 1TB), r2 (Adata XPG Gammix D30 16GB DDR4 3200MHz), psu1 (MSI MAG A650BN PSU-650W 80 Plus Bronze), c1 (Cooler Master Liquid 240L ARGB (White)), cab1 (Deepcool Macube 110 Cabinet(White))",
-        "build": [],
-        "budget": null
+        "reply": "I'll create a balanced gaming PC build for you.",
+        "build": [
+          {
+            "category": "processor",
+            "id": "p3"
+          },
+          {
+            "category": "motherboard",
+            "id": "m1"
+          },
+          {
+            "category": "gpu",
+            "id": "g1"
+          },
+          {
+            "category": "ram",
+            "id": "r2"
+          },
+          {
+            "category": "ps",
+            "id": "ps2"
+          },
+          {
+            "category": "ss",
+            "id": "ss1"
+          },
+          {
+            "category": "psu",
+            "id": "psu1"
+          },
+          {
+            "category": "cabinet",
+            "id": "cab1"
+          },
+          {
+            "category": "cooling",
+            "id": "c1"
+          }
+        ],
+        "budget": 75000.0
       },
       "error": null
     },
@@ -244,12 +679,49 @@
       "valid": true,
       "first_try_valid": true,
       "attempts": 1,
-      "tokens": 911,
-      "seconds": 2.93,
+      "tokens": 1190,
+      "seconds": 3.46,
       "output": {
-        "reply": "Based on the provided parts, I recommend the following build: Intel i5 12400, MSI PRO B760M-E DDR5, Adata XPG Gammix D30 16GB DDR4 3200MHz, Adata Legend 710 512GB M.2 NVMe Internal SSD, Western Digital HDD 1TB, MSI MAG A650BN PSU-650W 80 Plus Bronze, Cooler Master Liquid 240L ARGB (White), GALAX RTX 5070Ti 16gb GDDR7, and Deepcool Macube 110 Cabinet(White).",
-        "build": [],
-        "budget": null
+        "reply": "Here is a balanced gaming PC build configured within your target budget.",
+        "build": [
+          {
+            "category": "processor",
+            "id": "p3"
+          },
+          {
+            "category": "motherboard",
+            "id": "m1"
+          },
+          {
+            "category": "gpu",
+            "id": "g1"
+          },
+          {
+            "category": "ram",
+            "id": "r2"
+          },
+          {
+            "category": "ps",
+            "id": "ps2"
+          },
+          {
+            "category": "ss",
+            "id": "ss1"
+          },
+          {
+            "category": "psu",
+            "id": "psu1"
+          },
+          {
+            "category": "cabinet",
+            "id": "cab1"
+          },
+          {
+            "category": "cooling",
+            "id": "c1"
+          }
+        ],
+        "budget": 75000.0
       },
       "error": null
     },
@@ -259,12 +731,49 @@
       "valid": true,
       "first_try_valid": true,
       "attempts": 1,
-      "tokens": 940,
-      "seconds": 3.51,
+      "tokens": 1189,
+      "seconds": 3.43,
       "output": {
-        "reply": "I recommend the following build: p4 (AMD Ryzen 5 5600X), m1 (MSI PRO B760M-E DDR5), g3 (MSI RTX 5080 OC 16GB GDDR7 White), ps2 (Adata Legend 710 512GB M.2 NVMe Internal SSD), ss1 (Western Digital HDD 1TB), r2 (Adata XPG Gammix D30 16GB DDR4 3200MHz), psu1 (MSI MAG A650BN PSU-650W 80 Plus Bronze), c1 (Cooler Master Liquid 240L ARGB (White)), cab1 (Deepcool Macube 110 Cabinet(White))",
-        "build": [],
-        "budget": null
+        "reply": "I've configured a high-performance PC build for you.",
+        "build": [
+          {
+            "category": "processor",
+            "id": "p4"
+          },
+          {
+            "category": "motherboard",
+            "id": "m1"
+          },
+          {
+            "category": "gpu",
+            "id": "g3"
+          },
+          {
+            "category": "ram",
+            "id": "r2"
+          },
+          {
+            "category": "ps",
+            "id": "ps2"
+          },
+          {
+            "category": "ss",
+            "id": "ss1"
+          },
+          {
+            "category": "psu",
+            "id": "psu1"
+          },
+          {
+            "category": "cabinet",
+            "id": "cab1"
+          },
+          {
+            "category": "cooling",
+            "id": "c1"
+          }
+        ],
+        "budget": 192500.0
       },
       "error": null
     },
@@ -274,12 +783,49 @@
       "valid": true,
       "first_try_valid": true,
       "attempts": 1,
-      "tokens": 941,
-      "seconds": 3.43,
+      "tokens": 1192,
+      "seconds": 3.4,
       "output": {
-        "reply": "I recommend the following build: p1 (Intel i5 12400), m1 (MSI PRO B760M-E DDR5), g1 (Gigabyte RTX 4060 OC 8GB), ps1 (Adata Legend 710 256GB M.2 NVMe Internal SSD), ss1 (Western Digital HDD 1TB), r2 (Adata XPG Gammix D30 16GB DDR4 3200MHz), psu1 (MSI MAG A650BN PSU-650W 80 Plus Bronze), c1 (Cooler Master Liquid 240L ARGB (White)), cab1 (Deepcool Macube 110 Cabinet(White))",
-        "build": [],
-        "budget": null
+        "reply": "Here is a build for calculating digits of pi.",
+        "build": [
+          {
+            "category": "processor",
+            "id": "p3"
+          },
+          {
+            "category": "motherboard",
+            "id": "m1"
+          },
+          {
+            "category": "gpu",
+            "id": "g2"
+          },
+          {
+            "category": "ram",
+            "id": "r2"
+          },
+          {
+            "category": "ps",
+            "id": "ps2"
+          },
+          {
+            "category": "ss",
+            "id": "ss1"
+          },
+          {
+            "category": "psu",
+            "id": "psu1"
+          },
+          {
+            "category": "cabinet",
+            "id": "cab1"
+          },
+          {
+            "category": "cooling",
+            "id": "c2"
+          }
+        ],
+        "budget": 0.0
       },
       "error": null
     },
@@ -289,12 +835,49 @@
       "valid": true,
       "first_try_valid": true,
       "attempts": 1,
-      "tokens": 942,
-      "seconds": 3.42,
+      "tokens": 1194,
+      "seconds": 3.43,
       "output": {
-        "reply": "To build a machine that survives a desert climate, I recommend the following build: Intel i5 12400 (p1), MSI PRO B760M-E DDR5 (m1), Adata XPG Gammix D30 16GB DDR4 3200MHz (r2), Adata Legend 710 512GB M.2 NVMe Internal SSD (ps2), Western Digital HDD 1TB (ss2), Cooler Master Liquid 240L ARGB (c2), MSI MAG A650BN PSU-650W 80 Plus Bronze (psu1), GALAX Revolution-06 Mesh RGB (cab2), and Gigabyte RTX 4060 OC 8GB (g1).",
-        "build": [],
-        "budget": null
+        "reply": "I've configured a build that should withstand the desert climate.",
+        "build": [
+          {
+            "category": "processor",
+            "id": "p3"
+          },
+          {
+            "category": "motherboard",
+            "id": "m3"
+          },
+          {
+            "category": "gpu",
+            "id": "g2"
+          },
+          {
+            "category": "ram",
+            "id": "r1"
+          },
+          {
+            "category": "ps",
+            "id": "ps1"
+          },
+          {
+            "category": "ss",
+            "id": "ss1"
+          },
+          {
+            "category": "psu",
+            "id": "psu1"
+          },
+          {
+            "category": "cabinet",
+            "id": "cab2"
+          },
+          {
+            "category": "cooling",
+            "id": "c2"
+          }
+        ],
+        "budget": 0.0
       },
       "error": null
     },
@@ -304,12 +887,49 @@
       "valid": true,
       "first_try_valid": true,
       "attempts": 1,
-      "tokens": 947,
-      "seconds": 3.56,
+      "tokens": 1195,
+      "seconds": 3.5,
       "output": {
-        "reply": "For a retro arcade emulation gaming rig, I recommend the following build: p3 (AMD Ryzen 5 5600), m2 (MSI PRO B660M-E DDR4), g2 (Inno3d RTX 3060 12GB), ps1 (Adata Legend 710 256GB M.2 NVMe Internal SSD), ss1 (Western Digital HDD 1TB), r1 (Adata XPG Gammix D30 8GB DDR4 3200MHz), psu1 (MSI MAG A650BN PSU-650W 80 Plus Bronze), cab1 (Deepcool Macube 110 Cabinet(White)), c2 (Cooler Master Liquid 240L ARGB (Black))",
-        "build": [],
-        "budget": null
+        "reply": "Here is a balanced, compatible gaming PC build configured for retro arcade emulation.",
+        "build": [
+          {
+            "category": "processor",
+            "id": "p3"
+          },
+          {
+            "category": "motherboard",
+            "id": "m3"
+          },
+          {
+            "category": "gpu",
+            "id": "g2"
+          },
+          {
+            "category": "ram",
+            "id": "r1"
+          },
+          {
+            "category": "ps",
+            "id": "ps1"
+          },
+          {
+            "category": "ss",
+            "id": "ss1"
+          },
+          {
+            "category": "psu",
+            "id": "psu2"
+          },
+          {
+            "category": "cabinet",
+            "id": "cab2"
+          },
+          {
+            "category": "cooling",
+            "id": "c2"
+          }
+        ],
+        "budget": 0.0
       },
       "error": null
     }

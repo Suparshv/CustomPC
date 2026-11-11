@@ -1,12 +1,17 @@
+import logging
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 import httpx
+from google.genai import errors
 
 from llm import get_llm, LLMError, LLMValidationError
 from schemas import DraftBuild
 from catalog import check_build
 from prompts import ARCHITECT_SYSTEM, format_architect_user_prompt
+
+logger = logging.getLogger("agent-service")
+logging.basicConfig(level=logging.INFO)
 
 app = FastAPI(title="PC Builder agent service")
 
@@ -27,11 +32,12 @@ class Ask(BaseModel):
 
 @app.get("/health")
 def health():
+    # Finding E: Clean single Exception handler covering all connection/readiness errors
     try:
         llm = get_current_llm()
         health_info = llm.check_health()
         return health_info
-    except (httpx.ConnectError, httpx.ConnectTimeout, ConnectionError, Exception) as e:
+    except Exception as e:
         return JSONResponse(
             status_code=503,
             content={
@@ -70,6 +76,22 @@ def draft_build(ask: Ask):
                 "attempts": e.attempts,
             },
         )
+    except errors.APIError as e:
+        # Finding B: Map Google API 503/429 to HTTP 503 with retry-after hint
+        if getattr(e, "code", None) in (503, 429):
+            raise HTTPException(
+                status_code=503,
+                detail={
+                    "error": "ServiceUnavailable",
+                    "message": f"Gemini API is temporarily overloaded ({e.code}). Please retry.",
+                    "code": e.code,
+                },
+                headers={"Retry-After": "5"},
+            )
+        raise HTTPException(
+            status_code=502,
+            detail={"error": "LLMProviderError", "message": str(e)},
+        )
     except (httpx.ConnectError, httpx.ConnectTimeout, ConnectionError) as e:
         raise HTTPException(
             status_code=503,
@@ -80,7 +102,9 @@ def draft_build(ask: Ask):
             status_code=502,
             detail={"error": "LLMError", "message": str(e)},
         )
-    except Exception:
+    except Exception as e:
+        # Finding C: Log unexpected errors so server logs preserve stack traces
+        logger.exception("Unexpected error in draft_build: %s", e)
         raise HTTPException(
             status_code=500,
             detail={"error": "InternalServerError", "message": "An unexpected server error occurred."},

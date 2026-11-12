@@ -7,3 +7,5 @@ pytest
 requests
 ollama
 httpx
+pandas
+pymongo

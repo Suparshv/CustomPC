@@ -7,3 +7,4 @@ __pycache__/
 *.pyc
 agent-service/.venv/
 agent-service/.env
+agent-service/data/

@@ -120,12 +120,22 @@ def load_seed_parts() -> list[dict]:
             vram_str = spec.get("vram", "")
             vram_match = re.search(r"(\d+)", vram_str)
             doc["memory"] = float(vram_match.group(1)) if vram_match else None
+            doc["gpu_memory"] = doc["memory"]
             doc["vram"] = vram_str
             doc["tdp"] = spec.get("tdp")
             doc["benchmark"] = spec.get("benchmark")
             doc["best_for"] = spec.get("bestFor")
+            # GPU card dimensions sourced from official manufacturer specifications:
+            # g1: Gigabyte RTX 4060 EAGLE OC 8G -> 192 mm
+            #     https://www.gigabyte.com/Graphics-Card/GV-N4060EAGLE-OC-8GD/sp#sp
+            # g2: Inno3D RTX 3060 Twin X2 12GB -> 224 mm
+            #     https://www.inno3d.com/en/PRODUCT_INNO3D_GEFORCE_RTX_3060_TWIN_X2
+            # g3: MSI RTX 5080 16G GAMING TRIO WHITE -> 300 mm
+            #     https://www.msi.com/Graphics-Card/GeForce-RTX-5080-16G-GAMING-TRIO-WHITE/Specification
+            # g4: GALAX RTX 5070 Ti EX Gamer 16GB -> 282 mm
+            #     https://www.galax.com/en/graphics-card/50-series
             lengths = {"g1": 192, "g2": 224, "g3": 300, "g4": 282}
-            doc["length"] = lengths.get(key, 250)
+            doc["length"] = lengths.get(key, None)  # Rule 3: Missing data yields UNKNOWN, never guess defaults
             chipsets = {
                 "g1": "GeForce RTX 4060",
                 "g2": "GeForce RTX 3060",
@@ -148,7 +158,7 @@ def load_seed_parts() -> list[dict]:
             doc["type"] = "SSD"
             cap_str = spec.get("capacity", "")
             cap_match = re.search(r"(\d+)", cap_str)
-            doc["capacity"] = int(cap_match.group(1)) if cap_match else 500
+            doc["capacity"] = int(cap_match.group(1)) if cap_match else None  # Rule 3: Never guess defaults
             doc["form_factor"] = "M.2-2280"
             doc["interface"] = "PCIe 3.0 x4"
             doc["benchmark"] = spec.get("benchmark")
@@ -166,20 +176,24 @@ def load_seed_parts() -> list[dict]:
 
         elif cat == "psu":
             doc["type"] = "ATX"
-            doc["wattage"] = int(spec.get("wattage", 550))
+            w = spec.get("wattage")
+            doc["wattage"] = int(w) if w is not None else None  # Rule 3: Never guess defaults
             doc["efficiency"] = spec.get("rating")
             doc["best_for"] = spec.get("bestFor")
 
         elif cat == "cabinet":
             ff = spec.get("formFactor", "")
             is_matx = ff.lower() in ("matx", "micro atx", "microatx")
-            doc["type"] = "MicroATX Mini Tower" if is_matx else "ATX Mid Tower"
+            ctype = "MicroATX Mini Tower" if is_matx else "ATX Mid Tower"
+            doc["type"] = ctype
+            doc["case_type"] = ctype
             doc["form_factor"] = "Micro ATX" if is_matx else "ATX"
             doc["color"] = spec.get("color")
             doc["best_for"] = spec.get("bestFor")
 
         elif cat == "cooling":
             doc["type"] = "AIO"
+            doc["cooler_kind"] = "liquid"
             doc["size"] = 240
             doc["color"] = "White" if "White" in spec.get("name", "") else "Black"
             doc["best_for"] = spec.get("bestFor")
@@ -324,6 +338,7 @@ def load_gpus(cap_per_chipset: int = 5) -> list[dict]:
                 "stock_simulated": True,
                 "chipset": g.get("chipset"),
                 "memory": g.get("memory"),
+                "gpu_memory": g.get("memory"),
                 "core_clock": g.get("core_clock"),
                 "boost_clock": g.get("boost_clock"),
                 "length": g.get("length"),
@@ -471,6 +486,7 @@ def load_cases(cap_per_type: int = 50) -> list[dict]:
                 "in_stock": is_simulated_in_stock(part_id),
                 "stock_simulated": True,
                 "type": c.get("type"),
+                "case_type": ctype,
                 "color": c.get("color"),
                 "internal_35_bays": c.get("internal_35_bays"),
                 "side_panel": c.get("side_panel"),
@@ -577,6 +593,7 @@ def load_coolers(cap_per_size: int = 40) -> list[dict]:
                 "price_inr_approx": True,
                 "in_stock": is_simulated_in_stock(part_id),
                 "stock_simulated": True,
+                "cooler_kind": "liquid" if c.get("size") is not None else "air",
                 "rpm": c.get("rpm"),
                 "noise_level": c.get("noise_level"),
                 "color": c.get("color"),

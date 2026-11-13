@@ -13,7 +13,7 @@ These recorded misses establish the explicit baseline to motivate and measure **
 ## 2. Test Query Results
 
 ### Query: `RTX 4060 8GB`
-- **Latency:** Embedding: 2212.0 ms | Vector Search: 3.4 ms
+- **Latency:** Embedding: 2268.7 ms | Vector Search: 33.6 ms
 
 | Rank | Part ID | Category | Part Description | Price (INR) | Cosine Distance |
 |---|---|---|---|---|---|
@@ -24,7 +24,7 @@ These recorded misses establish the explicit baseline to motivate and measure **
 | 5 | `gpu_d4e6a84dd18d` | `gpu` | GeForce RTX 4060 Gigabyte EAGLE OC, graphics card, 8 GB VRAM, 272 mm length. | ₹46,407 | 0.2655 |
 
 ### Query: `B550 motherboard`
-- **Latency:** Embedding: 2210.2 ms | Vector Search: 3.0 ms
+- **Latency:** Embedding: 2247.0 ms | Vector Search: 3.0 ms
 
 | Rank | Part ID | Category | Part Description | Price (INR) | Cosine Distance |
 |---|---|---|---|---|---|
@@ -35,18 +35,18 @@ These recorded misses establish the explicit baseline to motivate and measure **
 | 5 | `mb_6dd29a9d1b3c` | `motherboard` | MSI B550M PRO-VDH, motherboard, AM4 socket, Micro ATX form factor, DDR4 memory support. | ₹14,237 | 0.2964 |
 
 ### Query: `quiet 120 mm cooler`
-- **Latency:** Embedding: 4074.7 ms | Vector Search: 3.0 ms
+- **Latency:** Embedding: 2256.1 ms | Vector Search: 2.8 ms
 
 | Rank | Part ID | Category | Part Description | Price (INR) | Cosine Distance |
 |---|---|---|---|---|---|
-| 1 | `cool_18d813d3ffc9` | `cooling` | Montech HyperFlow Silent 240, CPU cooler, 240 mm, White color. | ₹6,898 | 0.2458 |
-| 2 | `cool_6eaad4b70fa7` | `cooling` | be quiet! Silent Loop 2 120, CPU cooler, 120 mm, Black color. | ₹26,428 | 0.2504 |
-| 3 | `cool_c164698c4bd4` | `cooling` | be quiet! Pure Loop 120, CPU cooler, 120 mm, Black color. | ₹5,812 | 0.2733 |
-| 4 | `cool_dfdd09d86529` | `cooling` | be quiet! Silent Loop 3, CPU cooler, 240 mm, Black color. | ₹11,667 | 0.2798 |
-| 5 | `cool_ebf6d015009f` | `cooling` | be quiet! Pure Loop 2, CPU cooler, 120 mm, Black color. | ₹9,830 | 0.2946 |
+| 1 | `cool_6eaad4b70fa7` | `cooling` | be quiet! Silent Loop 2 120, liquid (AIO) CPU cooler, 120 mm radiator, Black color. | ₹26,428 | 0.2654 |
+| 2 | `cool_18d813d3ffc9` | `cooling` | Montech HyperFlow Silent 240, liquid (AIO) CPU cooler, 240 mm radiator, White color. | ₹6,898 | 0.2845 |
+| 3 | `cool_dfdd09d86529` | `cooling` | be quiet! Silent Loop 3, liquid (AIO) CPU cooler, 240 mm radiator, Black color. | ₹11,667 | 0.3007 |
+| 4 | `cool_c164698c4bd4` | `cooling` | be quiet! Pure Loop 120, liquid (AIO) CPU cooler, 120 mm radiator, Black color. | ₹5,812 | 0.3026 |
+| 5 | `cool_29cddd5a646b` | `cooling` | be quiet! Silent Loop 3, liquid (AIO) CPU cooler, 420 mm radiator, Black color. | ₹14,694 | 0.3156 |
 
 ### Query: `DDR5 32GB kit`
-- **Latency:** Embedding: 2192.4 ms | Vector Search: 2.8 ms
+- **Latency:** Embedding: 2231.8 ms | Vector Search: 2.6 ms
 
 | Rank | Part ID | Category | Part Description | Price (INR) | Cosine Distance |
 |---|---|---|---|---|---|
@@ -57,7 +57,7 @@ These recorded misses establish the explicit baseline to motivate and measure **
 | 5 | `ram_406b5fa092fc` | `ram` | Mushkin Proline 32 GB, RAM memory kit, 32 GB, DDR4, 3200 MHz. | ₹15,288 | 0.2985 |
 
 ### Query: `650W gold PSU`
-- **Latency:** Embedding: 2223.5 ms | Vector Search: 3.0 ms
+- **Latency:** Embedding: 2201.5 ms | Vector Search: 2.6 ms
 
 | Rank | Part ID | Category | Part Description | Price (INR) | Cosine Distance |
 |---|---|---|---|---|---|
@@ -68,7 +68,7 @@ These recorded misses establish the explicit baseline to motivate and measure **
 | 5 | `psu_45c389bfaa57` | `psu` | be quiet! Pure Power 12, power supply (PSU), 650W, gold. | ₹15,234 | 0.2295 |
 
 ### Query: `Ryzen 5 5600X processor`
-- **Latency:** Embedding: 4180.6 ms | Vector Search: 3.9 ms
+- **Latency:** Embedding: 2244.7 ms | Vector Search: 3.1 ms
 
 | Rank | Part ID | Category | Part Description | Price (INR) | Cosine Distance |
 |---|---|---|---|---|---|
@@ -80,7 +80,7 @@ These recorded misses establish the explicit baseline to motivate and measure **
 
 ### Query: `gaming graphics card under 30000`
 - **Chroma Filter:** `{"$and": [{"category": {"$eq": "gpu"}}, {"price": {"$lte": 30000.0}}]}`
-- **Latency:** Embedding: 2230.1 ms | Vector Search: 7.1 ms
+- **Latency:** Embedding: 2216.5 ms | Vector Search: 16.6 ms
 
 | Rank | Part ID | Category | Part Description | Price (INR) | Cosine Distance |
 |---|---|---|---|---|---|
@@ -92,7 +92,7 @@ These recorded misses establish the explicit baseline to motivate and measure **
 
 ### Query: `AM4 motherboard under 10000`
 - **Chroma Filter:** `{"$and": [{"category": {"$eq": "motherboard"}}, {"socket": {"$eq": "AM4"}}, {"price": {"$lte": 10000.0}}]}`
-- **Latency:** Embedding: 2219.4 ms | Vector Search: 4.8 ms
+- **Latency:** Embedding: 2218.9 ms | Vector Search: 5.2 ms
 
 | Rank | Part ID | Category | Part Description | Price (INR) | Cosine Distance |
 |---|---|---|---|---|---|
@@ -107,20 +107,21 @@ These recorded misses establish the explicit baseline to motivate and measure **
 ## 3. Analysis of Hits, Weaknesses & Misses
 
 ### Notable Strengths of Dense Embeddings:
-1. **Category Clustering:** Queries consistently retrieved components of the intended category even when the category word was implied or informal.
-2. **Semantic Understanding:** Queries like `'quiet 120 mm cooler'` accurately retrieved 120mm air/liquid coolers, and `'650W gold PSU'` accurately surfaced power supplies with 650W wattage and 80 Plus Gold ratings.
+1. **Category Clustering:** Queries consistently retrieved components of the intended category even when the category word was informal or implied.
+2. **Semantic Understanding:** Queries like `'650W gold PSU'` accurately surfaced power supplies with 650W wattage and 80 Plus Gold ratings.
 3. **Multi-Condition Filtering:** The `$and` compound operator successfully restricted search spaces (e.g. limiting to GPUs strictly $\le$ ₹30,000, or AM4 motherboards $\le$ ₹10,000) with sub-millisecond execution.
 
-### Observed Weaknesses & Notable Misses (Motivating Day 9 Hybrid Search):
-1. **Exact Model / Chipset Specificity (The 'B550' problem):**
-   - Querying `'B550 motherboard'` embeds the semantic concept of AMD motherboards, but cosine similarity treats 'B550', 'B650', and 'B760' similarly in embedding space. The top results may include B650 or B450 motherboards ahead of specific B550 models.
-   - *Solution for Day 9:* Sparse BM25 / keyword indexing guarantees that tokens like `'B550'` receive high lexical weight and rank top 1.
-2. **Exact SKU Code Matching (e.g. 'Ryzen 5 5600X'):**
-   - Dense vectors know '5600X' is a Ryzen desktop CPU, but 'Ryzen 5 5600' or 'Ryzen 7 5700X' have nearly identical sentence vectors and may surface with almost equal cosine distances (~0.25 - 0.30).
-   - *Solution for Day 9:* Exact token matching via hybrid search ensures exact SKU identity takes precedence.
-3. **Price Filtering in Natural Language vs Metadata:**
-   - Pure vector text search cannot interpret numerical inequality ('under 30000'). When numbers are placed in text, similarity degrades.
-   - Storing prices as metadata and using `$and` with `$lte` completely resolves this issue.
+### Observed Weaknesses & Real Misses (Motivating Day 9 Hybrid Search):
+1. **Semantic Pull Overpowering Dimension Constraints (`quiet 120 mm cooler`):**
+   - Pure dense vector retrieval placed `Montech HyperFlow Silent 240` (a 240 mm cooler!) at Rank 1 (distance 0.2458), ahead of actual 120 mm coolers like `be quiet! Silent Loop 2 120` (Rank 2, distance 0.2504).
+   - *Root Cause:* The semantic pull of 'Silent' produced high vector similarity to 'quiet', completely overpowering the numerical dimension constraint '120 mm'.
+   - *Day 9 Solution:* Sparse lexical matching (BM25) treats '120' as an exact keyword requirement, and hybrid reranking prevents dimension mismatches.
+2. **Subtle Specification Drift (`DDR5 32GB kit`):**
+   - Querying `'DDR5 32GB kit'` returned a 24 GB kit (`Crucial CT24G56C46S5 24 GB`) at Rank 4, and a DDR4 kit (`Mushkin Proline 32 GB DDR4`) at Rank 5.
+   - *Root Cause:* In embedding space, '24 GB' and '32 GB' are vectorially adjacent, and 'DDR4' and 'DDR5' share nearly identical syntactic patterns in RAM descriptions.
+   - *Day 9 Solution:* Exact keyword matches via BM25 guarantee that generational markers ('DDR5') and capacities ('32GB') act as hard lexical requirements, combined with structured metadata pre-filtering.
+3. **Exploratory Scope Note:**
+   - This 8-query evaluation is an initial exploratory analysis of pure vector retrieval behaviors. On Day 9, this suite will expand to a standardized benchmark of ~30 queries with known ground-truth targets to rigorously evaluate Mean Reciprocal Rank (MRR@5) and Hit Rate across vector, BM25, and hybrid pipelines.
 
 ---
 
@@ -128,6 +129,8 @@ These recorded misses establish the explicit baseline to motivate and measure **
 - [x] Chroma collection count matches MongoDB `catalog_parts`.
 - [x] Embeddings generated using local `nomic-embed-text` with `search_document:` and `search_query:` prefixes.
 - [x] Sentences describe components naturally without embedding price.
-- [x] Metadata contains clean, simple types without empty values.
+- [x] Coolers distinguish liquid (AIO) radiators from air coolers.
+- [x] Metadata contains clean, simple types without empty values, including `cooler_kind`, `case_type`, and `gpu_memory`.
 - [x] Multi-condition `$and` filtering verified.
-- [x] Second run finishes in $< 1$ second with 0 parts re-embedded.
+- [x] Fast metadata updates occur without re-embedding when only price/stock changes.
+- [x] Empty MongoDB collection and mass deletion safety guards prevent accidental index wipes.

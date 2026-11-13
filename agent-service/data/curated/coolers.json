@@ -1,0 +1,62 @@
+{
+  "cool_8cccc772e215": {
+    "name": "Thermalright Peerless Assassin 120 White ARGB",
+    "height_mm": 157,
+    "source_url": "https://www.thermalright.com/product/peerless-assassin-120-white-argb/"
+  },
+  "cool_70af1a5d8ce2": {
+    "name": "Thermalright Phantom Spirit 120 SE",
+    "height_mm": 154,
+    "source_url": "https://www.thermalright.com/product/phantom-spirit-120-se/"
+  },
+  "cool_5344e03f8f1a": {
+    "name": "Thermalright Assassin X Refined SE RGB",
+    "height_mm": 148,
+    "source_url": "https://www.thermalright.com/product/assassin-x-120-refined-se-argb/"
+  },
+  "cool_3b30ea00f2a2": {
+    "name": "Thermalright Assassin Spirit 120 EVO",
+    "height_mm": 156,
+    "source_url": "https://www.thermalright.com/product/assassin-spirit-120-evo/"
+  },
+  "cool_8d6cca62ff77": {
+    "name": "Thermalright Burst Assassin 120 SE ARGB",
+    "height_mm": 152,
+    "source_url": "https://www.thermalright.com/product/burst-assassin-120-se-argb/"
+  },
+  "cool_998768c01fe2": {
+    "name": "Cooler Master Hyper 212 Black Edition",
+    "height_mm": 158.8,
+    "source_url": "https://www.coolermaster.com/en-global/products/hyper-212-black-edition/"
+  },
+  "cool_3a095f8b0e6d": {
+    "name": "Cooler Master Hyper 212 LED",
+    "height_mm": 160,
+    "source_url": "https://www.coolermaster.com/en-global/products/hyper-212-led/"
+  },
+  "cool_4ec52a9c8c69": {
+    "name": "be quiet! Pure Rock LP",
+    "height_mm": 45,
+    "source_url": "https://www.bequiet.com/en/cpucooler/3947"
+  },
+  "cool_288e83d97363": {
+    "name": "ID-COOLING SE-903-XT",
+    "height_mm": 123,
+    "source_url": "https://www.idcooling.com/Product/detail/id/296/SE-903-XT"
+  },
+  "cool_e88def204f32": {
+    "name": "ID-COOLING SE-207-XT SLIM",
+    "height_mm": 135,
+    "source_url": "https://www.idcooling.com/Product/detail/id/272/SE-207-XT%20SLIM"
+  },
+  "cool_009be718f68c": {
+    "name": "ID-COOLING IS-55 ARGB",
+    "height_mm": 55,
+    "source_url": "https://www.idcooling.com/Product/detail/id/326/IS-55%20ARGB%20WHITE"
+  },
+  "cool_58bd370a9768": {
+    "name": "ARCTIC Freezer i13 X",
+    "height_mm": 137,
+    "source_url": "https://www.arctic.de/en/Freezer-i13-X/ACFRE00078A"
+  }
+}

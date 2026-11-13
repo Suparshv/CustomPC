@@ -1,0 +1,104 @@
+{
+  "cab1": {
+    "name": "Deepcool Macube 110 Cabinet(White)",
+    "max_gpu_length_mm": 320,
+    "max_cooler_height_mm": 165,
+    "source_url": "https://www.deepcool.com/products/Cases/fulltowercases/Macube-110-Micro-ATX-Case/2021/848.shtml"
+  },
+  "cab2": {
+    "name": "GALAX Revolution-06 Mesh RGB (ATX) Mid-tower",
+    "max_gpu_length_mm": 330,
+    "max_cooler_height_mm": 160,
+    "source_url": "https://www.galax.com/en/revolution-06.html"
+  },
+  "cab_98692901e262": {
+    "name": "Corsair 4000D Airflow",
+    "max_gpu_length_mm": 360,
+    "max_cooler_height_mm": 170,
+    "source_url": "https://www.corsair.com/us/en/p/pc-cases/cc-9011200-ww/4000d-airflow-tempered-glass-mid-tower-atx-case-black-cc-9011200-ww"
+  },
+  "cab_ca606bf13220": {
+    "name": "NZXT H7 Flow (2022)",
+    "max_gpu_length_mm": 400,
+    "max_cooler_height_mm": 185,
+    "source_url": "https://nzxt.com/product/h7-flow"
+  },
+  "cab_3cdd9f1f5cee": {
+    "name": "Corsair 3500X",
+    "max_gpu_length_mm": 410,
+    "max_cooler_height_mm": 170,
+    "source_url": "https://www.corsair.com/us/en/p/pc-cases/cc-9011276-ww/3500x-mid-tower-pc-case-cc-9011276-ww"
+  },
+  "cab_8de9126a841a": {
+    "name": "Fractal Design Pop Air",
+    "max_gpu_length_mm": 405,
+    "max_cooler_height_mm": 170,
+    "source_url": "https://www.fractal-design.com/products/cases/pop/pop-air/rgb-black-core/"
+  },
+  "cab_ff8777ac67e5": {
+    "name": "Cooler Master QUBE 500 Flatpack",
+    "max_gpu_length_mm": 365,
+    "max_cooler_height_mm": 172,
+    "source_url": "https://www.coolermaster.com/en-global/products/qube-500-flatpack/"
+  },
+  "cab_4737d01ed10c": {
+    "name": "Lian Li Lancool 207",
+    "max_gpu_length_mm": 375,
+    "max_cooler_height_mm": 180,
+    "source_url": "https://lian-li.com/product/lancool-207/"
+  },
+  "cab_51d1cda89a3e": {
+    "name": "Phanteks XT View",
+    "max_gpu_length_mm": 415,
+    "max_cooler_height_mm": 184,
+    "source_url": "https://www.phanteks.com/XT-View.html"
+  },
+  "cab_77749d774b9f": {
+    "name": "Lian Li O11D EVO RGB",
+    "max_gpu_length_mm": 455,
+    "max_cooler_height_mm": 167,
+    "source_url": "https://lian-li.com/product/o11d-evo-rgb/"
+  },
+  "cab_3338d9c4a7d9": {
+    "name": "Lian Li LANCOOL III RGB",
+    "max_gpu_length_mm": 435,
+    "max_cooler_height_mm": 187,
+    "source_url": "https://lian-li.com/product/lancool-iii/"
+  },
+  "cab_531f08ab1e86": {
+    "name": "Fractal Design Define 7 Compact",
+    "max_gpu_length_mm": 341,
+    "max_cooler_height_mm": 169,
+    "source_url": "https://www.fractal-design.com/products/cases/define/define-7-compact/black/"
+  },
+  "cab_9c66abc9b491": {
+    "name": "Cooler Master MasterBox K501L",
+    "max_gpu_length_mm": 410,
+    "max_cooler_height_mm": 165,
+    "source_url": "https://www.coolermaster.com/en-global/products/masterbox-k501l/"
+  },
+  "cab_6000e49fe728": {
+    "name": "Thermaltake Ceres 300 TG ARGB",
+    "max_gpu_length_mm": 340,
+    "max_cooler_height_mm": 185,
+    "source_url": "https://www.thermaltake.com/ceres-300-tg-argb-mid-tower-chassis.html"
+  },
+  "cab_434784c8747a": {
+    "name": "Montech KING 95 PRO",
+    "max_gpu_length_mm": 420,
+    "max_cooler_height_mm": 175,
+    "source_url": "https://www.montechpc.com/en/products_detail.php?nid=379"
+  },
+  "cab_f36b13525656": {
+    "name": "Montech SKY TWO GX",
+    "max_gpu_length_mm": 400,
+    "max_cooler_height_mm": 168,
+    "source_url": "https://www.montechpc.com/en/products_detail.php?nid=390"
+  },
+  "cab_9015c986e7be": {
+    "name": "Cougar MX330-X",
+    "max_gpu_length_mm": 350,
+    "max_cooler_height_mm": 155,
+    "source_url": "https://cougargaming.com/products/cases/mx330/"
+  }
+}

@@ -2,7 +2,7 @@
 embeddings.py - Embedding utilities for nomic-embed-text via Ollama
 
 Handles text prefixing (search_document: and search_query:), batching (default: 64),
-and retry logic for Chroma vector store operations.
+and retry logic for Ollama embedding API operations.
 """
 
 import os
@@ -49,6 +49,7 @@ def embed_batch_with_retry(
     client: Optional[ollama.Client] = None,
     model: str = DEFAULT_MODEL,
     max_retries: int = MAX_RETRIES,
+    keep_alive: str = "1h",
 ) -> list[list[float]]:
     """Embed a single pre-formatted batch of texts with retry backoff."""
     if not texts:
@@ -59,7 +60,7 @@ def embed_batch_with_retry(
 
     for attempt in range(1, max_retries + 1):
         try:
-            response = ollama_client.embed(model=model, input=texts)
+            response = ollama_client.embed(model=model, input=texts, keep_alive=keep_alive)
             embeddings = response.get("embeddings") or response.get("embedding")
             if embeddings and len(embeddings) == len(texts):
                 return embeddings
@@ -80,6 +81,7 @@ def embed_documents(
     batch_size: int = DEFAULT_BATCH_SIZE,
     client: Optional[ollama.Client] = None,
     model: str = DEFAULT_MODEL,
+    keep_alive: str = "1h",
 ) -> list[list[float]]:
     """
     Format documents with 'search_document: ' prefix and generate embeddings in batches.
@@ -92,7 +94,7 @@ def embed_documents(
 
     for i in range(0, len(formatted_texts), batch_size):
         batch = formatted_texts[i:i + batch_size]
-        batch_embeddings = embed_batch_with_retry(batch, client=client, model=model)
+        batch_embeddings = embed_batch_with_retry(batch, client=client, model=model, keep_alive=keep_alive)
         all_embeddings.extend(batch_embeddings)
 
     return all_embeddings
@@ -102,10 +104,11 @@ def embed_query(
     query: str,
     client: Optional[ollama.Client] = None,
     model: str = DEFAULT_MODEL,
+    keep_alive: str = "1h",
 ) -> list[float]:
     """
     Format query with 'search_query: ' prefix and generate single embedding vector.
     """
     formatted = format_query_text(query)
-    embeddings = embed_batch_with_retry([formatted], client=client, model=model)
+    embeddings = embed_batch_with_retry([formatted], client=client, model=model, keep_alive=keep_alive)
     return embeddings[0]

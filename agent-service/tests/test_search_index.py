@@ -11,7 +11,7 @@ Tests:
 
 import pytest
 from embeddings import format_doc_text, format_query_text, DOC_PREFIX, QUERY_PREFIX
-from build_index import describe, build_metadata, compute_doc_hash
+from build_index import describe, build_metadata, compute_doc_hash, compute_meta_hash
 
 
 # ─── 1. PREFIX TESTS ──────────────────────────────────────────────────────────
@@ -228,3 +228,103 @@ def test_fake_embedder_idempotency():
             run2_embeds += 1
 
     assert run2_embeds == 0  # Zero parts re-embedded!
+
+
+# ─── 6. COOLER LIQUID VS AIR DESCRIPTION TEST ────────────────────────────────
+def test_describe_coolers_liquid_vs_air():
+    liquid_doc = {
+        "category": "cooling",
+        "name": "ARCTIC Liquid Freezer III 360",
+        "size": 360,
+        "cooler_kind": "liquid",
+        "color": "Black",
+    }
+    air_doc = {
+        "category": "cooling",
+        "name": "Thermalright Peerless Assassin 120 SE",
+        "size": None,
+        "cooler_kind": "air",
+        "color": "Black",
+    }
+
+    desc_liquid = describe(liquid_doc)
+    desc_air = describe(air_doc)
+
+    assert "liquid (AIO) CPU cooler, 360 mm radiator" in desc_liquid
+    assert "air CPU cooler" in desc_air
+    assert "liquid" not in desc_air
+
+
+# ─── 7. METADATA HASH SENSITIVITY AND FIELDS ─────────────────────────────────
+def test_meta_hash_sensitivity_and_fields():
+    doc1 = {
+        "_id": "g1",
+        "category": "gpu",
+        "name": "RTX 4060",
+        "price_inr": 25000,
+        "in_stock": True,
+        "gpu_memory": 8.0,
+    }
+    meta1 = build_metadata(doc1)
+    hash1 = compute_meta_hash(meta1)
+
+    # Day 8 filter attributes preserved
+    assert meta1["gpu_memory"] == 8.0
+
+    # Changing price changes meta_hash
+    doc2 = dict(doc1, price_inr=26000)
+    meta2 = build_metadata(doc2)
+    hash2 = compute_meta_hash(meta2)
+    assert hash1 != hash2
+
+    # Changing stock status changes meta_hash
+    doc3 = dict(doc1, in_stock=False)
+    meta3 = build_metadata(doc3)
+    hash3 = compute_meta_hash(meta3)
+    assert hash1 != hash3
+
+
+# ─── 8. METADATA UPDATE WITHOUT RE-EMBEDDING ─────────────────────────────────
+def test_metadata_update_without_reembedding():
+    """Verify that when only price changes, doc_hash is identical, meta_hash changes, and 0 embeds occur."""
+    doc_initial = {
+        "_id": "g1",
+        "category": "gpu",
+        "name": "RTX 4060",
+        "chipset": "GeForce RTX 4060",
+        "memory": 8.0,
+        "price_inr": 25000,
+        "in_stock": True,
+    }
+
+    text_initial = describe(doc_initial)
+    dhash_initial = compute_doc_hash(text_initial)
+    meta_initial = build_metadata(doc_initial)
+    mhash_initial = compute_meta_hash(meta_initial)
+
+    # Price update in MongoDB
+    doc_updated = dict(doc_initial, price_inr=23500)
+    text_updated = describe(doc_updated)
+    dhash_updated = compute_doc_hash(text_updated)
+    meta_updated = build_metadata(doc_updated)
+    mhash_updated = compute_meta_hash(meta_updated)
+
+    # Document text and doc_hash are identical (price excluded from text)
+    assert text_initial == text_updated
+    assert dhash_initial == dhash_updated
+
+    # Metadata hash changed due to price change
+    assert mhash_initial != mhash_updated
+
+    # Sync classification logic: text unchanged -> 0 embeds, only metadata update needed!
+    embeds_called = 0
+    updates_called = 0
+
+    if dhash_initial != dhash_updated:
+        embeds_called += 1
+    elif mhash_initial != mhash_updated:
+        updates_called += 1
+
+    assert embeds_called == 0
+    assert updates_called == 1
+

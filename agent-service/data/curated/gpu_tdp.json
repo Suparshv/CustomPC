@@ -1,0 +1,94 @@
+{
+  "GeForce RTX 4060": {
+    "tdp_w": 115,
+    "source_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/40-series/rtx-4060-4060ti/"
+  },
+  "GeForce RTX 4060 Ti": {
+    "tdp_w": 160,
+    "source_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/40-series/rtx-4060-4060ti/"
+  },
+  "GeForce RTX 4070": {
+    "tdp_w": 200,
+    "source_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/40-series/rtx-4070-4070ti/"
+  },
+  "GeForce RTX 4070 SUPER": {
+    "tdp_w": 220,
+    "source_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/40-series/rtx-4070-super-family/"
+  },
+  "GeForce RTX 4070 Ti": {
+    "tdp_w": 285,
+    "source_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/40-series/rtx-4070-4070ti/"
+  },
+  "GeForce RTX 4070 Ti SUPER": {
+    "tdp_w": 285,
+    "source_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/40-series/rtx-4070-super-family/"
+  },
+  "GeForce RTX 4080": {
+    "tdp_w": 320,
+    "source_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/40-series/rtx-4080/"
+  },
+  "GeForce RTX 4080 SUPER": {
+    "tdp_w": 320,
+    "source_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/40-series/rtx-4080-super/"
+  },
+  "GeForce RTX 4090": {
+    "tdp_w": 450,
+    "source_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/40-series/rtx-4090/"
+  },
+  "GeForce RTX 5070": {
+    "tdp_w": 250,
+    "source_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/50-series/rtx-5070/"
+  },
+  "GeForce RTX 5070 Ti": {
+    "tdp_w": 300,
+    "source_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/50-series/rtx-5070-ti/"
+  },
+  "GeForce RTX 5080": {
+    "tdp_w": 400,
+    "source_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/50-series/rtx-5080/"
+  },
+  "GeForce RTX 3050 6GB": {
+    "tdp_w": 70,
+    "source_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3050/"
+  },
+  "GeForce RTX 3050 8GB": {
+    "tdp_w": 130,
+    "source_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3050/"
+  },
+  "GeForce RTX 3060": {
+    "tdp_w": 170,
+    "source_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3060-3060ti/"
+  },
+  "GeForce RTX 3060 12GB": {
+    "tdp_w": 170,
+    "source_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3060-3060ti/"
+  },
+  "GeForce RTX 3060 Ti": {
+    "tdp_w": 200,
+    "source_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3060-3060ti/"
+  },
+  "GeForce GTX 1660 SUPER": {
+    "tdp_w": 125,
+    "source_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/gtx-1660-super/"
+  },
+  "Radeon RX 7600": {
+    "tdp_w": 165,
+    "source_url": "https://www.amd.com/en/products/graphics/desktops/radeon-7000-series/amd-radeon-rx-7600.html"
+  },
+  "Radeon RX 7700 XT": {
+    "tdp_w": 245,
+    "source_url": "https://www.amd.com/en/products/graphics/desktops/radeon-7000-series/amd-radeon-rx-7700-xt.html"
+  },
+  "Radeon RX 7800 XT": {
+    "tdp_w": 263,
+    "source_url": "https://www.amd.com/en/products/graphics/desktops/radeon-7000-series/amd-radeon-rx-7800-xt.html"
+  },
+  "Radeon RX 7900 XT": {
+    "tdp_w": 315,
+    "source_url": "https://www.amd.com/en/products/graphics/desktops/radeon-7000-series/amd-radeon-rx-7900-xt.html"
+  },
+  "Radeon RX 7900 XTX": {
+    "tdp_w": 355,
+    "source_url": "https://www.amd.com/en/products/graphics/desktops/radeon-7000-series/amd-radeon-rx-7900-xtx.html"
+  }
+}

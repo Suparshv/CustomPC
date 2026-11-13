@@ -9,3 +9,5 @@ ollama
 httpx
 pandas
 pymongo
+chromadb
+

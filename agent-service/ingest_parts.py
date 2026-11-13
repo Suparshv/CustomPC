@@ -2,7 +2,7 @@
 """
 ingest_parts.py - Ingest PC Component Catalog into MongoDB
 
-Loads ~2,900 real PC components (target: 2,861 from docyx/pc-part-dataset
+Loads ~2,850 real PC components (2,830 from docyx/pc-part-dataset
 plus 24 seed parts from componentSpecs.json) into the 'catalog_parts' collection
 in MongoDB database 'PC'.
 
@@ -34,8 +34,15 @@ USD_TO_INR_DATE = os.getenv("USD_TO_INR_DATE", "2026-11-12")
 
 
 def generate_stable_id(prefix: str, raw_item: dict) -> str:
-    """Generate a deterministic, clean 12-hex hash ID from category prefix and part attributes."""
-    sig = json.dumps(raw_item, sort_keys=True)
+    """
+    Generate a deterministic, clean 12-hex hash ID from category prefix and identity fields.
+    Excludes volatile pricing, retailer, and URL data so price updates do not change the ID.
+    """
+    identity = {
+        k: v for k, v in raw_item.items()
+        if k not in ("price", "price_per_gb", "url", "retailer")
+    }
+    sig = json.dumps(identity, sort_keys=True)
     digest = hashlib.sha256(sig.encode("utf-8")).hexdigest()[:12]
     return f"{prefix}_{digest}"
 
@@ -64,6 +71,11 @@ def spread_sample(items: list[dict], max_items: int) -> list[dict]:
 
 # ─── 1. SEED PARTS (24 items) ──────────────────────────────────────────────────
 def load_seed_parts() -> list[dict]:
+    """
+    Load the 24 frozen seed parts, mapping their legacy field names (ramType, formFactor,
+    capacity, speed, vram) to unified dataset names while keeping the original structure
+    under 'legacy_specs'.
+    """
     if not SEED_SPECS_PATH.exists():
         raise FileNotFoundError(f"Seed specifications not found at: {SEED_SPECS_PATH}")
 
@@ -72,20 +84,106 @@ def load_seed_parts() -> list[dict]:
 
     seed_docs = []
     for key, spec in specs.items():
+        cat = spec.get("category")
         doc = {
             "_id": key.strip(),
             "name": spec.get("name"),
-            "category": spec.get("category"),
+            "category": cat,
             "source": "seed24",
             "price_inr": spec.get("price"),
             "price_inr_approx": False,
             "in_stock": True,
             "stock_simulated": True,
+            "legacy_specs": spec,
         }
-        # Copy remaining category-specific metadata
-        for k, v in spec.items():
-            if k not in ("name", "category", "price"):
-                doc[k] = v
+
+        if cat == "processor":
+            doc["socket"] = spec.get("socket")
+            doc["core_count"] = spec.get("cores")
+            doc["cores"] = spec.get("cores")
+            doc["threads"] = spec.get("threads")
+            doc["tdp"] = spec.get("tdp")
+            doc["ram_type"] = spec.get("ramType")
+            doc["benchmark"] = spec.get("benchmark")
+            doc["best_for"] = spec.get("bestFor")
+
+        elif cat == "motherboard":
+            doc["socket"] = spec.get("socket")
+            doc["ram_type"] = spec.get("ramType")
+            ff = spec.get("formFactor", "")
+            doc["form_factor"] = "Micro ATX" if ff.lower() in ("matx", "micro atx", "microatx") else ff
+            doc["best_for"] = spec.get("bestFor")
+            if "features" in spec:
+                doc["features"] = spec["features"]
+
+        elif cat == "gpu":
+            vram_str = spec.get("vram", "")
+            vram_match = re.search(r"(\d+)", vram_str)
+            doc["memory"] = float(vram_match.group(1)) if vram_match else None
+            doc["vram"] = vram_str
+            doc["tdp"] = spec.get("tdp")
+            doc["benchmark"] = spec.get("benchmark")
+            doc["best_for"] = spec.get("bestFor")
+            lengths = {"g1": 192, "g2": 224, "g3": 300, "g4": 282}
+            doc["length"] = lengths.get(key, 250)
+            chipsets = {
+                "g1": "GeForce RTX 4060",
+                "g2": "GeForce RTX 3060",
+                "g3": "GeForce RTX 5080",
+                "g4": "GeForce RTX 5070 Ti",
+            }
+            doc["chipset"] = chipsets.get(key, spec.get("name"))
+
+        elif cat == "ram":
+            doc["ram_type"] = spec.get("ramType")
+            doc["speed_mhz"] = 3200
+            cap_str = spec.get("capacity", "")
+            cap_match = re.search(r"(\d+)", cap_str)
+            doc["capacity_gb"] = int(cap_match.group(1)) if cap_match else 16
+            doc["speed"] = spec.get("speed")
+            doc["capacity"] = cap_str
+            doc["best_for"] = spec.get("bestFor")
+
+        elif cat == "ps":
+            doc["type"] = "SSD"
+            cap_str = spec.get("capacity", "")
+            cap_match = re.search(r"(\d+)", cap_str)
+            doc["capacity"] = int(cap_match.group(1)) if cap_match else 500
+            doc["form_factor"] = "M.2-2280"
+            doc["interface"] = "PCIe 3.0 x4"
+            doc["benchmark"] = spec.get("benchmark")
+            doc["best_for"] = spec.get("bestFor")
+
+        elif cat == "ss":
+            doc["type"] = "HDD"
+            doc["capacity"] = 1000
+            doc["form_factor"] = "3.5"
+            doc["interface"] = "SATA 6.0 Gb/s"
+            spd = spec.get("speed", "")
+            rpm_match = re.search(r"(\d+)", spd)
+            doc["rpm"] = int(rpm_match.group(1)) if rpm_match else 7200
+            doc["best_for"] = spec.get("bestFor")
+
+        elif cat == "psu":
+            doc["type"] = "ATX"
+            doc["wattage"] = int(spec.get("wattage", 550))
+            doc["efficiency"] = spec.get("rating")
+            doc["best_for"] = spec.get("bestFor")
+
+        elif cat == "cabinet":
+            ff = spec.get("formFactor", "")
+            is_matx = ff.lower() in ("matx", "micro atx", "microatx")
+            doc["type"] = "MicroATX Mini Tower" if is_matx else "ATX Mid Tower"
+            doc["form_factor"] = "Micro ATX" if is_matx else "ATX"
+            doc["color"] = spec.get("color")
+            doc["best_for"] = spec.get("bestFor")
+
+        elif cat == "cooling":
+            doc["type"] = "AIO"
+            doc["size"] = 240
+            doc["color"] = "White" if "White" in spec.get("name", "") else "Black"
+            doc["best_for"] = spec.get("bestFor")
+
         seed_docs.append(doc)
     return seed_docs
 
@@ -103,8 +201,6 @@ def load_cpus() -> list[dict]:
         name = c.get("name", "")
         arch = c.get("microarchitecture") or ""
 
-        # Derive socket: Ryzen 3000-5000 -> AM4, Ryzen 7000-9000 -> AM5,
-        # Intel 12th-14th -> LGA1700, Core Ultra (Arrow Lake) -> LGA1851
         socket = None
         if re.search(r"Ryzen \d\s+(3\d{3}|4\d{3}|5\d{3})", name):
             socket = "AM4"
@@ -153,8 +249,6 @@ def load_motherboards() -> list[dict]:
         socket = m.get("socket")
         name = m.get("name", "")
 
-        # Derive RAM type: AM5 & LGA1851 -> DDR5, AM4 -> DDR4
-        # LGA1700 boards require DDR4 / D4 in name, or ASRock H610M-HDV/M.2+ D5 for DDR5
         ram_type = None
         if socket == "AM4":
             ram_type = "DDR4"
@@ -163,7 +257,7 @@ def load_motherboards() -> list[dict]:
         elif socket == "LGA1700":
             if re.search(r"\b(ddr4|d4)\b", name, re.IGNORECASE):
                 ram_type = "DDR4"
-            elif "H610M-HDV/M.2+ D5" in name:
+            elif re.search(r"\b(ddr5|d5)\b", name, re.IGNORECASE):
                 ram_type = "DDR5"
 
         if not ram_type:
@@ -203,7 +297,6 @@ def load_gpus(cap_per_chipset: int = 5) -> list[dict]:
         if not price or price <= 0 or not length or length <= 0:
             continue
 
-        # RTX 20-50, GTX 16, RX 6000/7000/9000
         is_recent = bool(
             re.search(r"GeForce (RTX [2345]0\d{2}|GTX 16\d{2})", chipset)
             or re.search(r"Radeon RX [679]\d{3}", chipset)
@@ -402,10 +495,8 @@ def load_storage(cap_ssd: int = 30, cap_hdd: int = 25) -> list[dict]:
         cap = d.get("capacity") or 0
         form_factor = d.get("form_factor")
 
-        # Primary Storage: SSDs >= 250 GB
         if dtype == "SSD" and cap >= 250:
             ssds_by_cap[cap].append(d)
-        # Secondary Storage: 3.5" HDDs
         elif form_factor in (3.5, "3.5"):
             hdds_by_cap[cap].append(d)
 
@@ -525,7 +616,7 @@ def ingest():
 
     dataset_parts = cpus + mbs + gpus + rams + psus + cases + storage + coolers
 
-    # Deduplicate dataset parts by _id (if any duplicate rows in raw scrape)
+    # Deduplicate dataset parts by _id (if any duplicate identity in raw scrape)
     unique_dataset = {}
     for d in dataset_parts:
         if d["_id"] not in unique_dataset:
@@ -568,7 +659,15 @@ def ingest():
     print(f"  • Upserted Count : {len(result.upserted_ids)}")
     print(f"  • Inserted Count : {result.inserted_count}")
 
-    # 5. Verify Database State
+    # 5. Delete stale dataset documents not present in current ingest
+    current_dataset_ids = [d["_id"] for d in dataset_parts]
+    delete_result = collection.delete_many(
+        {"source": "pcpartpicker", "_id": {"$nin": current_dataset_ids}}
+    )
+    if delete_result.deleted_count > 0:
+        print(f"  • Deleted Stale  : {delete_result.deleted_count}")
+
+    # 6. Verify Database State
     total_in_db = collection.count_documents({})
     seed_in_db = collection.count_documents({"source": "seed24"})
     dataset_in_db = collection.count_documents({"source": "pcpartpicker"})
@@ -584,6 +683,7 @@ def ingest():
         "seed_count": seed_in_db,
         "upserted_count": len(result.upserted_ids),
         "matched_count": result.matched_count,
+        "deleted_count": delete_result.deleted_count,
     }
 
 

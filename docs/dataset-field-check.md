@@ -154,10 +154,16 @@ The raw dataset is missing several critical hardware compatibility attributes re
    - `video-card.json` contains chipset, memory, and length, but power consumption is omitted.
    - *Strategy:* Use default TDP tables by chipset family on Day 7.
 
-4. **Case Clearance & Cooler Height:**
-   - GPU maximum length clearance and cooler height clearance are sparsely populated across cases.
-   - *Strategy:* Curate standard clearance thresholds on Day 7.
+4. **Case Clearance & Cooler Height (Complete Absence):**
+   - In `case.json`, fields for maximum GPU length clearance (`max_video_card_length`) and CPU cooler height clearance (`cooler_clearance`) do not exist at all (0% populated in schema).
+   - In `cpu-cooler.json`, air cooler physical height (in mm) does not exist at all (0% populated in schema; only radiator `size` is given for liquid coolers).
+   - *Strategy:* These cannot be derived from dataset text. They must be curated by hand on Day 7 using manufacturer specification sheets for the selected cases and coolers.
 
 5. **Stock Availability:**
    - Scraped PCPartPicker data has no inventory status.
    - *Strategy:* Deterministically simulate ~92% in-stock based on a hash of the part ID, clearly marked `in_stock: true/false` and `stock_simulated: true`.
+
+6. **Form Factor Edge Cases for Day 7 Fit Rules:**
+   - **Motherboards:** While the vast majority are ATX (330) and Micro ATX (227), the dataset includes **16 EATX** boards (requiring Full Tower or EATX-capable mid-towers) and **1 Mini DTX** board (fits ITX / mATX enclosures).
+   - **Cases:** Beyond standard towers (Mid Tower: 656, Mini Tower: 112, Full Tower: 90), the dataset includes **19 HTPC cases** and **1 ATX Desktop** case, which have non-standard low-profile GPU and cooler height limits.
+   - *Strategy:* Day 7 compatibility checker rules must explicitly map and test compatibility matrices for these form factors.

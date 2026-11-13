@@ -150,7 +150,7 @@ To re-run from scratch, move the old `eval/results.jsonl` into `eval/archive/` f
 - [x] Baseline of the current system (this README)
 - [x] One setting to switch between Gemini and a local Ollama model
 - [x] Validated schemas for every agent output, with retries
-- [ ] A catalogue of about 3,000 real parts (instead of 24)
+- [x] A catalogue of about 3,000 real parts (instead of 24)
 - [ ] Code-based compatibility checker as the decision-maker; the AI only proposes and explains
 - [ ] Agent tools: `search_parts`, `check_compatibility`, `price_total`
 - [ ] Hybrid keyword + vector search with filters and a reranker
@@ -158,6 +158,9 @@ To re-run from scratch, move the old `eval/results.jsonl` into `eval/archive/` f
 - [ ] Approval step before add-to-cart
 - [ ] Tracing with Langfuse
 - [ ] Before/after results table, architecture diagram and demo video
+
+> [!NOTE]
+> **Catalogue Coverage Limit:** Only one LGA1700 DDR5 board qualifies (`ASRock H610M-HDV/M.2+ D5`, as most LGA1700 board names in the raw dataset omit "DDR5" explicitly). Consequently, Intel DDR5 builds will mostly draw from Core Ultra (LGA1851), while 12th–14th gen Intel builds will primarily pair with DDR4.
 
 ## Upgraded Agent Service Progress
 

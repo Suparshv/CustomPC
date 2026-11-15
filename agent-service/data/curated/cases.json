@@ -100,5 +100,47 @@
     "max_gpu_length_mm": 350,
     "max_cooler_height_mm": 155,
     "source_url": "https://cougargaming.com/products/cases/mx330/"
+  },
+  "cab_1544d3fda1bc": {
+    "name": "Cooler Master MasterBox Q300L",
+    "max_gpu_length_mm": 360,
+    "max_cooler_height_mm": 159,
+    "source_url": "https://www.coolermaster.com/en-global/products/masterbox-q300l/"
+  },
+  "cab_b2cd26e40aa4": {
+    "name": "Thermaltake Versa H18",
+    "max_gpu_length_mm": 350,
+    "max_cooler_height_mm": 155,
+    "source_url": "https://www.thermaltake.com/versa-h18.html"
+  },
+  "cab_fd93dbcfc3b0": {
+    "name": "Cooler Master Q300L V2",
+    "max_gpu_length_mm": 360,
+    "max_cooler_height_mm": 159,
+    "source_url": "https://www.coolermaster.com/en-global/products/masterbox-q300l-v2/"
+  },
+  "cab_026bd8a7f03f": {
+    "name": "Gigabyte C301 GLASS",
+    "max_gpu_length_mm": 400,
+    "max_cooler_height_mm": 170,
+    "source_url": "https://www.gigabyte.com/PC-Case/GB-C301G/sp#sp"
+  },
+  "cab_ed59bf05f1c9": {
+    "name": "be quiet! Shadow Base 800 DX",
+    "max_gpu_length_mm": 430,
+    "max_cooler_height_mm": 180,
+    "source_url": "https://www.bequiet.com/en/case/4470"
+  },
+  "cab_230f3bc4c5ee": {
+    "name": "be quiet! Light Base 600 DX",
+    "max_gpu_length_mm": 400,
+    "max_cooler_height_mm": 170,
+    "source_url": "https://www.bequiet.com/en/case/5256"
+  },
+  "cab_4c58128c097e": {
+    "name": "Antec C5 ARGB",
+    "max_gpu_length_mm": 410,
+    "max_cooler_height_mm": 160,
+    "source_url": "https://www.antec.com/product/case/c5-argb"
   }
 }

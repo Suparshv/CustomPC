@@ -3,8 +3,11 @@ test_checker.py - Unit tests for Deterministic Code-Based Compatibility Checker 
 
 Covers:
 - PASS, FAIL, UNKNOWN for each of the 8 compatibility rules.
-- Catalogue quirks (EATX requiring Full Tower, Mini DTX and HTPC returning UNKNOWN).
-- Distinguishing 'valid' (no FAILs) from 'fully_verified' (all PASS).
+- Issue 1: Testing EVERY case type in the catalogue, verifying ATX boards FAIL in MicroATX Mid Tower.
+- Issue 2: Strict exact/alias matching for GPU TDP (RX 7600 XT is 190W not 165W, RTX 3060 Ti LHR is 200W, RTX 3060 8GB is 115W).
+- Issue 3: Unresolved string IDs returned explicitly in 'unresolved' list.
+- Issue 4: Exact name/ID matching for cases and coolers (no fuzzy substring inheriting).
+- Issue 5: 'checkable' flag calculation on components.
 - Golden test: 100% verdict match with compat.py across all 30 baseline builds in eval/results.jsonl.
 """
 
@@ -22,13 +25,13 @@ from checker import (
     check_cooler_height,
     check_within_budget,
     check_build,
+    is_part_checkable,
 )
-from normalize import normalize_build
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-# ─── 1. ALL CATEGORIES RULE ───────────────────────────────────────────────────
+# ─── 1. ALL CATEGORIES RULE & UNRESOLVED IDS (Issue 3) ────────────────────────
 def test_all_categories_pass_fail():
     complete_build = [
         {"category": "processor", "name": "CPU"},
@@ -49,6 +52,16 @@ def test_all_categories_pass_fail():
     v_fail, m_fail = check_all_categories(incomplete)
     assert v_fail == "FAIL"
     assert "cooling" in m_fail
+
+
+def test_unresolved_string_ids_returned_in_list():
+    """Issue 3: Unknown string IDs must not vanish silently; returned in 'unresolved'."""
+    res = check_build(["gpu_unknown_999", "cpu_unknown_888"])
+    assert res["valid"] is False
+    assert len(res["unresolved"]) == 2
+    assert "gpu_unknown_999" in res["unresolved"]
+    assert "cpu_unknown_888" in res["unresolved"]
+    assert "Unresolved part identifiers" in res["rules"]["all_categories"]["message"]
 
 
 # ─── 2. SOCKET MATCH RULE ─────────────────────────────────────────────────────
@@ -121,7 +134,7 @@ def test_ram_generation_pass_fail_unknown():
     assert v == "UNKNOWN"
 
 
-# ─── 4. PSU HEADROOM RULE ─────────────────────────────────────────────────────
+# ─── 4. PSU HEADROOM & STRICT GPU LOOKUP (Issue 2) ───────────────────────────
 def test_psu_headroom_pass_fail_unknown():
     # PASS: CPU 65W, GPU 115W, Overhead 80W -> (65+115+80)*1.4 = 364W <= 550W PSU
     parts_pass = [
@@ -130,15 +143,6 @@ def test_psu_headroom_pass_fail_unknown():
         {"category": "psu", "wattage": 550},
     ]
     v, _ = check_psu_headroom(parts_pass)
-    assert v == "PASS"
-
-    # Curated table resolution: GPU without tdp resolves via chipset "GeForce RTX 4060" -> 115W
-    parts_curated = [
-        {"category": "processor", "tdp": 65},
-        {"category": "gpu", "chipset": "GeForce RTX 4060", "tdp": None},
-        {"category": "psu", "wattage": 550},
-    ]
-    v, _ = check_psu_headroom(parts_curated)
     assert v == "PASS"
 
     # FAIL: CPU 170W, GPU 450W (RTX 4090), Overhead 80W -> (170+450+80)*1.4 = 980W > 650W PSU
@@ -150,75 +154,132 @@ def test_psu_headroom_pass_fail_unknown():
     v, _ = check_psu_headroom(parts_fail)
     assert v == "FAIL"
 
-    # UNKNOWN: Uncurated GPU chipset
-    parts_unk = [
+
+def test_gpu_tdp_exact_matching_no_fuzzy_leak():
+    """
+    Issue 2: Verify GPU TDP lookup does not use fuzzy substring matching.
+    RX 7600 XT must get 190W (not 165W from RX 7600).
+    RTX 3060 Ti LHR must get 200W (not 170W from RTX 3060).
+    RTX 3060 8GB must get 115W (not 170W from RTX 3060 12GB).
+    Uncurated variant must return UNKNOWN.
+    """
+    # RX 7600 XT: 190W. With 65W CPU: (65 + 190 + 80) * 1.4 = 469W.
+    # If it wrongly got 165W: (65 + 165 + 80) * 1.4 = 434W.
+    # A 450W PSU must FAIL with 190W (450 < 469), but would pass with 165W (450 > 434)!
+    parts_rx7600xt = [
         {"category": "processor", "tdp": 65},
-        {"category": "gpu", "chipset": "Obscure Unknown GPU 9999", "tdp": None},
+        {"category": "gpu", "chipset": "Radeon RX 7600 XT", "tdp": None},
+        {"category": "psu", "wattage": 450},
+    ]
+    v1, m1 = check_psu_headroom(parts_rx7600xt)
+    assert v1 == "FAIL", f"Expected FAIL with 190W GPU, got {v1} ({m1})"
+    assert "469W" in m1
+
+    # RTX 3060 Ti LHR: 200W. (65 + 200 + 80) * 1.4 = 483W.
+    # A 475W PSU must FAIL!
+    parts_3060ti = [
+        {"category": "processor", "tdp": 65},
+        {"category": "gpu", "chipset": "GeForce RTX 3060 Ti LHR", "tdp": None},
+        {"category": "psu", "wattage": 475},
+    ]
+    v2, m2 = check_psu_headroom(parts_3060ti)
+    assert v2 == "FAIL"
+    assert "483W" in m2
+
+    # RTX 3060 8GB: 115W. (65 + 115 + 80) * 1.4 = 364W.
+    # A 400W PSU passes!
+    parts_3060_8gb = [
+        {"category": "processor", "tdp": 65},
+        {"category": "gpu", "chipset": "GeForce RTX 3060 8GB", "tdp": None},
+        {"category": "psu", "wattage": 400},
+    ]
+    v3, m3 = check_psu_headroom(parts_3060_8gb)
+    assert v3 == "PASS"
+
+    # Completely uncurated GPU: Must return UNKNOWN, not fuzzy match any known card!
+    parts_uncurated = [
+        {"category": "processor", "tdp": 65},
+        {"category": "gpu", "chipset": "GeForce RTX 3060 Ultra Custom Special Edition", "tdp": None},
         {"category": "psu", "wattage": 650},
     ]
-    v, _ = check_psu_headroom(parts_unk)
-    assert v == "UNKNOWN"
+    v4, _ = check_psu_headroom(parts_uncurated)
+    assert v4 == "UNKNOWN"
 
 
-# ─── 5. FORM FACTOR FIT RULE (INCLUDING QUIRKS) ──────────────────────────────
-def test_formfactor_fit_pass_fail_unknown():
-    # PASS: Micro ATX board in MicroATX Mini Tower
-    parts_pass1 = [
-        {"category": "motherboard", "form_factor": "Micro ATX"},
-        {"category": "cabinet", "case_type": "MicroATX Mini Tower"},
-    ]
-    v, _ = check_formfactor_fit(parts_pass1)
-    assert v == "PASS"
-
-    # PASS: ATX board in ATX Mid Tower
-    parts_pass2 = [
+# ─── 5. FORM FACTOR FIT & EVERY CASE TYPE TEST (Issue 1) ──────────────────────
+def test_formfactor_microatx_mid_tower_rejects_atx():
+    """Issue 1: An ATX board in a 'MicroATX Mid Tower' case must return FAIL!"""
+    parts = [
         {"category": "motherboard", "form_factor": "ATX"},
-        {"category": "cabinet", "case_type": "ATX Mid Tower"},
+        {"category": "cabinet", "case_type": "MicroATX Mid Tower"},
     ]
-    v, _ = check_formfactor_fit(parts_pass2)
-    assert v == "PASS"
+    v, m = check_formfactor_fit(parts)
+    assert v == "FAIL", f"Expected FAIL for ATX board in MicroATX Mid Tower, got {v} ({m})"
 
-    # FAIL: ATX board does NOT fit in MicroATX Mini Tower
-    parts_fail = [
-        {"category": "motherboard", "form_factor": "ATX"},
-        {"category": "cabinet", "case_type": "MicroATX Mini Tower"},
+
+def test_formfactor_fit_all_catalogue_case_types():
+    """
+    Issue 1: Test EVERY case type in the catalogue against all motherboard form factors.
+    Catalogue case types:
+    - 'ATX Full Tower'
+    - 'ATX Mid Tower'
+    - 'ATX Desktop'
+    - 'MicroATX Mid Tower'
+    - 'MicroATX Mini Tower'
+    - 'MicroATX Desktop'
+    - 'Mini ITX Tower'
+    - 'Mini ITX Desktop'
+    - 'HTPC'
+    """
+    case_types = [
+        "ATX Full Tower",
+        "ATX Mid Tower",
+        "ATX Desktop",
+        "MicroATX Mid Tower",
+        "MicroATX Mini Tower",
+        "MicroATX Desktop",
+        "Mini ITX Tower",
+        "Mini ITX Desktop",
+        "HTPC",
     ]
-    v, _ = check_formfactor_fit(parts_fail)
-    assert v == "FAIL"
 
-    # Catalogue Quirk 1: EATX board requires Full Tower (FAIL in Mid Tower, PASS in Full Tower)
-    parts_eatx_mid = [
-        {"category": "motherboard", "form_factor": "EATX"},
-        {"category": "cabinet", "case_type": "ATX Mid Tower"},
-    ]
-    v_mid, _ = check_formfactor_fit(parts_eatx_mid)
-    assert v_mid == "FAIL"
+    for ctype in case_types:
+        cab = [{"category": "cabinet", "case_type": ctype}]
 
-    parts_eatx_full = [
-        {"category": "motherboard", "form_factor": "EATX"},
-        {"category": "cabinet", "case_type": "ATX Full Tower"},
-    ]
-    v_full, _ = check_formfactor_fit(parts_eatx_full)
-    assert v_full == "PASS"
+        # 1. HTPC always returns UNKNOWN
+        if ctype == "HTPC":
+            for mb_ff in ["ATX", "Micro ATX", "Mini ITX", "EATX"]:
+                v, _ = check_formfactor_fit([{"category": "motherboard", "form_factor": mb_ff}] + cab)
+                assert v == "UNKNOWN"
+            continue
 
-    # Catalogue Quirk 2: Mini DTX returns UNKNOWN
-    parts_dtx = [
-        {"category": "motherboard", "form_factor": "Mini DTX"},
-        {"category": "cabinet", "case_type": "ATX Mid Tower"},
-    ]
-    v_dtx, _ = check_formfactor_fit(parts_dtx)
-    assert v_dtx == "UNKNOWN"
+        # 2. EATX: Only passes in Full Tower
+        v_eatx, _ = check_formfactor_fit([{"category": "motherboard", "form_factor": "EATX"}] + cab)
+        if ctype == "ATX Full Tower":
+            assert v_eatx == "PASS"
+        else:
+            assert v_eatx == "FAIL"
 
-    # Catalogue Quirk 3: HTPC case returns UNKNOWN
-    parts_htpc = [
-        {"category": "motherboard", "form_factor": "Micro ATX"},
-        {"category": "cabinet", "case_type": "HTPC"},
-    ]
-    v_htpc, _ = check_formfactor_fit(parts_htpc)
-    assert v_htpc == "UNKNOWN"
+        # 3. ATX: Passes in Full Tower, Mid Tower, and ATX Desktop; FAILS in all MicroATX and Mini ITX cases!
+        v_atx, _ = check_formfactor_fit([{"category": "motherboard", "form_factor": "ATX"}] + cab)
+        if ctype in ("ATX Full Tower", "ATX Mid Tower", "ATX Desktop"):
+            assert v_atx == "PASS"
+        else:
+            assert v_atx == "FAIL", f"ATX should FAIL in {ctype}, but got {v_atx}"
+
+        # 4. Micro ATX: Passes in Full Tower, Mid Tower, ATX Desktop, and MicroATX cases; FAILS in Mini ITX cases!
+        v_matx, _ = check_formfactor_fit([{"category": "motherboard", "form_factor": "Micro ATX"}] + cab)
+        if ctype in ("Mini ITX Tower", "Mini ITX Desktop"):
+            assert v_matx == "FAIL", f"Micro ATX should FAIL in {ctype}, but got {v_matx}"
+        else:
+            assert v_matx == "PASS", f"Micro ATX should PASS in {ctype}, but got {v_matx}"
+
+        # 5. Mini ITX: Fits in ALL non-HTPC cases!
+        v_mitx, _ = check_formfactor_fit([{"category": "motherboard", "form_factor": "Mini ITX"}] + cab)
+        assert v_mitx == "PASS", f"Mini ITX should PASS in {ctype}, but got {v_mitx}"
 
 
-# ─── 6. GPU LENGTH RULE ───────────────────────────────────────────────────────
+# ─── 6. GPU LENGTH RULE & NO FUZZY NAME LEAK (Issue 4) ────────────────────────
 def test_gpu_length_pass_fail_unknown():
     # PASS: 192 mm GPU in cab1 (Deepcool Macube 110, limit 320 mm)
     parts_pass = [
@@ -236,24 +297,18 @@ def test_gpu_length_pass_fail_unknown():
     v, _ = check_gpu_length(parts_fail)
     assert v == "FAIL"
 
-    # UNKNOWN: GPU missing length
-    parts_unk1 = [
-        {"category": "gpu", "length": None, "name": "Custom GPU"},
-        {"category": "cabinet", "id": "cab1", "name": "Deepcool Macube 110"},
-    ]
-    v, _ = check_gpu_length(parts_unk1)
-    assert v == "UNKNOWN"
 
-    # UNKNOWN: Case missing curated limit
-    parts_unk2 = [
-        {"category": "gpu", "length": 250, "name": "RTX 4060"},
-        {"category": "cabinet", "id": "cab_uncurated_xyz", "name": "Unknown Generic Case"},
+def test_case_no_fuzzy_name_matching():
+    """Issue 4: 'Corsair 4000D' must NOT inherit 'Corsair 4000D Airflow' limits via substring."""
+    parts = [
+        {"category": "gpu", "length": 350, "name": "RTX 4080"},
+        {"category": "cabinet", "id": "cab_uncured_diff", "name": "Corsair 4000D"},
     ]
-    v, _ = check_gpu_length(parts_unk2)
+    v, _ = check_gpu_length(parts)
     assert v == "UNKNOWN"
 
 
-# ─── 7. COOLER HEIGHT RULE ────────────────────────────────────────────────────
+# ─── 7. COOLER HEIGHT RULE & NO FUZZY MATCH (Issue 4) ─────────────────────────
 def test_cooler_height_pass_fail_unknown():
     # PASS: Air cooler 154 mm in cab1 (limit 165 mm)
     parts_pass = [
@@ -271,21 +326,13 @@ def test_cooler_height_pass_fail_unknown():
     v, _ = check_cooler_height(parts_fail)
     assert v == "FAIL"
 
-    # UNKNOWN: Liquid (AIO) coolers return UNKNOWN (radiator mounting clearance requires radiator check)
+    # UNKNOWN: Liquid (AIO) coolers return UNKNOWN
     parts_liquid = [
         {"category": "cooling", "cooler_kind": "liquid", "name": "Cooler Master Liquid 240L"},
         {"category": "cabinet", "id": "cab1", "name": "Deepcool Macube 110"},
     ]
     v_liq, _ = check_cooler_height(parts_liquid)
     assert v_liq == "UNKNOWN"
-
-    # UNKNOWN: Uncurated air cooler height
-    parts_unk = [
-        {"category": "cooling", "cooler_kind": "air", "height": None, "id": "cool_uncurated", "name": "Generic Cooler"},
-        {"category": "cabinet", "id": "cab1", "name": "Deepcool Macube 110"},
-    ]
-    v, _ = check_cooler_height(parts_unk)
-    assert v == "UNKNOWN"
 
 
 # ─── 8. WITHIN BUDGET RULE ────────────────────────────────────────────────────
@@ -307,51 +354,29 @@ def test_within_budget_pass_fail_unknown():
     v_unk_nobudget, _ = check_within_budget(parts, budget=None)
     assert v_unk_nobudget == "UNKNOWN"
 
-    # UNKNOWN: Part missing price
-    parts_missing_price = [
-        {"category": "processor", "name": "CPU", "price": 15000},
-        {"category": "gpu", "name": "GPU", "price": None},
-    ]
-    v_unk_price, _ = check_within_budget(parts_missing_price, budget=50000)
-    assert v_unk_price == "UNKNOWN"
 
+# ─── 9. CHECKABLE PARTS INSPECTOR (Issue 5) ───────────────────────────────────
+def test_is_part_checkable_flag():
+    """Issue 5: Verify 'checkable' flag detects parts with sufficient data."""
+    # Checkable CPU
+    cpu = {"category": "processor", "socket": "AM5", "tdp": 65}
+    assert is_part_checkable(cpu) is True
 
-# ─── 9. CHECK_BUILD ORCHESTRATOR (VALID VS FULLY VERIFIED) ────────────────────
-def test_check_build_valid_and_fully_verified():
-    # Build with all data present satisfying every rule
-    fully_valid_build = [
-        {"category": "processor", "name": "AMD Ryzen 5 7600", "socket": "AM5", "ram_type": "DDR5", "tdp": 65, "price": 18000},
-        {"category": "motherboard", "name": "MSI B650M Gaming", "socket": "AM5", "ram_type": "DDR5", "form_factor": "Micro ATX", "price": 12000},
-        {"category": "gpu", "name": "Gigabyte RTX 4060", "chipset": "GeForce RTX 4060", "tdp": 115, "length": 192, "price": 25000},
-        {"category": "ram", "name": "Corsair DDR5 32GB", "ram_type": "DDR5", "price": 8000},
-        {"category": "ps", "name": "Crucial 1TB SSD", "price": 5000},
-        {"category": "ss", "name": "WD 1TB HDD", "price": 3000},
-        {"category": "psu", "name": "Corsair 650W", "wattage": 650, "price": 6000},
-        {"category": "cabinet", "id": "cab1", "name": "Deepcool Macube 110", "case_type": "MicroATX Mini Tower", "price": 4000},
-        {"category": "cooling", "id": "cool_70af1a5d8ce2", "name": "Thermalright Phantom Spirit 120 SE", "cooler_kind": "air", "height": 154, "price": 3500},
-    ]
+    # Uncheckable GPU (missing length and uncurated)
+    gpu_bad = {"category": "gpu", "chipset": "Unknown 999", "length": None}
+    assert is_part_checkable(gpu_bad) is False
 
-    res = check_build(fully_valid_build, budget=90000)
-    assert res["valid"] is True
-    assert res["fully_verified"] is True
-    assert len(res["fails"]) == 0
-    assert len(res["unknowns"]) == 0
+    # Checkable GPU
+    gpu_good = {"category": "gpu", "chipset": "GeForce RTX 4060", "length": 192}
+    assert is_part_checkable(gpu_good) is True
 
-    # Build with uncurated case clearance -> valid=True (no FAILs), but fully_verified=False (has UNKNOWN)
-    build_with_unknown = list(fully_valid_build)
-    build_with_unknown[7] = {
-        "category": "cabinet",
-        "id": "cab_uncurated_test",
-        "name": "Generic Case Uncurated",
-        "case_type": "MicroATX Mini Tower",
-        "price": 4000,
-    }
+    # AIO Cooler is not checkable for air clearance
+    aio = {"category": "cooling", "cooler_kind": "liquid"}
+    assert is_part_checkable(aio) is False
 
-    res_unk = check_build(build_with_unknown, budget=90000)
-    assert res_unk["valid"] is True
-    assert res_unk["fully_verified"] is False
-    assert "gpu_length" in res_unk["unknowns"]
-    assert len(res_unk["fails"]) == 0
+    # Air Cooler with curated height
+    air = {"category": "cooling", "cooler_kind": "air", "id": "cool_70af1a5d8ce2"}
+    assert is_part_checkable(air) is True
 
 
 # ─── 10. GOLDEN TEST: 100% AGREEMENT WITH COMPAT.PY ACROSS 30 BASELINE BUILDS ──

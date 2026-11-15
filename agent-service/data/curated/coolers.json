@@ -58,5 +58,35 @@
     "name": "ARCTIC Freezer i13 X",
     "height_mm": 137,
     "source_url": "https://www.arctic.de/en/Freezer-i13-X/ACFRE00078A"
+  },
+  "cool_ff50a25a7b0a": {
+    "name": "Scythe Mugen 6",
+    "height_mm": 154.5,
+    "source_url": "https://www.scytheus.com/mugen-6"
+  },
+  "cool_6a7e0449c8b2": {
+    "name": "Noctua NH-L9i-17xx",
+    "height_mm": 37,
+    "source_url": "https://noctua.at/en/nh-l9i-17xx"
+  },
+  "cool_8250dfdd451a": {
+    "name": "Noctua NH-U12S redux",
+    "height_mm": 158,
+    "source_url": "https://noctua.at/en/nh-u12s-redux"
+  },
+  "cool_13a68bfd48be": {
+    "name": "Thermaltake UX200 SE ARGB",
+    "height_mm": 156.2,
+    "source_url": "https://www.thermaltake.com/ux200-se-argb-lighting-cpu-cooler.html"
+  },
+  "cool_922bf3172e39": {
+    "name": "Thermaltake TOUGHAIR 510",
+    "height_mm": 159.5,
+    "source_url": "https://www.thermaltake.com/toughair-510-cpu-cooler.html"
+  },
+  "cool_99bf839402ca": {
+    "name": "Silverstone Krypton KR02",
+    "height_mm": 125,
+    "source_url": "https://www.silverstonetek.com/en/product/info/coolers/KR02/"
   }
 }

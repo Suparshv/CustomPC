@@ -47,6 +47,10 @@
     "tdp_w": 400,
     "source_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/50-series/rtx-5080/"
   },
+  "GeForce RTX 5090": {
+    "tdp_w": 600,
+    "source_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/50-series/rtx-5090/"
+  },
   "GeForce RTX 3050 6GB": {
     "tdp_w": 70,
     "source_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3050/"
@@ -63,17 +67,117 @@
     "tdp_w": 170,
     "source_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3060-3060ti/"
   },
+  "GeForce RTX 3060 8GB": {
+    "tdp_w": 115,
+    "source_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3060-3060ti/"
+  },
   "GeForce RTX 3060 Ti": {
     "tdp_w": 200,
     "source_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3060-3060ti/"
+  },
+  "GeForce RTX 3060 Ti LHR": {
+    "tdp_w": 200,
+    "source_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3060-3060ti/"
+  },
+  "GeForce RTX 3070": {
+    "tdp_w": 220,
+    "source_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3070-3070ti/"
+  },
+  "GeForce RTX 3070 LHR": {
+    "tdp_w": 220,
+    "source_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3070-3070ti/"
+  },
+  "GeForce RTX 3070 Ti": {
+    "tdp_w": 290,
+    "source_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3070-3070ti/"
+  },
+  "GeForce RTX 3080 10GB": {
+    "tdp_w": 320,
+    "source_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3080-3080ti/"
+  },
+  "GeForce RTX 3080 10GB LHR": {
+    "tdp_w": 320,
+    "source_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3080-3080ti/"
+  },
+  "GeForce RTX 3080 12GB LHR": {
+    "tdp_w": 350,
+    "source_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3080-3080ti/"
+  },
+  "GeForce RTX 3080 Ti": {
+    "tdp_w": 350,
+    "source_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3080-3080ti/"
+  },
+  "GeForce RTX 3090": {
+    "tdp_w": 350,
+    "source_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3090-3090ti/"
+  },
+  "GeForce RTX 3090 Ti": {
+    "tdp_w": 450,
+    "source_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3090-3090ti/"
+  },
+  "GeForce GTX 1650 G5": {
+    "tdp_w": 75,
+    "source_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/gtx-1650/"
+  },
+  "GeForce GTX 1650 G6": {
+    "tdp_w": 75,
+    "source_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/gtx-1650/"
+  },
+  "GeForce GTX 1650 SUPER": {
+    "tdp_w": 100,
+    "source_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/gtx-1650-super/"
+  },
+  "GeForce GTX 1660": {
+    "tdp_w": 120,
+    "source_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/gtx-1660/"
   },
   "GeForce GTX 1660 SUPER": {
     "tdp_w": 125,
     "source_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/gtx-1660-super/"
   },
+  "GeForce GTX 1660 Ti": {
+    "tdp_w": 120,
+    "source_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/gtx-1660-ti/"
+  },
+  "Radeon RX 6600": {
+    "tdp_w": 132,
+    "source_url": "https://www.amd.com/en/products/graphics/desktops/radeon-6000-series/amd-radeon-rx-6600.html"
+  },
+  "Radeon RX 6600 XT": {
+    "tdp_w": 160,
+    "source_url": "https://www.amd.com/en/products/graphics/desktops/radeon-6000-series/amd-radeon-rx-6600-xt.html"
+  },
+  "Radeon RX 6650 XT": {
+    "tdp_w": 180,
+    "source_url": "https://www.amd.com/en/products/graphics/desktops/radeon-6000-series/amd-radeon-rx-6650-xt.html"
+  },
+  "Radeon RX 6700 XT": {
+    "tdp_w": 230,
+    "source_url": "https://www.amd.com/en/products/graphics/desktops/radeon-6000-series/amd-radeon-rx-6700-xt.html"
+  },
+  "Radeon RX 6750 XT": {
+    "tdp_w": 250,
+    "source_url": "https://www.amd.com/en/products/graphics/desktops/radeon-6000-series/amd-radeon-rx-6750-xt.html"
+  },
+  "Radeon RX 6800": {
+    "tdp_w": 250,
+    "source_url": "https://www.amd.com/en/products/graphics/desktops/radeon-6000-series/amd-radeon-rx-6800.html"
+  },
+  "Radeon RX 6800 XT": {
+    "tdp_w": 300,
+    "source_url": "https://www.amd.com/en/products/graphics/desktops/radeon-6000-series/amd-radeon-rx-6800-xt.html"
+  },
+  "Radeon RX 6900 XT": {
+    "tdp_w": 300,
+    "source_url": "https://www.amd.com/en/products/graphics/desktops/radeon-6000-series/amd-radeon-rx-6900-xt.html"
+  },
   "Radeon RX 7600": {
     "tdp_w": 165,
     "source_url": "https://www.amd.com/en/products/graphics/desktops/radeon-7000-series/amd-radeon-rx-7600.html"
+  },
+  "Radeon RX 7600 XT": {
+    "tdp_w": 190,
+    "source_url": "https://www.amd.com/en/products/graphics/desktops/radeon-7000-series/amd-radeon-rx-7600-xt.html"
   },
   "Radeon RX 7700 XT": {
     "tdp_w": 245,
@@ -82,6 +186,10 @@
   "Radeon RX 7800 XT": {
     "tdp_w": 263,
     "source_url": "https://www.amd.com/en/products/graphics/desktops/radeon-7000-series/amd-radeon-rx-7800-xt.html"
+  },
+  "Radeon RX 7900 GRE": {
+    "tdp_w": 260,
+    "source_url": "https://www.amd.com/en/products/graphics/desktops/radeon-7000-series/amd-radeon-rx-7900-gre.html"
   },
   "Radeon RX 7900 XT": {
     "tdp_w": 315,

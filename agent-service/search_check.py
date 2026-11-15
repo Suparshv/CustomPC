@@ -136,7 +136,7 @@ def generate_markdown_report(all_outputs: list, total_parts: int):
         "",
         "## 1. Overview & Evaluation Goals",
         "",
-        "The goal of Day 6 is to evaluate pure dense vector retrieval against realistic user build queries. Vector search excels at conceptual matching (e.g. associating 'quiet cooler' with low-noise thermal solutions or 'gold PSU' with high-efficiency power supplies). However, pure dense retrieval possesses known weaknesses with exact hardware SKU codes (such as 'B550', '5600X', or exact memory kit timings).",
+        "The goal of Day 6 is to evaluate pure dense vector retrieval against realistic user build queries. Vector search excels at conceptual matching (e.g. associating 'quiet cooler' with low-noise thermal solutions or 'gold PSU' with high-efficiency power supplies). However, pure dense retrieval possesses observed weaknesses with semantic pull overpowering numerical dimensions (such as 'quiet 120 mm cooler' ranking 240 mm coolers first due to 'Silent' keyword affinity) and subtle generational/capacity drift (such as a 24 GB kit and a DDR4 kit surfacing in top results for 'DDR5 32GB kit').",
         "",
         "These recorded misses establish the explicit baseline to motivate and measure **Day 9's hybrid search (dense vectors + sparse BM25 + Cross-Encoder reranker)**.",
         "",

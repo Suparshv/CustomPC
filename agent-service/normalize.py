@@ -3,20 +3,21 @@ normalize.py - Normalize component specifications across seed and dataset format
 
 Translates varied field names (ramType vs ram_type, mATX vs Micro ATX, etc.)
 and schema variations into a clean, uniform dictionary shape for compatibility checks.
+Tracks unresolvable string IDs in an unresolved list rather than silently dropping them.
 """
 
 import json
 import os
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 # Optional seed specs lookup for resolving string IDs / names in baseline builds
 BASE_DIR = Path(__file__).resolve().parent
 SEED_SPECS_PATH = BASE_DIR.parent / "backend" / "data" / "componentSpecs.json"
 
-_SEED_SPECS_BY_ID = {}
-_SEED_SPECS_BY_NAME = {}
+_SEED_SPECS_BY_ID: Dict[str, Dict[str, Any]] = {}
+_SEED_SPECS_BY_NAME: Dict[str, Dict[str, Any]] = {}
 
 if SEED_SPECS_PATH.exists():
     try:
@@ -119,27 +120,44 @@ def normalize_ram_type(rt: Optional[str], socket: Optional[str] = None) -> Optio
     return None
 
 
-def normalize_part(part: Union[Dict[str, Any], str]) -> Dict[str, Any]:
+def normalize_part(
+    part: Union[Dict[str, Any], str],
+    part_lookup: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
     """
     Normalize any component representation (dict from MongoDB, seed specs, or string identifier)
     into a standardized dictionary format.
+    Unresolved string IDs are flagged with 'unresolved': True.
     """
     raw: Dict[str, Any] = {}
+    is_unresolved = False
+
     if isinstance(part, str):
-        # Resolve string ID or name from seed specs if available
         key = part.strip().lower()
-        found = _SEED_SPECS_BY_ID.get(key) or _SEED_SPECS_BY_NAME.get(key)
+        found = None
+        if part_lookup and part in part_lookup:
+            found = part_lookup[part]
+        elif part_lookup and key in part_lookup:
+            found = part_lookup[key]
+        else:
+            found = _SEED_SPECS_BY_ID.get(key) or _SEED_SPECS_BY_NAME.get(key)
+
         if found:
             raw = dict(found)
         else:
             raw = {"_id": part, "name": part}
+            is_unresolved = True
     elif isinstance(part, dict):
         raw = dict(part)
+        if not raw.get("category"):
+            is_unresolved = True
     else:
-        return {}
+        return {"id": str(part), "name": str(part), "category": None, "unresolved": True, "raw": {}}
 
     # Category
     cat = normalize_category(raw.get("category"))
+    if not cat:
+        is_unresolved = True
 
     # Name and ID
     name = raw.get("name") or raw.get("_id") or "Unknown Part"
@@ -223,18 +241,32 @@ def normalize_part(part: Union[Dict[str, Any], str]) -> Dict[str, Any]:
         "case_type": str(case_type) if case_type else None,
         "cooler_kind": cooler_kind,
         "chipset": str(chipset) if chipset else None,
+        "unresolved": is_unresolved,
         "raw": raw,
     }
 
 
-def normalize_build(build: List[Any]) -> List[Dict[str, Any]]:
-    """Normalize an entire build list of parts."""
+def normalize_build(
+    build: List[Any],
+    part_lookup: Optional[Dict[str, Any]] = None,
+) -> Tuple[List[Dict[str, Any]], List[str]]:
+    """
+    Normalize an entire build list of parts.
+    Returns:
+        (normalized_parts, unresolved_identifiers)
+    """
     normalized = []
+    unresolved = []
+
     for item in build:
-        norm = normalize_part(item)
-        if norm and norm.get("category"):
+        norm = normalize_part(item, part_lookup=part_lookup)
+        if norm.get("unresolved") or not norm.get("category"):
+            identifier = norm.get("id") or norm.get("name") or str(item)
+            unresolved.append(str(identifier))
+        else:
             normalized.append(norm)
-    return normalized
+
+    return normalized, unresolved
 
 
 def get_part_by_category(parts: List[Dict[str, Any]], category: str) -> Optional[Dict[str, Any]]:

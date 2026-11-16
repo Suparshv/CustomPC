@@ -3,16 +3,18 @@ tools.py - Day 8 Deterministic Tools and Agent Tool Registry
 
 Provides three robust, validated tools for the PC building agent:
 1. search_parts: Semantic vector search + strict metadata filtering ($and) via ChromaDB.
-   Prioritizes components with verified physical/electrical specifications (checkable).
+   Prioritizes components with verified physical/electrical specifications (checkable)
+   via a soft boost/tie-break rather than an absolute override.
 2. price_total: Exact arithmetic summation and per-item pricing from MongoDB.
    Accurately handles duplicate parts (e.g. 2x RAM sticks) and reports missing prices.
 3. check_compatibility: Rigorous deterministic physical/electrical validation using checker.py.
 
 All tools validate inputs using Pydantic, return clean structured JSON, never mutate
-the database, and handle errors gracefully with informative messages rather than crashing.
+the database, and handle errors gracefully with sanitized error messages rather than crashing.
 """
 
 import logging
+import re
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import chromadb
@@ -37,6 +39,25 @@ from tool_models import (
 
 logger = logging.getLogger(__name__)
 
+# Mapping from motherboard form factor to compatible cabinet case_type values in the catalogue
+CASE_TYPES_FOR_BOARD_FF: Dict[str, List[str]] = {
+    "Mini ITX": [
+        "ATX Full Tower", "ATX Mid Tower", "ATX Desktop",
+        "MicroATX Mid Tower", "MicroATX Mini Tower", "MicroATX Desktop",
+        "Mini ITX Tower", "Mini ITX Desktop",
+    ],
+    "Micro ATX": [
+        "ATX Full Tower", "ATX Mid Tower", "ATX Desktop",
+        "MicroATX Mid Tower", "MicroATX Mini Tower", "MicroATX Desktop",
+    ],
+    "ATX": [
+        "ATX Full Tower", "ATX Mid Tower", "ATX Desktop",
+    ],
+    "EATX": [
+        "ATX Full Tower",
+    ],
+}
+
 
 # ─── 1. SEARCH_PARTS TOOL ──────────────────────────────────────────────────────
 def build_chroma_where(params: SearchPartsInput) -> Tuple[Optional[Dict[str, Any]], Dict[str, Any]]:
@@ -45,6 +66,8 @@ def build_chroma_where(params: SearchPartsInput) -> Tuple[Optional[Dict[str, Any
     Rules:
     - Single condition: returns the bare condition dict {"category": "processor"}.
     - Multiple conditions: wraps inside {"$and": [...]}.
+    - When category is 'cabinet' and allowed_form_factors is provided, translates
+      the motherboard form factors to valid case_type values with $in.
     - Returns (where_clause, filters_applied_dict).
     """
     conditions: List[Dict[str, Any]] = []
@@ -79,16 +102,35 @@ def build_chroma_where(params: SearchPartsInput) -> Tuple[Optional[Dict[str, Any
             conditions.append({"ram_type": rt})
             filters_applied["ram_type"] = rt
 
-    # 6. Form Factor (Motherboard / Case)
+    # 6. Form Factor (Motherboard vs Cabinet)
     if params.allowed_form_factors:
         clean_ffs = [normalize_form_factor(ff) for ff in params.allowed_form_factors if ff]
         clean_ffs = [f for f in clean_ffs if f]
-        if len(clean_ffs) == 1:
-            conditions.append({"form_factor": clean_ffs[0]})
-            filters_applied["allowed_form_factors"] = clean_ffs
-        elif len(clean_ffs) > 1:
-            conditions.append({"form_factor": {"$in": clean_ffs}})
-            filters_applied["allowed_form_factors"] = clean_ffs
+
+        if cat == "cabinet":
+            allowed_cases = set()
+            for ff in clean_ffs:
+                types = CASE_TYPES_FOR_BOARD_FF.get(ff)
+                if types:
+                    allowed_cases.update(types)
+                else:
+                    allowed_cases.add(ff)
+
+            compat_case_types = sorted(list(allowed_cases))
+            if compat_case_types:
+                if len(compat_case_types) == 1:
+                    conditions.append({"case_type": compat_case_types[0]})
+                else:
+                    conditions.append({"case_type": {"$in": compat_case_types}})
+                filters_applied["compatible_case_types"] = compat_case_types
+        else:
+            # Motherboard form factor filter
+            if len(clean_ffs) == 1:
+                conditions.append({"form_factor": clean_ffs[0]})
+                filters_applied["allowed_form_factors"] = clean_ffs
+            elif len(clean_ffs) > 1:
+                conditions.append({"form_factor": {"$in": clean_ffs}})
+                filters_applied["allowed_form_factors"] = clean_ffs
 
     # 7. Min Wattage (PSU)
     if params.min_wattage is not None:
@@ -145,7 +187,8 @@ def search_parts(
 ) -> Dict[str, Any]:
     """
     Search component catalog using ChromaDB vector similarity and metadata filtering.
-    Prioritizes parts with verified physical/electrical specifications (checkable).
+    Prioritizes parts with verified physical/electrical specifications (checkable)
+    using a tie-break / soft boost rather than an absolute override.
     """
     if collection is None:
         try:
@@ -159,18 +202,34 @@ def search_parts(
                 "total_matching": 0,
                 "filters_applied": {},
                 "cards": [],
-                "message": f"Vector search service unavailable: {str(exc)}",
+                "message": "Vector search service unavailable. Please check Chroma server.",
             }
 
     where, filters_applied = build_chroma_where(params)
-    fetch_k = min(max(params.limit * 4, 16), 40)
-
     keywords_clean = (params.keywords or "").strip()
     candidates: List[Dict[str, Any]] = []
 
     if keywords_clean:
+        try:
+            matched_ids_res = collection.get(where=where, include=[])
+            total_matching = len(matched_ids_res["ids"]) if matched_ids_res and matched_ids_res.get("ids") else 0
+        except Exception as exc:
+            logger.warning("Chroma matching count query failed: %s", exc)
+            total_matching = 0
+
+        if total_matching == 0:
+            return {
+                "count": 0,
+                "total_matching": 0,
+                "filters_applied": filters_applied,
+                "cards": [],
+                "message": _suggest_relaxation(params),
+            }
+
         # Embed query with asymmetric prefix
         query_emb = embeddings.embed_query(keywords_clean)
+        # Fetch sufficient results to rank and sort (up to 5x limit or all matching, max 60)
+        fetch_k = min(total_matching, max(params.limit * 5, 25), 60)
         try:
             results = collection.query(
                 query_embeddings=[query_emb],
@@ -197,14 +256,12 @@ def search_parts(
                 "total_matching": 0,
                 "filters_applied": filters_applied,
                 "cards": [],
-                "message": f"Search query failed: {str(exc)}",
+                "message": "Search query failed. Check query parameters or server status.",
             }
     else:
-        # No keywords: use collection.get(where=...) and sort by price
         try:
             results = collection.get(
                 where=where,
-                limit=fetch_k,
                 include=["documents", "metadatas"],
             )
             if results and results.get("ids"):
@@ -218,6 +275,7 @@ def search_parts(
                         "metadata": meta,
                         "distance": 0.0,
                     })
+            total_matching = len(candidates)
         except Exception as exc:
             logger.error("Chroma get failed: %s", exc)
             return {
@@ -225,10 +283,8 @@ def search_parts(
                 "total_matching": 0,
                 "filters_applied": filters_applied,
                 "cards": [],
-                "message": f"Catalog lookup failed: {str(exc)}",
+                "message": "Catalog lookup failed. Check filter parameters or server status.",
             }
-
-    total_matching = len(candidates)
 
     if total_matching == 0:
         return {
@@ -239,8 +295,7 @@ def search_parts(
             "message": _suggest_relaxation(params),
         }
 
-    # Enrich candidates with checkability & build PartCards
-    # Evaluate checkability using metadata & checker helper
+    # Enrich candidates with checkability & build PartCards (Issue 4: rich card fields)
     cards: List[Dict[str, Any]] = []
     for cand in candidates:
         meta = cand["metadata"]
@@ -250,7 +305,6 @@ def search_parts(
         doc_text = cand.get("document", "")
         name = meta.get("name")
         if not name:
-            # Extract first segment before comma
             name = doc_text.split(",")[0].rstrip(".") if doc_text else pid
 
         part_dict = {
@@ -274,6 +328,42 @@ def search_parts(
             "raw": meta,
         }
 
+        # Radiator size for coolers
+        radiator_size = meta.get("radiator_size") or meta.get("size")
+        if radiator_size is None and "radiator" in doc_text:
+            m_rad = re.search(r"(\d+)\s*mm\s*radiator", doc_text, re.IGNORECASE)
+            if m_rad:
+                radiator_size = int(m_rad.group(1))
+        elif radiator_size is not None:
+            try:
+                radiator_size = int(float(radiator_size))
+            except (ValueError, TypeError):
+                radiator_size = None
+
+        # GPU memory
+        gpu_memory = meta.get("gpu_memory") or meta.get("memory")
+        if gpu_memory is not None:
+            try:
+                gpu_memory = int(float(gpu_memory))
+            except (ValueError, TypeError):
+                gpu_memory = None
+
+        # RAM speed
+        speed_mhz = meta.get("speed_mhz")
+        if speed_mhz is not None:
+            try:
+                speed_mhz = int(float(speed_mhz))
+            except (ValueError, TypeError):
+                speed_mhz = None
+
+        # Storage / RAM capacity
+        capacity_gb = meta.get("capacity_gb") or meta.get("capacity")
+        if capacity_gb is not None:
+            try:
+                capacity_gb = int(float(capacity_gb))
+            except (ValueError, TypeError):
+                capacity_gb = None
+
         # Check if component is checkable
         is_chk = is_part_checkable(part_dict)
 
@@ -285,10 +375,15 @@ def search_parts(
             socket=part_dict.get("socket"),
             ram_type=part_dict.get("ram_type"),
             form_factor=part_dict.get("form_factor"),
+            case_type=part_dict.get("case_type"),
             wattage=part_dict.get("wattage"),
             length_mm=part_dict.get("length"),
             height_mm=part_dict.get("height"),
             cooler_kind=part_dict.get("cooler_kind"),
+            radiator_size=radiator_size,
+            gpu_memory=gpu_memory,
+            speed_mhz=speed_mhz,
+            capacity_gb=capacity_gb,
             in_stock=bool(part_dict.get("in_stock", True)),
             checkable=is_chk,
         ).model_dump()
@@ -296,11 +391,20 @@ def search_parts(
         card["_distance"] = cand.get("distance", 0.0)
         cards.append(card)
 
-    # Sort: checkable=True FIRST, then by distance (if keywords) or price (if no keywords)
     if keywords_clean:
-        cards.sort(key=lambda c: (not c["checkable"], c.get("_distance", 0.0), c.get("price") or 999999))
+        # Distance is cosine distance (lower = closer semantic match).
+        # Checkable parts receive a small 0.05 boost so close matches prefer checkable,
+        # but a strong semantic match (e.g. RX 9060 XT) will never be overtaken by an irrelevant checkable part.
+        def _keyword_sort_key(c: Dict[str, Any]) -> Tuple[float, float]:
+            raw_dist = c.get("_distance", 0.0)
+            boost = 0.05 if c.get("checkable") else 0.0
+            effective_dist = max(0.0, raw_dist - boost)
+            price = c.get("price") or 999999.0
+            return (round(effective_dist, 4), price)
+
+        cards.sort(key=_keyword_sort_key)
     else:
-        cards.sort(key=lambda c: (not c["checkable"], c.get("price") or 999999))
+        cards.sort(key=lambda c: (c.get("price") or 999999.0, not c.get("checkable", False)))
 
     # Strip internal sort key and slice to limit
     final_cards = []
@@ -313,7 +417,7 @@ def search_parts(
         "total_matching": total_matching,
         "filters_applied": filters_applied,
         "cards": final_cards,
-        "message": f"Found {len(final_cards)} matching {params.category} candidate(s).",
+        "message": f"Found {len(final_cards)} matching {params.category} candidate(s) out of {total_matching} total match(es).",
     }
 
 
@@ -517,9 +621,10 @@ def run_tool(
             errors.append(f"{loc}: {msg}")
         return {"error": f"Invalid arguments for tool '{name}': {'; '.join(errors)}"}
     except Exception as exc:
-        return {"error": f"Invalid arguments for tool '{name}': {str(exc)}"}
+        logger.warning("Unexpected validation error for tool '%s': %s", name, exc)
+        return {"error": f"Invalid arguments for tool '{name}'."}
 
-    # 2. Execute tool
+    # 2. Execute tool (sanitized error reporting, no internal leakage)
     try:
         if name == "search_parts":
             return fn(validated_params, repo=repo, collection=collection)
@@ -529,13 +634,12 @@ def run_tool(
             return fn(validated_params)
     except Exception as exc:
         logger.exception("Error executing tool '%s': %s", name, exc)
-        return {"error": f"Execution of tool '{name}' failed: {str(exc)}"}
+        return {"error": f"Tool '{name}' execution failed. Please check arguments or retry."}
 
 
 def get_tool_definitions() -> List[Dict[str, Any]]:
     """
-    Export tool definitions with JSON schemas for Day 10 LLM function calling
-    (compatible with Gemini function declarations and Ollama tools).
+    Export raw tool definitions with JSON schemas for function calling..
     """
     defs = []
     for t_name, t_info in TOOLS.items():

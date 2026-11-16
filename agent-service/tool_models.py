@@ -6,24 +6,39 @@ for search_parts, price_total, and check_compatibility tools.
 Ensures tool calls fail cleanly with descriptive error messages rather than crashing.
 """
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 from pydantic import BaseModel, Field, field_validator
 
-from normalize import normalize_category, normalize_socket, normalize_ram_type, normalize_form_factor
+from normalize import (
+    normalize_category,
+    normalize_form_factor,
+    normalize_ram_type,
+    normalize_socket,
+)
 
-
-ALLOWED_CATEGORIES = {
-    "processor", "cpu", "motherboard", "mobo", "gpu", "video_card", "videocard",
-    "ram", "memory", "storage", "ps", "ssd", "ss", "hdd",
-    "psu", "power_supply", "cabinet", "case", "cooling", "cooler", "os"
-}
+# Canonical 9 categories in the catalogue plus developer-friendly aliases (excluding 'os')
+CategoryLiteral = Literal[
+    "processor",
+    "motherboard",
+    "gpu",
+    "ram",
+    "ps",
+    "ss",
+    "psu",
+    "cabinet",
+    "cooling",
+    "cpu",
+    "mobo",
+    "case",
+    "cooler",
+]
 
 
 class SearchPartsInput(BaseModel):
     """Input parameters for search_parts tool."""
-    category: str = Field(
+    category: CategoryLiteral = Field(
         ...,
-        description="Hardware component category (e.g. 'processor', 'motherboard', 'gpu', 'ram', 'psu', 'cabinet', 'cooling', 'storage', 'os').",
+        description="Hardware component category: 'processor', 'motherboard', 'gpu', 'ram', 'ps' (SSD), 'ss' (HDD), 'psu', 'cabinet', 'cooling'.",
     )
     keywords: Optional[str] = Field(
         default="",
@@ -57,7 +72,7 @@ class SearchPartsInput(BaseModel):
         default=None,
         description="Maximum physical length of GPU in mm (must be positive).",
     )
-    cooler_kind: Optional[str] = Field(
+    cooler_kind: Optional[Literal["air", "liquid"]] = Field(
         default=None,
         description="Cooling type: 'air' or 'liquid'.",
     )
@@ -69,14 +84,9 @@ class SearchPartsInput(BaseModel):
     @field_validator("category")
     @classmethod
     def validate_category(cls, v: str) -> str:
-        if not v or not str(v).strip():
-            raise ValueError("category is required and cannot be empty.")
         clean = str(v).strip().lower()
         norm = normalize_category(clean)
-        if not norm or (clean not in ALLOWED_CATEGORIES and norm not in ALLOWED_CATEGORIES):
-            valid_list = ", ".join(sorted(list(set(ALLOWED_CATEGORIES))))
-            raise ValueError(f"Invalid category '{v}'. Allowed categories are: {valid_list}")
-        return norm
+        return norm or clean
 
     @field_validator("keywords")
     @classmethod
@@ -95,6 +105,28 @@ class SearchPartsInput(BaseModel):
             raise ValueError("max_price must be positive.")
         return v
 
+    @field_validator("socket")
+    @classmethod
+    def validate_socket(cls, v: Optional[str]) -> Optional[str]:
+        if v:
+            return normalize_socket(v)
+        return None
+
+    @field_validator("ram_type")
+    @classmethod
+    def validate_ram_type(cls, v: Optional[str]) -> Optional[str]:
+        if v:
+            return normalize_ram_type(v)
+        return None
+
+    @field_validator("allowed_form_factors")
+    @classmethod
+    def validate_allowed_form_factors(cls, v: Optional[List[str]]) -> Optional[List[str]]:
+        if v:
+            clean = [normalize_form_factor(x) for x in v if x]
+            return [x for x in clean if x]
+        return None
+
     @field_validator("min_wattage")
     @classmethod
     def validate_min_wattage(cls, v: Optional[float]) -> Optional[float]:
@@ -108,16 +140,6 @@ class SearchPartsInput(BaseModel):
         if v is not None and v <= 0:
             raise ValueError("max_gpu_length must be positive.")
         return v
-
-    @field_validator("cooler_kind")
-    @classmethod
-    def validate_cooler_kind(cls, v: Optional[str]) -> Optional[str]:
-        if v is not None:
-            clean = str(v).strip().lower()
-            if clean not in ("air", "liquid"):
-                raise ValueError("cooler_kind must be either 'air' or 'liquid'.")
-            return clean
-        return None
 
     @field_validator("limit")
     @classmethod
@@ -163,9 +185,14 @@ class PartCard(BaseModel):
     socket: Optional[str] = None
     ram_type: Optional[str] = None
     form_factor: Optional[str] = None
+    case_type: Optional[str] = None
     wattage: Optional[float] = None
     length_mm: Optional[float] = None
     height_mm: Optional[float] = None
     cooler_kind: Optional[str] = None
+    radiator_size: Optional[int] = None
+    gpu_memory: Optional[int] = None
+    speed_mhz: Optional[int] = None
+    capacity_gb: Optional[int] = None
     in_stock: bool = True
     checkable: bool = False

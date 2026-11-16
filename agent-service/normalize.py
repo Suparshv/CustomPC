@@ -67,18 +67,18 @@ def normalize_category(cat: Optional[str]) -> Optional[str]:
 
 
 def normalize_form_factor(ff: Optional[str]) -> Optional[str]:
-    """Normalize motherboard and case form factor strings."""
+    """Normalize motherboard and case form factor strings, handling spelling variants."""
     if not ff:
         return None
     clean = str(ff).strip()
-    lower = clean.lower()
-    if lower in ("matx", "micro atx", "microatx", "micro-atx"):
+    lower = re.sub(r"[\s\-_]+", " ", clean.lower()).strip()
+    if lower in ("matx", "m atx", "micro atx", "microatx", "u atx", "uatx", "µ atx", "µatx"):
         return "Micro ATX"
-    if lower in ("mitx", "mini itx", "minitx", "mini-itx"):
+    if lower in ("mitx", "m itx", "mini itx", "minitx"):
         return "Mini ITX"
-    if lower in ("eatx", "extended atx", "extended-atx"):
+    if lower in ("eatx", "e atx", "extended atx"):
         return "EATX"
-    if lower in ("mini dtx", "dtx", "mini-dtx"):
+    if lower in ("mini dtx", "m dtx", "dtx"):
         return "Mini DTX"
     if lower in ("atx", "standard atx"):
         return "ATX"
@@ -86,25 +86,45 @@ def normalize_form_factor(ff: Optional[str]) -> Optional[str]:
 
 
 def normalize_socket(sock: Optional[str]) -> Optional[str]:
-    """Normalize CPU and Motherboard socket strings."""
+    """Normalize CPU and Motherboard socket strings, handling spelling variants."""
     if not sock:
         return None
     s = str(sock).strip().upper()
-    s = s.replace("SOCKET ", "").replace("SOCKET-", "")
-    return s
+    s = re.sub(r"^SOCKET[\s\-]*", "", s).strip()
+
+    # Match AM4, AM5, AM3 (including "AM 5", "AM-5")
+    m_am = re.search(r"\bAM[\s\-]*([345])\b", s)
+    if m_am:
+        return f"AM{m_am.group(1)}"
+
+    # Match LGA 1700, LGA 1851, LGA 1200, LGA 1151 (including "LGA 1700", "LGA-1700")
+    m_lga = re.search(r"\bLGA[\s\-]*(\d+)\b", s)
+    if m_lga:
+        return f"LGA{m_lga.group(1)}"
+
+    # Match raw socket numbers
+    if s in ("1700", "1851", "1200", "1151"):
+        return f"LGA{s}"
+
+    # Remove internal whitespace (e.g. "LGA 1700" fallback)
+    return re.sub(r"\s+", "", s)
 
 
 def normalize_ram_type(rt: Optional[str], socket: Optional[str] = None) -> Optional[str]:
-    """Normalize RAM generation (DDR4, DDR5, DDR4/DDR5)."""
+    """Normalize RAM generation (DDR4, DDR5, DDR4/DDR5), handling spelling variants like DDR 5, 5."""
     if rt:
         clean = str(rt).strip().upper()
-        # Handle formats like "DDR4-3200", "DDR4 / DDR5", "DDR4/DDR5"
+        # Handle single digit strings "4" -> DDR4, "5" -> DDR5
+        if clean in ("5", "DDR 5", "DDR-5"):
+            return "DDR5"
+        if clean in ("4", "DDR 4", "DDR-4"):
+            return "DDR4"
         if "/" in clean:
             types = [t.strip() for t in clean.split("/")]
-            return "/".join(t for t in types if t.startswith("DDR"))
-        m = re.search(r"(DDR[345])", clean)
+            return "/".join(normalize_ram_type(t) or t for t in types)
+        m = re.search(r"DDR[\s\-]*([345])", clean)
         if m:
-            return m.group(1)
+            return f"DDR{m.group(1)}"
         return clean
 
     # Fallback to deriving from socket when missing

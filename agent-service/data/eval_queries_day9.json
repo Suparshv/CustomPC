@@ -1,0 +1,346 @@
+[
+  {
+    "id": "q01",
+    "query": "RTX 4060 Ti 8GB",
+    "category": "gpu",
+    "group": "exact",
+    "description": "Exact GPU model and VRAM match",
+    "rules": {
+      "category": "gpu",
+      "name_contains": ["4060", "Ti"],
+      "gpu_memory": 8.0
+    }
+  },
+  {
+    "id": "q02",
+    "query": "B650",
+    "category": "motherboard",
+    "group": "exact",
+    "description": "AMD AM5 mainstream chipset",
+    "rules": {
+      "category": "motherboard",
+      "chipset_or_name_contains": ["B650"],
+      "socket": "AM5"
+    }
+  },
+  {
+    "id": "q03",
+    "query": "Z790",
+    "category": "motherboard",
+    "group": "exact",
+    "description": "Intel LGA1700 enthusiast chipset",
+    "rules": {
+      "category": "motherboard",
+      "chipset_or_name_contains": ["Z790"],
+      "socket": "LGA1700"
+    }
+  },
+  {
+    "id": "q04",
+    "query": "i5-12400",
+    "category": "processor",
+    "group": "exact",
+    "description": "Intel Core i5-12400 exact processor code",
+    "rules": {
+      "category": "processor",
+      "name_contains": ["12400"]
+    }
+  },
+  {
+    "id": "q05",
+    "query": "Ryzen 5 7600",
+    "category": "processor",
+    "group": "exact",
+    "description": "AMD Zen 4 Ryzen 5 7600 CPU",
+    "rules": {
+      "category": "processor",
+      "name_contains": ["7600"]
+    }
+  },
+  {
+    "id": "q06",
+    "query": "B550",
+    "category": "motherboard",
+    "group": "exact",
+    "description": "AMD AM4 B550 chipset motherboard",
+    "rules": {
+      "category": "motherboard",
+      "chipset_or_name_contains": ["B550"],
+      "socket": "AM4"
+    }
+  },
+  {
+    "id": "q07",
+    "query": "Radeon RX 7800 XT",
+    "category": "gpu",
+    "group": "exact",
+    "description": "AMD Radeon RX 7800 XT graphics card",
+    "rules": {
+      "category": "gpu",
+      "name_contains": ["7800", "XT"]
+    }
+  },
+  {
+    "id": "q08",
+    "query": "Ryzen 7 7800X3D",
+    "category": "processor",
+    "group": "exact",
+    "description": "AMD 7800X3D gaming processor with 3D V-Cache",
+    "rules": {
+      "category": "processor",
+      "name_contains": ["7800X3D"]
+    }
+  },
+  {
+    "id": "q09",
+    "query": "GeForce RTX 4070 Super",
+    "category": "gpu",
+    "group": "exact",
+    "description": "Nvidia RTX 4070 Super GPU",
+    "rules": {
+      "category": "gpu",
+      "name_contains": ["4070", "Super"]
+    }
+  },
+  {
+    "id": "q10",
+    "query": "970 EVO Plus",
+    "category": "ps",
+    "group": "exact",
+    "description": "Samsung 970 EVO Plus M.2 NVMe SSD",
+    "rules": {
+      "category": "ps",
+      "name_contains": ["970 EVO"]
+    }
+  },
+  {
+    "id": "q11",
+    "query": "DDR5 32GB kit",
+    "category": "ram",
+    "group": "attribute",
+    "description": "Day 6 miss: DDR5 RAM with exactly 32GB capacity",
+    "rules": {
+      "category": "ram",
+      "ram_type": "DDR5",
+      "capacity_gb": 32
+    }
+  },
+  {
+    "id": "q12",
+    "query": "1TB NVMe",
+    "category": "ps",
+    "group": "attribute",
+    "description": "1TB capacity internal solid state drive",
+    "rules": {
+      "category": "ps",
+      "capacity_range": [960, 1024]
+    }
+  },
+  {
+    "id": "q13",
+    "query": "750W gold PSU",
+    "category": "psu",
+    "group": "attribute",
+    "description": "750 Watt power supply with 80+ Gold efficiency",
+    "rules": {
+      "category": "psu",
+      "wattage": 750,
+      "efficiency_contains": "Gold"
+    }
+  },
+  {
+    "id": "q14",
+    "query": "DDR4 16GB",
+    "category": "ram",
+    "group": "attribute",
+    "description": "DDR4 RAM kit with 16GB total capacity",
+    "rules": {
+      "category": "ram",
+      "ram_type": "DDR4",
+      "capacity_gb": 16
+    }
+  },
+  {
+    "id": "q15",
+    "query": "2TB SSD",
+    "category": "ps",
+    "group": "attribute",
+    "description": "2TB capacity internal solid state drive",
+    "rules": {
+      "category": "ps",
+      "capacity_range": [1900, 2048]
+    }
+  },
+  {
+    "id": "q16",
+    "query": "850W power supply",
+    "category": "psu",
+    "group": "attribute",
+    "description": "850W rated PSU for high power GPU builds",
+    "rules": {
+      "category": "psu",
+      "wattage": 850
+    }
+  },
+  {
+    "id": "q17",
+    "query": "AM5 micro ATX motherboard",
+    "category": "motherboard",
+    "group": "attribute",
+    "description": "Socket AM5 motherboard with Micro ATX form factor",
+    "rules": {
+      "category": "motherboard",
+      "socket": "AM5",
+      "form_factor_in": ["Micro ATX", "mATX", "Micro-ATX"]
+    }
+  },
+  {
+    "id": "q18",
+    "query": "16GB VRAM graphics card",
+    "category": "gpu",
+    "group": "attribute",
+    "description": "Graphics card with exactly 16GB VRAM",
+    "rules": {
+      "category": "gpu",
+      "gpu_memory": 16.0
+    }
+  },
+  {
+    "id": "q19",
+    "query": "360mm AIO liquid cooler",
+    "category": "cooling",
+    "group": "attribute",
+    "description": "Liquid CPU cooler with 360mm radiator",
+    "rules": {
+      "category": "cooling",
+      "cooler_kind": "liquid",
+      "size_or_name_contains": ["360"]
+    }
+  },
+  {
+    "id": "q20",
+    "query": "650W bronze PSU",
+    "category": "psu",
+    "group": "attribute",
+    "description": "650 Watt power supply with 80+ Bronze efficiency",
+    "rules": {
+      "category": "psu",
+      "wattage": 650,
+      "efficiency_contains": "Bronze"
+    }
+  },
+  {
+    "id": "q21",
+    "query": "quiet 120 mm air cooler",
+    "category": "cooling",
+    "group": "descriptive",
+    "description": "Day 6 miss: air CPU cooler with 120mm fan (NOT liquid)",
+    "rules": {
+      "category": "cooling",
+      "cooler_kind": "air",
+      "size_or_name_contains": ["120"]
+    }
+  },
+  {
+    "id": "q22",
+    "query": "small case for a mini-ITX board",
+    "category": "cabinet",
+    "group": "descriptive",
+    "description": "Compact PC cabinet supporting Mini-ITX form factor",
+    "rules": {
+      "category": "cabinet",
+      "case_type_or_name_contains": ["Mini ITX", "Mini-ITX", "ITX", "Small Form Factor", "MicroATX"]
+    }
+  },
+  {
+    "id": "q23",
+    "query": "budget 6-core gaming CPU",
+    "category": "processor",
+    "group": "descriptive",
+    "description": "Desktop 6-core processor for budget gaming",
+    "rules": {
+      "category": "processor",
+      "core_count_or_name": 6
+    }
+  },
+  {
+    "id": "q24",
+    "query": "compact dual fan GPU under 250mm",
+    "category": "gpu",
+    "group": "descriptive",
+    "description": "Graphics card with physical card length 250mm or less",
+    "rules": {
+      "category": "gpu",
+      "max_length": 250.0
+    }
+  },
+  {
+    "id": "q25",
+    "query": "high airflow mesh ATX mid tower case",
+    "category": "cabinet",
+    "group": "descriptive",
+    "description": "ATX mid or full tower case with high airflow design",
+    "rules": {
+      "category": "cabinet",
+      "case_type_in": ["ATX Mid Tower", "ATX Full Tower"]
+    }
+  },
+  {
+    "id": "q26",
+    "query": "white CPU air cooler with single tower",
+    "category": "cooling",
+    "group": "descriptive",
+    "description": "White aesthetic air CPU cooler",
+    "rules": {
+      "category": "cooling",
+      "cooler_kind": "air",
+      "name_contains": ["White"]
+    }
+  },
+  {
+    "id": "q27",
+    "query": "high capacity 4TB hard drive for backup storage",
+    "category": "ss",
+    "group": "descriptive",
+    "description": "High capacity 3.5-inch secondary storage HDD (4TB+)",
+    "rules": {
+      "category": "ss",
+      "min_capacity": 4000
+    }
+  },
+  {
+    "id": "q28",
+    "query": "dual channel 6000MHz DDR5 memory",
+    "category": "ram",
+    "group": "descriptive",
+    "description": "Fast DDR5 RAM running at 6000 MHz or higher",
+    "rules": {
+      "category": "ram",
+      "ram_type": "DDR5",
+      "min_speed_mhz": 6000
+    }
+  },
+  {
+    "id": "q29",
+    "query": "silent low TDP processor with integrated graphics",
+    "category": "processor",
+    "group": "descriptive",
+    "description": "Low power desktop processor with TDP 65W or below",
+    "rules": {
+      "category": "processor",
+      "max_tdp": 65.0
+    }
+  },
+  {
+    "id": "q30",
+    "query": "white ATX mid tower gaming cabinet",
+    "category": "cabinet",
+    "group": "descriptive",
+    "description": "White ATX Mid Tower case",
+    "rules": {
+      "category": "cabinet",
+      "case_type_in": ["ATX Mid Tower", "ATX Full Tower"],
+      "name_contains": ["White"]
+    }
+  }
+]

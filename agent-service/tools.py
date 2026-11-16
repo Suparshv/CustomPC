@@ -226,38 +226,79 @@ def search_parts(
                 "message": _suggest_relaxation(params),
             }
 
-        # Embed query with asymmetric prefix
-        query_emb = embeddings.embed_query(keywords_clean)
-        # Fetch sufficient results to rank and sort (up to 5x limit or all matching, max 60)
-        fetch_k = min(total_matching, max(params.limit * 5, 25), 60)
-        try:
-            results = collection.query(
-                query_embeddings=[query_emb],
-                n_results=fetch_k,
-                where=where,
-                include=["documents", "metadatas", "distances"],
-            )
-            if results and results.get("ids") and results["ids"][0]:
-                for i in range(len(results["ids"][0])):
-                    pid = results["ids"][0][i]
-                    doc_text = results["documents"][0][i]
-                    meta = results["metadatas"][0][i] or {}
-                    dist = results["distances"][0][i] if results.get("distances") else 0.0
+        strategy = getattr(params, "retriever", "vector")
+        if strategy == "vector":
+            # Embed query with asymmetric prefix
+            query_emb = embeddings.embed_query(f"search_query: {keywords_clean}")
+            # Fetch sufficient results to rank and sort (up to 5x limit or all matching, max 60)
+            fetch_k = min(total_matching, max(params.limit * 5, 25), 60)
+            try:
+                results = collection.query(
+                    query_embeddings=[query_emb],
+                    n_results=fetch_k,
+                    where=where,
+                    include=["documents", "metadatas", "distances"],
+                )
+                if results and results.get("ids") and results["ids"][0]:
+                    for i in range(len(results["ids"][0])):
+                        pid = results["ids"][0][i]
+                        doc_text = results["documents"][0][i]
+                        meta = results["metadatas"][0][i] or {}
+                        dist = results["distances"][0][i] if results.get("distances") else 0.0
+                        candidates.append({
+                            "id": pid,
+                            "document": doc_text,
+                            "metadata": meta,
+                            "distance": dist,
+                        })
+            except Exception as exc:
+                logger.error("Chroma query failed: %s", exc)
+                return {
+                    "count": 0,
+                    "total_matching": 0,
+                    "filters_applied": filters_applied,
+                    "cards": [],
+                    "message": "Search query failed. Check query parameters or server status.",
+                }
+        else:
+            # 'hybrid' or 'hybrid_rerank'
+            try:
+                from hybrid_search import run_hybrid_pipeline
+                filt_dict = {
+                    "in_stock_only": params.in_stock_only,
+                    "max_price": params.max_price,
+                    "socket": params.socket,
+                    "ram_type": params.ram_type,
+                    "allowed_form_factors": params.allowed_form_factors,
+                    "min_wattage": params.min_wattage,
+                    "max_gpu_length": params.max_gpu_length,
+                    "cooler_kind": params.cooler_kind,
+                }
+                cands, _ = run_hybrid_pipeline(
+                    query=keywords_clean,
+                    category=params.category,
+                    chroma_coll=collection,
+                    where_clause=where,
+                    filters=filt_dict,
+                    strategy=strategy,
+                    top_k=params.limit,
+                )
+                for c in cands:
                     candidates.append({
-                        "id": pid,
-                        "document": doc_text,
-                        "metadata": meta,
-                        "distance": dist,
+                        "id": c["id"],
+                        "document": c.get("document", ""),
+                        "metadata": c.get("metadata", {}),
+                        "distance": c.get("vector_score", 0.0) or 0.0,
                     })
-        except Exception as exc:
-            logger.error("Chroma query failed: %s", exc)
-            return {
-                "count": 0,
-                "total_matching": 0,
-                "filters_applied": filters_applied,
-                "cards": [],
-                "message": "Search query failed. Check query parameters or server status.",
-            }
+            except Exception as exc:
+                logger.error("Hybrid pipeline failed: %s", exc)
+                return {
+                    "count": 0,
+                    "total_matching": 0,
+                    "filters_applied": filters_applied,
+                    "cards": [],
+                    "message": "Hybrid search failed. Check search parameters or server status.",
+                }
     else:
         try:
             results = collection.get(
@@ -392,17 +433,21 @@ def search_parts(
         cards.append(card)
 
     if keywords_clean:
-        # Distance is cosine distance (lower = closer semantic match).
-        # Checkable parts receive a small 0.05 boost so close matches prefer checkable,
-        # but a strong semantic match (e.g. RX 9060 XT) will never be overtaken by an irrelevant checkable part.
-        def _keyword_sort_key(c: Dict[str, Any]) -> Tuple[float, float]:
-            raw_dist = c.get("_distance", 0.0)
-            boost = 0.05 if c.get("checkable") else 0.0
-            effective_dist = max(0.0, raw_dist - boost)
-            price = c.get("price") or 999999.0
-            return (round(effective_dist, 4), price)
+        if getattr(params, "retriever", "vector") == "vector":
+            # Distance is cosine distance (lower = closer semantic match).
+            # Checkable parts receive a small 0.05 boost so close matches prefer checkable,
+            # but a strong semantic match (e.g. RX 9060 XT) will never be overtaken by an irrelevant checkable part.
+            def _keyword_sort_key(c: Dict[str, Any]) -> Tuple[float, float]:
+                raw_dist = c.get("_distance", 0.0)
+                boost = 0.05 if c.get("checkable") else 0.0
+                effective_dist = max(0.0, raw_dist - boost)
+                price = c.get("price") or 999999.0
+                return (round(effective_dist, 4), price)
 
-        cards.sort(key=_keyword_sort_key)
+            cards.sort(key=_keyword_sort_key)
+        else:
+            # Hybrid and hybrid_rerank are already ordered by RRF / cross-encoder rank
+            pass
     else:
         cards.sort(key=lambda c: (c.get("price") or 999999.0, not c.get("checkable", False)))
 

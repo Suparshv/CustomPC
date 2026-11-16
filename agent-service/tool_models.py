@@ -76,6 +76,10 @@ class SearchPartsInput(BaseModel):
         default=None,
         description="Cooling type: 'air' or 'liquid'.",
     )
+    retriever: Literal["vector", "hybrid", "hybrid_rerank"] = Field(
+        default="vector",
+        description="Retrieval strategy: 'vector' (Chroma vector search), 'hybrid' (vector + BM25 keyword merged via RRF), or 'hybrid_rerank' (hybrid + CrossEncoder reranker).",
+    )
     limit: int = Field(
         default=8,
         description="Number of candidate parts to return (default 8, minimum 1, maximum 10).",

@@ -10,4 +10,6 @@ httpx
 pandas
 pymongo
 chromadb
+rank-bm25
+sentence-transformers
 

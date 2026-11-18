@@ -1,15 +1,7 @@
 # Day 9 Search Evaluation Report: Vector vs. Hybrid vs. Hybrid+Rerank
 
-> [!WARNING]
-> **Stale report (code review, 17 Nov 2026). Re-run `python agent-service/eval_search.py` to regenerate.**
-> The tables below were measured, but section 4's text was hand-written and contradicts them: hybrid
-> *failed* q21 and tied vector-only on Hit@5; only hybrid + rerank improved it. The "~2-5 ms" latency
-> was never measured. Precision@5 divided by the number of cards returned instead of 5, unknown GPU
-> length / CPU TDP counted as correct, and query 1's timing included index build and model load.
-> All of these are fixed in `eval_search.py`, and the hybrid search now uses Chroma's filters only.
-
-**Evaluation Date:** 2026-11-16 10:48:40  
-**Corpus Size:** 2,820 real PC components in ChromaDB & MongoDB  
+**Evaluation Date:** 2026-11-18 13:32:06  
+**Corpus Size:** 2,820 PC components in ChromaDB
 **Queries:** 30 frozen evaluation queries (10 Exact Names, 10 Attribute Requirements, 10 Descriptive Requests)  
 **Evaluation Rules:** Strict deterministic attribute matching against catalog metadata
 
@@ -19,9 +11,9 @@
 
 | Search Strategy | Hit@5 (Recall@5) | Precision@5 | Avg Latency | Failed Queries (Hit@5=0) |
 |:---|:---:|:---:|:---:|:---:|
-| **Vector-only (Chroma nomic-embed)** | **83.3%** | **60.7%** | **2247.5 ms** | 5 of 30 |
-| **Hybrid (Vector + BM25 via RRF)** | **83.3%** | **66.0%** | **2231.2 ms** | 5 of 30 |
-| **Hybrid + Reranker (ms-marco-MiniLM)** | **90.0%** | **71.3%** | **2499.2 ms** | 3 of 30 |
+| **Vector-only (Chroma nomic-embed)** | **83.3%** | **60.7%** | **147.3 ms** | 5 of 30 |
+| **Hybrid (Vector + BM25 via RRF)** | **83.3%** | **66.0%** | **194.3 ms** | 5 of 30 |
+| **Hybrid + Reranker (ms-marco-MiniLM)** | **90.0%** | **70.7%** | **253.1 ms** | 3 of 30 |
 
 ---
 
@@ -31,7 +23,7 @@
 |:---|:---:|:---:|:---:|
 | **Exact Names / Codes** | 100.0% / 72.0% | 100.0% / 74.0% | 100.0% / 78.0% |
 | **Attribute Questions** | 80.0% / 56.0% | 70.0% / 62.0% | 90.0% / 66.0% |
-| **Descriptive Questions** | 70.0% / 54.0% | 80.0% / 62.0% | 80.0% / 70.0% |
+| **Descriptive Questions** | 70.0% / 54.0% | 80.0% / 62.0% | 80.0% / 68.0% |
 
 ---
 
@@ -58,16 +50,20 @@
 
 ---
 
-## 4. Key Takeaways & Architectural Decision
+## 4. Key Takeaways (generated from the numbers above)
 
-1. **Resolution of Day 6 Misses:**
-   - *Miss 1 ("quiet 120 mm cooler"):* Vector search confused 240mm liquid coolers due to dense semantic proximity to "quiet cooler". BM25 exact matching on "120" and "air" ranked genuine 120mm air coolers directly in the top 3!
-   - *Miss 2 ("DDR5 32GB kit"):* Vector search previously surfaced 16GB and DDR4 kits. Keyword tokenization isolating `32` and `gb` ensures exact 32GB DDR5 kits dominate the top positions.
+1. **Accuracy (Hit@5 / Precision@5):**
+   - Vector-only: 83.3% / 60.7%
+   - Hybrid (BM25 + vector, RRF): 83.3% / 66.0%
+   - Hybrid + cross-encoder rerank: 90.0% / 70.7%
 
-2. **Latency Trade-off:**
-   - Hybrid adds near-zero latency (~2-5ms) because BM25 is in-memory and category-sharded.
-   - The Cross-Encoder reranker adds ~50-120ms per query on CPU.
-   
-3. **Recommendation:**
-   - **Hybrid search (BM25 + Vector via RRF)** delivers the highest accuracy gains with negligible overhead.
-   - The Cross-Encoder reranker should be kept available as an optional high-precision mode (`retriever="hybrid_rerank"`), with `hybrid` set as the robust default for agent loops.
+2. **What BM25 changed versus vector-only (Hit@5 per query):**
+   - Hybrid fixed: q23 (budget 6-core gaming CPU), q28 (dual channel 6000MHz DDR5 memory)
+   - Hybrid broke: q12 (1TB NVMe), q21 (quiet 120 mm air cooler)
+
+3. **Latency (average per query, after an untimed warm-up):**
+   - Hybrid vs vector-only: +47.0 ms
+   - Rerank vs hybrid: +58.8 ms
+
+4. **Recommendation (by Hit@5, then Precision@5, then latency):**
+   - Hybrid + cross-encoder rerank scored best on this run. With 30 queries, one query is 3.3 points, so treat small gaps as noise.

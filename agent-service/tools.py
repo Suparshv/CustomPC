@@ -200,6 +200,20 @@ def _suggest_relaxation(params: SearchPartsInput) -> str:
     return "No parts found in the catalog matching the requested category."
 
 
+# One shared Chroma collection for all search_parts calls. Opening a new connection
+# costs ~300ms , and the agent calls search_parts many times per request.
+_CHROMA_COLLECTION: Optional[chromadb.Collection] = None
+
+
+def _shared_collection(reconnect: bool = False) -> chromadb.Collection:
+    """Return the shared collection, connecting only the first time (or when reconnect=True)."""
+    global _CHROMA_COLLECTION
+    if _CHROMA_COLLECTION is None or reconnect:
+        _CHROMA_COLLECTION = None  # never keep a connection we just decided is bad
+        _CHROMA_COLLECTION = get_collection(get_chroma_client())
+    return _CHROMA_COLLECTION
+
+
 def search_parts(
     params: SearchPartsInput,
     repo: Optional[BasePartRepo] = None,
@@ -209,16 +223,40 @@ def search_parts(
     Search component catalog using ChromaDB vector similarity and metadata filtering.
     Prioritizes parts with verified physical/electrical specifications (checkable)
     using a tie-break / soft boost rather than an absolute override.
-    """
-    if collection is None:
-        try:
-            client = get_chroma_client()
-            collection = get_collection(client)
-        except Exception as exc:
-            # Fallback for offline testing without Chroma server
-            logger.warning("ChromaDB unavailable in search_parts: %s", exc)
-            return _search_error("Vector search service unavailable. Please check Chroma server.")
 
+    Connection handling:
+    - A collection passed in by the caller (tests, eval_search.py) is used as it is.
+    - Otherwise one shared connection is reused. If a search through it fails, the
+      connection may be stale (Chroma restarted, or build_index.py rebuilt the index),
+      so we reconnect ONCE and retry. If that fails too, the error is returned.
+    """
+    if collection is not None:
+        return _search_parts_in(params, collection)
+
+    # Only CONNECTING is caught here. Other errors (e.g. Ollama down while embedding the
+    # query) pass through to run_tool unchanged, so they are not blamed on Chroma.
+    unavailable = "Vector search service unavailable. Please check Chroma server."
+    try:
+        coll = _shared_collection()
+    except Exception as exc:
+        logger.warning("ChromaDB unavailable in search_parts: %s", exc)
+        return _search_error(unavailable)
+
+    result = _search_parts_in(params, coll)
+    if "error" not in result:
+        return result
+
+    logger.warning("search_parts failed on the saved Chroma connection; reconnecting once.")
+    try:
+        coll = _shared_collection(reconnect=True)
+    except Exception as exc:
+        logger.warning("ChromaDB still unavailable after reconnecting: %s", exc)
+        return _search_error(unavailable)
+    return _search_parts_in(params, coll)
+
+
+def _search_parts_in(params: SearchPartsInput, collection: chromadb.Collection) -> Dict[str, Any]:
+    """The search itself, on a given Chroma collection."""
     where, filters_applied = build_chroma_where(params)
     keywords_clean = (params.keywords or "").strip()
     candidates: List[Dict[str, Any]] = []
@@ -407,6 +445,7 @@ def search_parts(
             form_factor=part_dict.get("form_factor"),
             case_type=part_dict.get("case_type"),
             wattage=part_dict.get("wattage"),
+            tdp=part_dict.get("tdp"),
             length_mm=part_dict.get("length"),
             height_mm=part_dict.get("height"),
             cooler_kind=part_dict.get("cooler_kind"),

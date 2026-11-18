@@ -604,3 +604,107 @@ def test_demo_script_stops_with_a_clear_message_when_search_fails():
     with pytest.raises(SystemExit, match="no CPU candidates"):
         require_cards({"count": 0, "cards": [], "message": "No parts matched"}, "CPU")
     assert require_cards({"cards": [{"id": "x"}]}, "CPU") == [{"id": "x"}]
+
+
+def test_search_cards_include_cpu_tdp():
+    """
+    Written BEFORE the fix (18 Nov): TDP was stored in Chroma but not put on the card,
+    so the agent (PSU maths) and the Day 9 grader (q29 'low TDP') could not see it.
+    """
+    import chromadb
+
+    coll = chromadb.EphemeralClient().get_or_create_collection("review_card_tdp")
+    coll.add(
+        ids=["cpu_i3"],
+        embeddings=[[1.0, 0.0]],
+        documents=["Intel Core i3-13100"],
+        metadatas=[{"category": "processor", "price": 1.0, "in_stock": True, "tdp": 60.0}],
+    )
+    res = search_parts(SearchPartsInput(category="processor"), collection=coll)
+    assert res["cards"][0]["tdp"] == 60.0
+
+
+# ─── Chroma connection reuse (18 Nov, written BEFORE the fix) ──────────────────
+# search_parts used to open a NEW Chroma connection on every call (~300 ms each).
+# The Day 10 agent calls it 8+ times per request, so: connect once, reuse it, and
+# reconnect ONCE if a call fails (Chroma restarted, or build_index rebuilt the index).
+import tools as tools_module
+
+
+def _patch_chroma(monkeypatch, collections):
+    """Fake the Chroma connection. Each new connection hands out the next collection."""
+    connections = []
+    handed_out = iter(collections)
+
+    def fake_get_chroma_client():
+        connections.append(1)
+        return object()
+
+    monkeypatch.setattr(tools_module, "get_chroma_client", fake_get_chroma_client)
+    monkeypatch.setattr(tools_module, "get_collection", lambda client: next(handed_out))
+    monkeypatch.setattr(tools_module, "_CHROMA_COLLECTION", None, raising=False)
+    return connections
+
+
+def _working_collection(name):
+    import chromadb
+
+    coll = chromadb.EphemeralClient().get_or_create_collection(name)
+    coll.add(
+        ids=["cpu_1"],
+        embeddings=[[1.0, 0.0]],
+        documents=["AMD Ryzen 5 7600"],
+        metadatas=[{"category": "processor", "price": 1.0, "in_stock": True}],
+    )
+    return coll
+
+
+def _broken_collection():
+    broken = MagicMock()
+    broken.get.side_effect = RuntimeError("Chroma restarted")
+    return broken
+
+
+def test_search_parts_reuses_one_chroma_connection(monkeypatch):
+    connections = _patch_chroma(monkeypatch, [_working_collection("reuse_conn")])
+    for _ in range(3):
+        res = run_tool("search_parts", {"category": "processor"})
+        assert res["count"] == 1
+    assert len(connections) == 1
+
+
+def test_search_parts_reconnects_once_after_chroma_restart(monkeypatch):
+    connections = _patch_chroma(monkeypatch, [_broken_collection(), _working_collection("reconnect_ok")])
+    res = run_tool("search_parts", {"category": "processor"})
+    assert "error" not in res
+    assert res["count"] == 1
+    assert len(connections) == 2
+
+
+def test_search_parts_gives_up_after_one_reconnect(monkeypatch):
+    connections = _patch_chroma(monkeypatch, [_broken_collection(), _broken_collection()])
+    res = run_tool("search_parts", {"category": "processor"})
+    assert "error" in res
+    assert len(connections) == 2  # one retry, not an endless loop
+
+
+def test_search_parts_uses_a_collection_passed_in_without_connecting(monkeypatch):
+    """The eval passes its own collection: that must keep working, with no new connection."""
+    connections = _patch_chroma(monkeypatch, [])
+    res = search_parts(SearchPartsInput(category="processor"), collection=_working_collection("passed_in"))
+    assert res["count"] == 1
+    assert connections == []
+
+
+def test_ollama_down_is_not_reported_as_chroma_down(monkeypatch):
+    """Found in review of the reuse fix: an embedding (Ollama) failure must not blame Chroma."""
+    _patch_chroma(monkeypatch, [_working_collection("ollama_down")])
+    import embeddings as embeddings_mod
+
+    def ollama_down(*args, **kwargs):
+        raise ConnectionError("Ollama is not running")
+
+    monkeypatch.setattr(embeddings_mod, "embed_query", ollama_down)
+    res = run_tool("search_parts", {"category": "processor", "keywords": "Ryzen"})
+    assert "error" in res
+    assert "chroma" not in res["error"].lower()

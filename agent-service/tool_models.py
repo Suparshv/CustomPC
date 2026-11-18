@@ -198,6 +198,7 @@ class PartCard(BaseModel):
     form_factor: Optional[str] = None
     case_type: Optional[str] = None
     wattage: Optional[float] = None
+    tdp: Optional[float] = None  # CPU/GPU power draw in W; the agent needs it for PSU sizing
     length_mm: Optional[float] = None
     height_mm: Optional[float] = None
     cooler_kind: Optional[str] = None

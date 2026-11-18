@@ -38,10 +38,21 @@ def format_query_text(query: str) -> str:
     return f"{QUERY_PREFIX}{clean}"
 
 
+# 127.0.0.1, not "localhost": on Windows "localhost" tries IPv6 (::1) first, Ollama only
+# listens on IPv4, and every NEW connection then waits ~2 s before falling back.
+# Measured 18 Nov: ~2,100 ms per embedding via localhost vs ~50 ms via 127.0.0.1.
+DEFAULT_OLLAMA_HOST = "http://127.0.0.1:11434"
+
+# One client (= one reusable HTTP connection) per host, instead of a new one per search.
+_CLIENTS: dict = {}
+
+
 def get_ollama_client(host: Optional[str] = None) -> ollama.Client:
-    """Get Ollama client configured from environment or parameter."""
-    ollama_host = host or os.getenv("OLLAMA_HOST", "http://localhost:11434")
-    return ollama.Client(host=ollama_host)
+    """Get the shared Ollama client for a host (from the parameter, OLLAMA_HOST, or the default)."""
+    ollama_host = host or os.getenv("OLLAMA_HOST") or DEFAULT_OLLAMA_HOST
+    if ollama_host not in _CLIENTS:
+        _CLIENTS[ollama_host] = ollama.Client(host=ollama_host)
+    return _CLIENTS[ollama_host]
 
 
 def embed_batch_with_retry(

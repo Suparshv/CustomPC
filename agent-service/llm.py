@@ -244,7 +244,8 @@ class OllamaLLM(BaseLLM):
     def __init__(self):
         self.model = os.getenv("OLLAMA_MODEL", "llama3.1:8b")
         self.num_ctx = int(os.getenv("OLLAMA_NUM_CTX", "8192"))
-        self.client = Client(host=os.getenv("OLLAMA_HOST", "http://localhost:11434"))
+        # 127.0.0.1, not "localhost": see DEFAULT_OLLAMA_HOST in embeddings.py (~2 s IPv6 delay on Windows).
+        self.client = Client(host=os.getenv("OLLAMA_HOST") or "http://127.0.0.1:11434")
 
     def check_health(self) -> dict:
         # Finding D: Compare exact names, allowing :latest

@@ -228,6 +228,11 @@ def load_cpus() -> list[dict]:
         if not socket:
             continue
 
+        # The memory controller is fixed by the platform, so this is a fact, not a guess:
+        # AM4 = DDR4 only, AM5 / LGA1851 = DDR5 only, LGA1700 (12th-14th gen) = both.
+        # Without this field, search_parts(category="processor", ram_type=...) found 0 CPUs.
+        cpu_ram_type = {"AM4": "DDR4", "AM5": "DDR5", "LGA1851": "DDR5", "LGA1700": "DDR4/DDR5"}[socket]
+
         part_id = generate_stable_id("cpu", c)
         docs.append({
             "_id": part_id,
@@ -240,6 +245,7 @@ def load_cpus() -> list[dict]:
             "in_stock": is_simulated_in_stock(part_id),
             "stock_simulated": True,
             "socket": socket,
+            "ram_type": cpu_ram_type,
             "core_count": c.get("core_count"),
             "core_clock": c.get("core_clock"),
             "boost_clock": c.get("boost_clock"),

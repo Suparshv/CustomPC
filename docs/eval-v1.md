@@ -1,7 +1,24 @@
 # Evaluation Report: v1-baseline
 
-> Measured on 30 fixed test requests on 2026-11-08 21:41.
+> Measured on 30 fixed test requests on 2026-11-08 21:41 (re-scored 2026-11-17).
 > This is a small sample. Results describe this specific test set, not general accuracy.
+
+> **Re-scored on 17 Nov 2026 for the 20 Nov before/after comparison.** No requests were re-run:
+> these are the saved 8 Nov replies (`eval/results.jsonl`, Gemini 3.5 Flash Lite, commit `a4ed31e`)
+> scored again with the CURRENT scorer and judge, so the old and the new system are measured the same way.
+>
+> - **Judge:** `agent-service/checker.py` with parts read from MongoDB, the same code the new
+>   system's `check_compatibility` tool uses. The 8 Nov report used `compat.py` (6 rules, 24 parts),
+>   which cannot judge the new ~3,000-part catalogue.
+> - **Same as 8 Nov:** valid builds 4/10, within budget 5/9, success 4/10, refusals 0/10,
+>   comparisons 5/5, impossible 1/5 (hand-graded), off-topic 4/5, vague 4/5. `checker.py` agrees
+>   with `compat.py` on every saved build.
+> - **Changed:** the unknown rate was 1/10 and is now 10/10. The new judge also checks cooler height,
+>   and the old parts have no cooler-height data, so that check cannot run for any old build. For the
+>   same reason, 0/10 old builds are "fully verified" (a new measure: every rule PASS).
+> - **Time:** the 8 Nov times include any time the runner spent waiting before a retry (it did not
+>   record retries then). Ids 17 and 18 (about 60 s) probably include such a wait. Compare the
+>   **median** time; new runs record retry waits separately.
 
 ## Summary Table
 
@@ -10,15 +27,18 @@
 | Valid builds (no FAIL, all 9 categories) | 40.0% (4/10) |
 | Within budget (among budgeted builds) | 55.6% (5/9) |
 | Refusal rate (build requests declined) | 0.0% (0/10) |
-| Unknown rate (missing data for checks) | 10.0% (1/10) |
+| Unknown rate (a check could not run: missing data) | 100.0% (10/10) |
+| Fully verified builds (every rule PASS) | 0.0% (0/10) |
 | Comparisons handled correctly | 100.0% (5/5) |
 | Impossible requests handled correctly (strict) | 20.0% (1/5) |
 | Impossible requests breakdown | 1 correct, 2 partial, 2 incorrect (hand-graded) |
 | Off-topic requests handled correctly | 80.0% (4/5) |
 | Vague requests handled correctly | 80.0% (4/5) |
 | Avg time per request | 16.89s |
+| Median time per request | 9.36s |
 | Avg tokens per request | 5438 |
 | Total tokens used | 163125 |
+| Errored requests (left out of every rate) | 0 |
 
 ## Three Key Numbers
 
@@ -26,7 +46,7 @@
 |--------|-------|-------------|
 | **Success rate** | 40.0% | Valid and compatible builds within budget, out of all build requests |
 | **Refusal rate** | 0.0% | How often the system declined a build request |
-| **Unknown rate** | 10.0% | Checks that could not run due to missing spec data |
+| **Unknown rate** | 100.0% | Checks that could not run due to missing spec data |
 
 ## Per-Request Breakdown
 
@@ -34,14 +54,14 @@
 |----|------|--------|------|--------|--------|---------|
 | 1 | normal_build | Rs.80,000 | 7.72s | 7355 | PASS | All categories present, no compatibility failures |
 | 2 | normal_build | Rs.100,000 | 7.59s | 7325 | PASS | All categories present, no compatibility failures |
-| 3 | normal_build | Rs.40,000 | 8.87s | 7572 | FAIL | 6_within_budget |
-| 4 | normal_build | Rs.120,000 | 7.68s | 7769 | FAIL | 3_ram_type_match, 6_within_budget |
-| 5 | normal_build | Rs.90,000 | 7.99s | 7897 | FAIL | 3_ram_type_match, 4_psu_sufficient, 6_within_budget |
+| 3 | normal_build | Rs.40,000 | 8.87s | 7572 | FAIL | within_budget |
+| 4 | normal_build | Rs.120,000 | 7.68s | 7769 | FAIL | ram_type_match, within_budget |
+| 5 | normal_build | Rs.90,000 | 7.99s | 7897 | FAIL | ram_type_match, psu_headroom, within_budget |
 | 6 | normal_build | Rs.150,000 | 9.75s | 7281 | PASS | All categories present, no compatibility failures |
 | 7 | normal_build | Rs.95,000 | 19.21s | 7369 | PASS | All categories present, no compatibility failures |
-| 8 | normal_build | Rs.55,000 | 23.53s | 7351 | FAIL | 6_within_budget |
-| 9 | normal_build | - | 29.27s | 8100 | FAIL | 4_psu_sufficient |
-| 10 | normal_build | Rs.70,000 | 8.63s | 7408 | FAIL | 2_socket_match |
+| 8 | normal_build | Rs.55,000 | 23.53s | 7351 | FAIL | within_budget |
+| 9 | normal_build | - | 29.27s | 8100 | FAIL | psu_headroom |
+| 10 | normal_build | Rs.70,000 | 8.63s | 7408 | FAIL | socket_match |
 | 11 | comparison | - | 3.52s | 1350 | CORRECT | The RTX 4060 offers better frame rates and lower power draw, while the RTX  |
 | 12 | comparison | - | 3.92s | 1408 | CORRECT | The MSI RTX 5080 is superior for 4K gaming, delivering around 90fps in dema |
 | 13 | comparison | - | 42.9s | 1431 | CORRECT | Comparing the Intel i5 12400 and AMD Ryzen 5 5600: The Intel i5 12400 costs |
@@ -73,4 +93,8 @@
 - **Pricing Rule**: Consistent 1x part pricing (no automatic RAM doubling).
 - **Strict Scoring**:
   - Impossible requests are hand-graded from the saved replies (`eval/manual_grades.json`). Correct = refuses, or names the conflict without claiming the build satisfies it. Partial = names it but makes a false claim. Incorrect = no warning in the reply, or the reply contradicts the build. Only "correct" counts toward the headline.
-  - Vague requests counted as correct only if clarifying question asked or build passes all 6 checker rules.
+  - Hand grades are tied to the reply they were made for (sha256 `fingerprint` of reply + build ids). If a run's reply differs, the automatic score is used and the request is marked "Needs hand grade".
+  - Vague requests counted as correct only if a clarifying question is asked without handing over a full build, or the build passes the checker (`checker.py`, 9 rules).
+  - Comparisons counted as correct only if a comparison table is returned, or the reply is a text answer (not empty, not a refusal, not a build).
+  - Builds with a part id that is not in the catalogue are never valid.
+  - Requests that errored after all retries are left out of every rate and counted separately. Time per request is the successful attempt only (retry waits not included).

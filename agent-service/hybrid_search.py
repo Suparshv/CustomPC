@@ -11,10 +11,10 @@ Components:
 
 import logging
 import time
-from typing import Dict, List, Any, Optional, Tuple, Literal
+from typing import Dict, List, Any, Optional, Set, Tuple, Literal
 
 import embeddings
-from keyword_search import get_keyword_engine, matches_filters
+from keyword_search import get_keyword_engine
 
 logger = logging.getLogger(__name__)
 
@@ -172,12 +172,37 @@ def run_vector_search(
     return candidates
 
 
+def refresh_from_chroma(chroma_coll, candidates: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """
+    Re-read document + metadata for the final candidates straight from Chroma.
+
+    BM25-only hits carry the copy of metadata cached when the keyword engine was built.
+    Price and stock can change after that (build_index.py updates metadata in place),
+    so the cards the user sees must come from the live index, not the cache.
+    """
+    if not candidates:
+        return candidates
+    ids = [str(c["id"]) for c in candidates]
+    live = chroma_coll.get(ids=ids, include=["documents", "metadatas"])
+    by_id = {
+        live_id: (doc, meta)
+        for live_id, doc, meta in zip(live.get("ids", []), live.get("documents", []), live.get("metadatas", []))
+    }
+    refreshed = []
+    for c in candidates:
+        if str(c["id"]) not in by_id:
+            continue  # deleted from the index since the BM25 cache was built
+        doc, meta = by_id[str(c["id"])]
+        refreshed.append({**c, "document": doc, "metadata": meta or {}})
+    return refreshed
+
+
 def run_hybrid_pipeline(
     query: str,
     category: str,
     chroma_coll,
     where_clause: Optional[Dict[str, Any]],
-    filters: Optional[Dict[str, Any]],
+    allowed_ids: Optional[Set[str]] = None,
     strategy: Literal["vector", "hybrid", "hybrid_rerank"] = "hybrid",
     top_k: int = 8
 ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
@@ -189,6 +214,10 @@ def run_hybrid_pipeline(
     - 'hybrid': Vector (top 30) + BM25 (top 30) merged via RRF (top 20 -> top_k)
     - 'hybrid_rerank': Hybrid (top 20) -> Cross-Encoder reranked -> top_k
     
+    Filtering: Chroma's where_clause is the ONLY filter. BM25 may only return IDs in
+    `allowed_ids` (the IDs that pass where_clause). If the caller didn't pass them, they
+    are fetched here with one cheap collection.get(where=..., include=[]).
+
     Returns (candidate_list, diagnostics_dict).
     """
     diagnostics: Dict[str, Any] = {
@@ -214,13 +243,17 @@ def run_hybrid_pipeline(
     vector_candidates = run_vector_search(query, chroma_coll, where_clause, limit=30)
     diagnostics["vector_count"] = len(vector_candidates)
 
+    if allowed_ids is None:
+        passing = chroma_coll.get(where=where_clause, include=[]) if where_clause else chroma_coll.get(include=[])
+        allowed_ids = {str(i) for i in passing.get("ids", [])}
+
     kw_engine = get_keyword_engine(chroma_coll=chroma_coll)
-    kw_filters = dict(filters) if filters else {}
-    kw_filters["category"] = category
-    keyword_candidates = kw_engine.search(query=query, category=category, filters=kw_filters, limit=30)
+    keyword_candidates = kw_engine.search(query=query, category=category, allowed_ids=allowed_ids, limit=30)
     diagnostics["keyword_count"] = len(keyword_candidates)
 
     merged = rrf_merge(vector_candidates, keyword_candidates, k=DEFAULT_RRF_K, limit=20)
+    # Fresh price/stock/document for everything we might show (fixes stale BM25 cache).
+    merged = refresh_from_chroma(chroma_coll, merged)
     diagnostics["merged_count"] = len(merged)
 
     # 3. Strategy: Hybrid without reranker

@@ -328,3 +328,35 @@ def test_metadata_update_without_reembedding():
     assert embeds_called == 0
     assert updates_called == 1
 
+
+
+# ─── Code-review fix (Day 6): re-indexing must DELETE metadata keys that went away ──
+# Written BEFORE the fix. Chroma's update()/upsert() MERGE metadata, so if a part's
+# `length` became unknown in Mongo, the old length stayed in Chroma forever and the
+# max_gpu_length filter kept trusting it.
+def test_metadata_for_write_clears_keys_that_disappeared():
+    import chromadb
+    from build_index import metadata_for_write
+
+    coll = chromadb.EphemeralClient().get_or_create_collection("review_meta_removal")
+    coll.add(
+        ids=["gpu_1"],
+        embeddings=[[1.0, 0.0]],
+        documents=["A GPU"],
+        metadatas=[{"category": "gpu", "price": 100.0, "length": 300.0}],
+    )
+
+    old_meta = coll.get(ids=["gpu_1"])["metadatas"][0]
+    new_meta = {"category": "gpu", "price": 120.0}  # length is now unknown
+
+    coll.update(ids=["gpu_1"], metadatas=[metadata_for_write(new_meta, old_meta)])
+
+    assert coll.get(ids=["gpu_1"])["metadatas"][0] == {"category": "gpu", "price": 120.0}
+    # And the stale length no longer satisfies a GPU-length filter:
+    assert coll.get(where={"length": {"$lte": 320.0}})["ids"] == []
+
+
+def test_metadata_for_write_without_old_meta_is_unchanged():
+    from build_index import metadata_for_write
+
+    assert metadata_for_write({"a": 1}, None) == {"a": 1}

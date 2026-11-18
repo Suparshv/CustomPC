@@ -433,3 +433,80 @@ def test_golden_baseline_evaluation_matches_compat_py():
         assert compat_fails == checker_shared_fails, (
             f"Build #{build_id} fail mismatch: compat={compat_fails}, checker={checker_shared_fails}"
         )
+
+
+# ─── Code-review fixes (Day 7): every part is checked, unknown totals are UNKNOWN ──
+# These tests were written BEFORE the fix and failed against the old checker.
+
+def test_ram_rule_checks_every_ram_kit():
+    """A second, incompatible RAM kit must not hide behind the first one."""
+    parts = [
+        {"category": "processor", "socket": "AM5", "ram_type": "DDR5"},
+        {"category": "motherboard", "socket": "AM5", "ram_type": "DDR5"},
+        {"category": "ram", "name": "Good DDR5 kit", "ram_type": "DDR5"},
+        {"category": "ram", "name": "Wrong DDR4 kit", "ram_type": "DDR4"},
+    ]
+    v, msg = check_ram_generation(parts)
+    assert v == "FAIL"
+    assert "DDR4" in msg
+
+
+def test_psu_rule_counts_every_gpu():
+    """Two GPUs draw power together: (65 + 100 + 450 + 80) * 1.4 = 973 W > 550 W."""
+    parts = [
+        {"category": "processor", "tdp": 65},
+        {"category": "gpu", "name": "Small GPU", "tdp": 100},
+        {"category": "gpu", "name": "Big GPU", "tdp": 450},
+        {"category": "psu", "wattage": 550},
+    ]
+    v, msg = check_psu_headroom(parts)
+    assert v == "FAIL"
+    assert "973" in msg
+
+
+def test_gpu_length_rule_checks_every_gpu():
+    parts = [
+        {"category": "gpu", "name": "Short GPU", "length": 200},
+        {"category": "gpu", "name": "Long GPU", "length": 340},
+        {"category": "cabinet", "name": "Small Case", "raw": {"max_gpu_length_mm": 300}},
+    ]
+    v, msg = check_gpu_length(parts)
+    assert v == "FAIL"
+    assert "Long GPU" in msg
+
+
+def test_two_cpus_fail_one_per_slot_rule():
+    """A PC has one CPU socket, one board, one PSU, one case and one CPU cooler."""
+    res = check_build([
+        {"category": "processor", "name": "CPU A", "socket": "AM5"},
+        {"category": "processor", "name": "CPU B", "socket": "AM5"},
+        {"category": "motherboard", "name": "Board", "socket": "AM5"},
+    ])
+    assert res["rules"]["one_per_slot"]["verdict"] == "FAIL"
+    assert "processor" in res["rules"]["one_per_slot"]["message"]
+    assert res["valid"] is False
+
+
+def test_within_budget_unknown_when_a_part_is_unresolved():
+    """If a part could not be found, its price is unknown, so the total is unknown."""
+    res = check_build(["p3", "ghost_gpu_123"], budget=20000)
+    assert res["rules"]["within_budget"]["verdict"] == "UNKNOWN"
+    assert res["total_price"] is None
+
+
+def test_partial_build_mode_reports_missing_categories_as_unknown():
+    """While an agent builds step by step, missing categories are 'not chosen yet', not a failure."""
+    full = check_build(["p3", "m3", "r2"])
+    assert full["rules"]["all_categories"]["verdict"] == "FAIL"
+
+    partial = check_build(["p3", "m3", "r2"], partial=True)
+    assert partial["rules"]["all_categories"]["verdict"] == "UNKNOWN"
+    assert partial["rules"]["socket_match"]["verdict"] == "PASS"
+    assert partial["valid"] is True
+    assert partial["fully_verified"] is False
+
+
+def test_partial_build_mode_still_fails_on_unresolved_ids():
+    partial = check_build(["p3", "ghost_board_1"], partial=True)
+    assert partial["valid"] is False
+    assert "ghost_board_1" in partial["unresolved"]

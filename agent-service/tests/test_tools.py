@@ -515,3 +515,92 @@ def test_get_tool_definitions_has_valid_json_schemas():
         params = d["parameters"]
         assert params.get("type") == "object"
         assert "properties" in params
+
+
+# ─── Code-review fixes (Day 5 + Day 8) ─────────────────────────────────────────
+# These tests were written BEFORE the fix and failed against the old code.
+# Theme: an outage must look like an error, never like "no parts" or "bad IDs".
+
+def test_mongo_outage_is_reported_as_error_not_empty_catalog(monkeypatch):
+    """Old behaviour: get_repo() silently returned an EMPTY repo, so every ID looked unknown and total was 0."""
+    import repo as repo_module
+
+    class _DeadMongo:
+        def __init__(self, *a, **kw):
+            raise ConnectionError("connection refused")
+
+    monkeypatch.setattr(repo_module, "MongoPartRepo", _DeadMongo)
+
+    res = run_tool("price_total", {"part_ids": ["cpu_46f1874d7b4d"]})
+    assert "error" in res
+    assert "unavailable" in res["error"].lower()
+
+    res = run_tool("check_compatibility", {"part_ids": ["cpu_46f1874d7b4d"]})
+    assert "error" in res
+
+
+def test_mongo_db_name_defaults_when_uri_has_no_database():
+    """'mongodb://127.0.0.1:27017' has no /dbname; the host:port must not become the DB name."""
+    from repo import MongoPartRepo
+
+    assert MongoPartRepo(uri="mongodb://127.0.0.1:27017").db_name == "PC"
+    assert MongoPartRepo(uri="mongodb://127.0.0.1:27017/").db_name == "PC"
+    assert MongoPartRepo(uri="mongodb://127.0.0.1:27017/shop?retryWrites=true").db_name == "shop"
+
+
+def test_search_parts_reports_chroma_failure_as_error():
+    """Old behaviour: a Chroma crash became 'No parts matched... try relaxing filters'."""
+    broken = MagicMock()
+    broken.get.side_effect = RuntimeError("chroma is down")
+
+    res = search_parts(SearchPartsInput(category="gpu", keywords="rtx"), collection=broken)
+    assert "error" in res
+    assert "relax" not in res["message"].lower()
+    assert res["cards"] == []
+
+
+def test_ram_type_filter_also_matches_dual_ddr4_ddr5_parts():
+    """LGA1700 CPUs support DDR4 *and* DDR5 and are stored as 'DDR4/DDR5'."""
+    where, _ = build_chroma_where(SearchPartsInput(category="processor", ram_type="DDR5"))
+    assert {"ram_type": {"$in": ["DDR5", "DDR4/DDR5"]}} in where["$and"]
+
+
+def test_ram_type_filter_against_real_chroma():
+    """End to end with an in-memory Chroma: DDR5 search returns DDR5 and DDR4/DDR5 CPUs, not DDR4-only."""
+    import chromadb
+
+    coll = chromadb.EphemeralClient().get_or_create_collection("review_ram_filter")
+    coll.add(
+        ids=["c_am5", "c_lga1700", "c_am4"],
+        embeddings=[[1.0, 0.0], [0.0, 1.0], [1.0, 1.0]],
+        documents=["AM5 cpu", "LGA1700 cpu", "AM4 cpu"],
+        metadatas=[
+            {"category": "processor", "ram_type": "DDR5", "price": 1.0, "in_stock": True},
+            {"category": "processor", "ram_type": "DDR4/DDR5", "price": 1.0, "in_stock": True},
+            {"category": "processor", "ram_type": "DDR4", "price": 1.0, "in_stock": True},
+        ],
+    )
+    res = search_parts(SearchPartsInput(category="processor", ram_type="DDR5"), collection=coll)
+    assert sorted(c["id"] for c in res["cards"]) == ["c_am5", "c_lga1700"]
+
+
+def test_check_compatibility_partial_mode(mock_parts_repo):
+    """An agent checking CPU + board + RAM mid-build should be able to get valid=True."""
+    ids = ["cpu_am5_1", "mb_am5_1", "ram_ddr5_1"]
+    assert run_tool("check_compatibility", {"part_ids": ids}, repo=mock_parts_repo)["valid"] is False
+
+    res = run_tool("check_compatibility", {"part_ids": ids, "partial": True}, repo=mock_parts_repo)
+    assert res["valid"] is True
+    assert res["rules"]["all_categories"]["verdict"] == "UNKNOWN"
+    assert res["rules"]["socket_match"]["verdict"] == "PASS"
+
+
+def test_demo_script_stops_with_a_clear_message_when_search_fails():
+    """Written BEFORE the fix: run_tool_demo indexed res['cards'][0] blindly (KeyError / IndexError)."""
+    from run_tool_demo import require_cards
+
+    with pytest.raises(SystemExit, match="unavailable"):
+        require_cards({"error": "Vector search service unavailable.", "cards": []}, "CPU")
+    with pytest.raises(SystemExit, match="no CPU candidates"):
+        require_cards({"count": 0, "cards": [], "message": "No parts matched"}, "CPU")
+    assert require_cards({"cards": [{"id": "x"}]}, "CPU") == [{"id": "x"}]

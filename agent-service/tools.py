@@ -29,7 +29,7 @@ from normalize import (
     normalize_ram_type,
     normalize_socket,
 )
-from repo import BasePartRepo, get_repo
+from repo import BasePartRepo, RepoUnavailableError, get_repo
 from tool_models import (
     CheckCompatibilityInput,
     PartCard,
@@ -99,7 +99,12 @@ def build_chroma_where(params: SearchPartsInput) -> Tuple[Optional[Dict[str, Any
     if params.ram_type:
         rt = normalize_ram_type(params.ram_type)
         if rt:
-            conditions.append({"ram_type": rt})
+            if rt in ("DDR4", "DDR5"):
+                # Parts that support both generations (e.g. LGA1700 CPUs) are stored as
+                # "DDR4/DDR5". An exact {"ram_type": "DDR5"} match would silently drop them.
+                conditions.append({"ram_type": {"$in": [rt, "DDR4/DDR5"]}})
+            else:
+                conditions.append({"ram_type": rt})
             filters_applied["ram_type"] = rt
 
     # 6. Form Factor (Motherboard vs Cabinet)
@@ -155,6 +160,21 @@ def build_chroma_where(params: SearchPartsInput) -> Tuple[Optional[Dict[str, Any
     return {"$and": conditions}, filters_applied
 
 
+def _search_error(message: str, filters_applied: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """
+    Error-shaped search result. The "error" key tells the agent this is an outage,
+    so it should report the problem instead of loosening the user's filters.
+    """
+    return {
+        "error": message,
+        "count": 0,
+        "total_matching": 0,
+        "filters_applied": filters_applied or {},
+        "cards": [],
+        "message": message,
+    }
+
+
 def _suggest_relaxation(params: SearchPartsInput) -> str:
     """Generate helpful guidance on which filter to relax when 0 parts match."""
     relaxations = []
@@ -197,13 +217,7 @@ def search_parts(
         except Exception as exc:
             # Fallback for offline testing without Chroma server
             logger.warning("ChromaDB unavailable in search_parts: %s", exc)
-            return {
-                "count": 0,
-                "total_matching": 0,
-                "filters_applied": {},
-                "cards": [],
-                "message": "Vector search service unavailable. Please check Chroma server.",
-            }
+            return _search_error("Vector search service unavailable. Please check Chroma server.")
 
     where, filters_applied = build_chroma_where(params)
     keywords_clean = (params.keywords or "").strip()
@@ -214,8 +228,9 @@ def search_parts(
             matched_ids_res = collection.get(where=where, include=[])
             total_matching = len(matched_ids_res["ids"]) if matched_ids_res and matched_ids_res.get("ids") else 0
         except Exception as exc:
+            # A failed query is an outage, NOT "zero parts matched" -- don't tell the agent to relax filters.
             logger.warning("Chroma matching count query failed: %s", exc)
-            total_matching = 0
+            return _search_error("Search index query failed. Check Chroma server status.", filters_applied)
 
         if total_matching == 0:
             return {
@@ -253,33 +268,19 @@ def search_parts(
                         })
             except Exception as exc:
                 logger.error("Chroma query failed: %s", exc)
-                return {
-                    "count": 0,
-                    "total_matching": 0,
-                    "filters_applied": filters_applied,
-                    "cards": [],
-                    "message": "Search query failed. Check query parameters or server status.",
-                }
+                return _search_error("Search query failed. Check query parameters or server status.", filters_applied)
         else:
             # 'hybrid' or 'hybrid_rerank'
             try:
                 from hybrid_search import run_hybrid_pipeline
-                filt_dict = {
-                    "in_stock_only": params.in_stock_only,
-                    "max_price": params.max_price,
-                    "socket": params.socket,
-                    "ram_type": params.ram_type,
-                    "allowed_form_factors": params.allowed_form_factors,
-                    "min_wattage": params.min_wattage,
-                    "max_gpu_length": params.max_gpu_length,
-                    "cooler_kind": params.cooler_kind,
-                }
                 cands, _ = run_hybrid_pipeline(
                     query=keywords_clean,
                     category=params.category,
                     chroma_coll=collection,
                     where_clause=where,
-                    filters=filt_dict,
+                    # IDs that passed Chroma's filters above: BM25 may only rank these,
+                    # so there is exactly ONE filter implementation (the where clause).
+                    allowed_ids={str(i) for i in matched_ids_res["ids"]},
                     strategy=strategy,
                     top_k=params.limit,
                 )
@@ -292,13 +293,7 @@ def search_parts(
                     })
             except Exception as exc:
                 logger.error("Hybrid pipeline failed: %s", exc)
-                return {
-                    "count": 0,
-                    "total_matching": 0,
-                    "filters_applied": filters_applied,
-                    "cards": [],
-                    "message": "Hybrid search failed. Check search parameters or server status.",
-                }
+                return _search_error("Hybrid search failed. Check search parameters or server status.", filters_applied)
     else:
         try:
             results = collection.get(
@@ -319,13 +314,7 @@ def search_parts(
             total_matching = len(candidates)
         except Exception as exc:
             logger.error("Chroma get failed: %s", exc)
-            return {
-                "count": 0,
-                "total_matching": 0,
-                "filters_applied": filters_applied,
-                "cards": [],
-                "message": "Catalog lookup failed. Check filter parameters or server status.",
-            }
+            return _search_error("Catalog lookup failed. Check filter parameters or server status.", filters_applied)
 
     if total_matching == 0:
         return {
@@ -589,6 +578,7 @@ def check_compatibility(
         build=part_ids,
         budget=params.budget,
         part_lookup=part_lookup,
+        partial=params.partial,
     )
 
     return {
@@ -629,7 +619,8 @@ TOOLS: Dict[str, Dict[str, Any]] = {
         "name": "check_compatibility",
         "description": (
             "Verify physical, electrical, and budgetary compatibility of a proposed PC build "
-            "using the deterministic 8-rule Python checker. Never guesses."
+            "using the deterministic 9-rule Python checker. Never guesses. "
+            "Set partial=true while still choosing parts, so categories not chosen yet are UNKNOWN instead of FAIL."
         ),
         "input_model": CheckCompatibilityInput,
         "function": check_compatibility,
@@ -677,6 +668,10 @@ def run_tool(
             return fn(validated_params, repo=repo)
         else:
             return fn(validated_params)
+    except RepoUnavailableError as exc:
+        # Say clearly that this is a server outage, so the agent doesn't retry with "better" part IDs.
+        logger.error("Tool '%s' could not reach the parts database: %s", name, exc)
+        return {"error": f"Tool '{name}' failed: the parts database is unavailable (server problem, not a bad part ID)."}
     except Exception as exc:
         logger.exception("Error executing tool '%s': %s", name, exc)
         return {"error": f"Tool '{name}' execution failed. Please check arguments or retry."}

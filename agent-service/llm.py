@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from dotenv import load_dotenv
 from google import genai
 from google.genai import errors
-from ollama import Client
+from ollama import Client, ResponseError
 from pydantic import BaseModel, ValidationError
 from catalog import extract_budget
 
@@ -64,8 +64,22 @@ class BaseLLM:
     def check_health(self) -> dict:
         raise NotImplementedError
 
-    def generate(self, system: str, user: str, schema: type[BaseModel], check=None, max_retries: int = 2) -> LLMResult:
+    def generate(
+        self,
+        system: str,
+        user: str,
+        schema: type[BaseModel],
+        check=None,
+        max_retries: int = 2,
+        budget_source: str | None = None,
+    ) -> LLMResult:
+        """
+        budget_source: the user's raw request, used ONLY to read the budget with code.
+        `user` is often the full prompt (parts list with prices + the request), so it is
+        a bad place to look for the budget. If budget_source is None, `user` is used.
+        """
         start = time.perf_counter()
+        budget_text = budget_source if budget_source is not None else user
         tok_in, tok_out = 0, 0
         prompt = user
         problems = []
@@ -83,11 +97,11 @@ class BaseLLM:
             else:
                 try:
                     parsed = schema.model_validate_json(raw.text)
-                    # Finding A: Deterministically extract budget from user query with code
+                    # Finding A: code, not the model, decides the budget.
+                    # If the user's words contain no budget, the answer is None even
+                    # when the model filled one in: a guessed number must not survive.
                     if hasattr(parsed, "budget"):
-                        code_budget = extract_budget(user)
-                        if code_budget is not None:
-                            parsed.budget = code_budget
+                        parsed.budget = extract_budget(budget_text)
 
                     problems = check(parsed) if check else []
                 except ValidationError as e:
@@ -121,6 +135,20 @@ class BaseLLM:
             output_tokens=tok_out,
             seconds=round(time.perf_counter() - start, 2),
         )
+
+
+# Gemini finish reasons that mean "the provider refused", not "try again".
+GEMINI_BLOCK_FINISH_REASONS = {
+    "SAFETY", "PROHIBITED_CONTENT", "BLOCKLIST", "SPII", "RECITATION",
+    "IMAGE_SAFETY", "IMAGE_PROHIBITED_CONTENT",
+}
+
+
+def _enum_name(value) -> str | None:
+    """FinishReason.SAFETY -> 'SAFETY'; plain strings pass through; None stays None."""
+    if value is None:
+        return None
+    return getattr(value, "name", None) or str(value).split(".")[-1]
 
 
 class GeminiLLM(BaseLLM):
@@ -166,12 +194,21 @@ class GeminiLLM(BaseLLM):
         prompt_tokens = getattr(u, "prompt_token_count", 0) or 0
         output_tokens = getattr(u, "candidates_token_count", 0) or 0
 
+        # A blocked prompt or answer is final: sending the same prompt again gets
+        # blocked again, so raise LLMError instead of returning "" to be retried.
+        # (An empty answer cut off by MAX_TOKENS is different: that one IS retried.)
+        block_reason = _enum_name(getattr(getattr(resp, "prompt_feedback", None), "block_reason", None))
+        if block_reason and block_reason != "BLOCKED_REASON_UNSPECIFIED":
+            raise LLMError(f"Gemini blocked the prompt (block_reason: {block_reason})")
+
         finish_reason = "STOP"
         try:
             if resp and resp.candidates and len(resp.candidates) > 0:
-                finish_reason = getattr(resp.candidates[0], "finish_reason", "STOP")
+                finish_reason = _enum_name(getattr(resp.candidates[0], "finish_reason", None)) or "STOP"
         except Exception:
             pass
+        if finish_reason in GEMINI_BLOCK_FINISH_REASONS:
+            raise LLMError(f"Gemini blocked the answer (finish_reason: {finish_reason})")
 
         if not resp or not resp.text:
             return Raw(
@@ -219,12 +256,17 @@ class OllamaLLM(BaseLLM):
         return {"status": "ok", "provider": self.provider, "model": self.model}
 
     def _complete(self, system: str, user: str, schema: type[BaseModel]) -> Raw:
-        resp = self.client.chat(
-            model=self.model,
-            messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
-            format=schema.model_json_schema(),
-            options={"temperature": 0, "num_ctx": self.num_ctx},
-        )
+        try:
+            resp = self.client.chat(
+                model=self.model,
+                messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
+                format=schema.model_json_schema(),
+                options={"temperature": 0, "num_ctx": self.num_ctx},
+            )
+        except ResponseError as e:
+            # Ollama answered with an error (e.g. model not pulled). Connection
+            # failures are a different exception and still map to 503 in main.py.
+            raise LLMError(f"Ollama error (status {e.status_code}): {e.error}") from e
         if not resp.message or not resp.message.content:
             return Raw(
                 text="",

@@ -58,6 +58,7 @@ def draft_build(ask: Ask):
             user_prompt,
             DraftBuild,
             check=check_build,
+            budget_source=ask.message,  # read the budget from the request only, not the price list
         )
         return {
             "result": r.parsed,

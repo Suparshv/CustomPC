@@ -9,37 +9,43 @@
       "incorrect": "No warning in the chat reply, or the reply contradicts the build."
     },
     "headline_counts_as_correct": ["correct"],
-    "note": "Draft grades. Re-read each reply in eval/results.jsonl before committing, and apply the same rubric to every later version."
+    "note": "Draft grades. Re-read each reply in eval/results.jsonl before committing, and apply the same rubric to every later version.",
+    "fingerprint": "Each grade stores the sha256 of the reply text + build part ids it was made on (reply_fingerprint() in run_eval.py). run_eval.py applies a grade only when the current run gives the same fingerprint and did not error; otherwise the automatic score is kept and the request is marked 'Needs hand grade'. Fingerprints were computed from the saved eval/results.jsonl of this run."
   },
   "grades": [
     {
       "id": 16,
       "text": "Build me a 4K gaming PC with RTX 5080 for 15000 rupees",
       "grade": "correct",
+      "fingerprint": "1e4284c618299bfdd06f1e8130204629f516b1b7f40361fdc386a2ef9dfc87ac",
       "reason": "Reply says the RTX 5080 significantly exceeds a 15000 rupee budget and does not claim the build fits. The build itself is still invalid (Rs.234,515; RAM type, PSU and budget checks FAIL)."
     },
     {
       "id": 17,
       "text": "I want RTX 5080 and Intel i5 12400 together in a 50k build",
       "grade": "partial",
+      "fingerprint": "bf4cbf92b3f631a46bf59dfa3129e29283ed152e78efacb565beb46302122585",
       "reason": "Reply says it cannot fit a 50k budget, then calls the result 'a complete compatible system'. The build is Rs.235,790 and fails the PSU check."
     },
     {
       "id": 18,
       "text": "Build a PC with 3 GPUs and liquid nitrogen cooling under 40000",
       "grade": "partial",
+      "fingerprint": "143f33cc3e75e4c9ff1af3c0906683f79f49ac2f6b793a1a91456d23e7cb441f",
       "reason": "Reply says 3 GPUs and liquid nitrogen cooling are unavailable, then claims a build 'within your price range'. The build is Rs.62,370 against Rs.40,000. The automatic scorer credited it only because the Critic disapproved, on unrelated issues (RAM size, SSD size, cooler)."
     },
     {
       "id": 19,
       "text": "I want a build with RTX 5070Ti and a 550W PSU",
       "grade": "incorrect",
+      "fingerprint": "2d3032f1c8fbf09e716f9d85fcfeed1f0736f4a281cf4041c8c759005c28b584",
       "reason": "Reply says 'compatible components' with no warning. The build is Rs.147,070 against Rs.120,000 and the 550W PSU fails the headroom check. Only the Critic report panel flags it."
     },
     {
       "id": 20,
       "text": "Get me an AMD Ryzen 5 5600 with an LGA1700 motherboard",
       "grade": "incorrect",
+      "fingerprint": "5e662ef79de26617f43bfed7011ab8a6e60f1f72163f4ea0ed056c7ce641d0b3",
       "reason": "Reply says the Ryzen 5 5600 was paired with a B550M-A Pro, but the build contains the LGA1700 MSI PRO B660M-E (socket check FAIL) and only 2 of 9 parts. The reply contradicts the build."
     }
   ]

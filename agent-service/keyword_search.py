@@ -6,28 +6,22 @@ Key Features:
 - Preserves technical codes (e.g., 'i5-12400', 'b550m', 'rtx-4060') during tokenization.
 - Splits compound unit numbers (e.g., '32gb' -> '32gb', '32', 'gb') to maximize match recall.
 - Category-sharded BM25Okapi indices cached in memory.
-- Strict metadata filtering parity with Chroma vector search filters.
+- Filtering is done by Chroma; BM25 only ranks inside an allow-list of IDs.
 """
 
 import re
 import logging
-from typing import Dict, List, Any, Optional, Set
+from typing import Dict, List, Any, Optional, Set, Tuple
 
 from rank_bm25 import BM25Okapi
 
-from normalize import normalize_socket, normalize_ram_type, normalize_form_factor
-
 logger = logging.getLogger(__name__)
 
-# Motherboard to Case compatibility mapping (matching Day 8 specification)
-CASE_TYPES_FOR_BOARD_FF: Dict[str, List[str]] = {
-    "ATX": ["ATX Mid Tower", "ATX Full Tower", "ATX Desktop"],
-    "Micro ATX": ["MicroATX Mid Tower", "MicroATX Mini Tower", "ATX Mid Tower", "ATX Full Tower"],
-    "Mini ITX": ["Mini ITX Desktop", "Mini ITX Tower", "MicroATX Mid Tower", "MicroATX Mini Tower", "ATX Mid Tower", "ATX Full Tower"],
-    "Mini-ITX": ["Mini ITX Desktop", "Mini ITX Tower", "MicroATX Mid Tower", "MicroATX Mini Tower", "ATX Mid Tower", "ATX Full Tower"],
-    "E-ATX": ["ATX Full Tower"],
-    "EATX": ["ATX Full Tower"],
-}
+# NOTE (code review): this module used to keep its OWN copy of every metadata filter
+# (`matches_filters` + a copy of the case-type map). It drifted from the Chroma `where`
+# clause in tools.py (missing GPU length passed here but not in Chroma; case types differed).
+# Now Chroma is the single source of truth: the caller asks Chroma which IDs pass the
+# filters and hands that set to BM25 as `allowed_ids`.
 
 
 def tokenize(text: str) -> List[str]:
@@ -60,103 +54,6 @@ def tokenize(text: str) -> List[str]:
     return tokens
 
 
-def matches_filters(meta: Dict[str, Any], filters: Dict[str, Any]) -> bool:
-    """
-    Check if a component's metadata dict satisfies the applied search filters.
-    Matches the exact semantics of Chroma's where clause.
-    """
-    if not filters:
-        return True
-
-    # 1. Category
-    if "category" in filters and filters["category"]:
-        if meta.get("category") != filters["category"]:
-            return False
-
-    # 2. In stock only
-    if filters.get("in_stock_only"):
-        if not bool(meta.get("in_stock", True)):
-            return False
-
-    # 3. Max price
-    if filters.get("max_price") is not None:
-        price = meta.get("price")
-        if price is None:
-            return False
-        try:
-            if float(price) > float(filters["max_price"]):
-                return False
-        except (ValueError, TypeError):
-            return False
-
-    # 4. Socket
-    if filters.get("socket"):
-        target_sock = normalize_socket(filters["socket"])
-        cand_sock = normalize_socket(meta.get("socket") or "")
-        if cand_sock != target_sock:
-            return False
-
-    # 5. RAM Generation
-    if filters.get("ram_type"):
-        target_rt = normalize_ram_type(filters["ram_type"])
-        cand_rt = normalize_ram_type(meta.get("ram_type") or "")
-        # Allow multi-compatible boards/CPUs like "DDR4/DDR5"
-        raw_cand = str(meta.get("ram_type", "")).upper()
-        if cand_rt != target_rt and (target_rt not in raw_cand):
-            return False
-
-    # 6. Form factor & Case type
-    if filters.get("allowed_form_factors"):
-        cat = meta.get("category", "")
-        raw_ffs = filters["allowed_form_factors"]
-        clean_ffs = [normalize_form_factor(ff) for ff in raw_ffs if ff]
-        clean_ffs = [f for f in clean_ffs if f]
-
-        if cat == "cabinet":
-            allowed_cases: Set[str] = set()
-            for ff in clean_ffs:
-                types = CASE_TYPES_FOR_BOARD_FF.get(ff)
-                if types:
-                    allowed_cases.update(types)
-                else:
-                    allowed_cases.add(ff)
-            case_type = meta.get("case_type")
-            if case_type not in allowed_cases:
-                return False
-        else:
-            cand_ff = normalize_form_factor(meta.get("form_factor") or "")
-            if cand_ff not in clean_ffs:
-                return False
-
-    # 7. Min wattage (PSU)
-    if filters.get("min_wattage") is not None:
-        watt = meta.get("wattage")
-        if watt is None:
-            return False
-        try:
-            if float(watt) < float(filters["min_wattage"]):
-                return False
-        except (ValueError, TypeError):
-            return False
-
-    # 8. Max GPU length
-    if filters.get("max_gpu_length") is not None:
-        length = meta.get("length")
-        if length is not None:
-            try:
-                if float(length) > float(filters["max_gpu_length"]):
-                    return False
-            except (ValueError, TypeError):
-                pass  # If length missing/invalid, do not reject outright
-
-    # 9. Cooler kind
-    if filters.get("cooler_kind"):
-        if meta.get("cooler_kind") != filters["cooler_kind"]:
-            return False
-
-    return True
-
-
 class CategoryBM25Index:
     """Manages an in-memory BM25Okapi index for one category."""
 
@@ -173,38 +70,37 @@ class CategoryBM25Index:
     def search(
         self,
         query: str,
-        filters: Optional[Dict[str, Any]] = None,
+        allowed_ids: Optional[Set[str]] = None,
         limit: int = 30
     ) -> List[Dict[str, Any]]:
-        """Score documents with BM25, apply metadata filters, return top-N."""
+        """
+        Score documents with BM25 and return the top-N.
+        allowed_ids: if given, only these IDs may be returned (they already passed Chroma's filters).
+        """
         if not self.items:
             return []
 
+        def allowed(item: Dict[str, Any]) -> bool:
+            return allowed_ids is None or str(item["id"]) in allowed_ids
+
         if not self.bm25:
             # Fallback if corpus documents are empty (e.g. mock test collection)
-            candidates = []
-            for item in self.items:
-                if filters and not matches_filters(item.get("metadata", {}), filters):
-                    continue
-                candidates.append({
-                    "id": item["id"],
-                    "document": item.get("document", ""),
-                    "metadata": item.get("metadata", {}),
-                    "score": 0.0
-                })
-            return candidates[:limit]
+            return [
+                {"id": item["id"], "document": item.get("document", ""),
+                 "metadata": item.get("metadata", {}), "score": 0.0}
+                for item in self.items if allowed(item)
+            ][:limit]
 
         q_tokens = tokenize(query)
         if not q_tokens:
             return []
 
         scores = self.bm25.get_scores(q_tokens)
-        
-        # Collect scored candidates that pass metadata filters
+
         candidates = []
         for idx, score in enumerate(scores):
             item = self.items[idx]
-            if filters and not matches_filters(item["metadata"], filters):
+            if not allowed(item):
                 continue
             candidates.append({
                 "id": item["id"],
@@ -248,36 +144,45 @@ class KeywordSearchEngine:
         self,
         query: str,
         category: str,
-        filters: Optional[Dict[str, Any]] = None,
+        allowed_ids: Optional[Set[str]] = None,
         limit: int = 30
     ) -> List[Dict[str, Any]]:
-        """Search within a specific category index."""
+        """Search within a specific category index, restricted to allowed_ids if given."""
         cat_index = self.indices.get(category)
         if not cat_index:
             return []
-        
-        filt = dict(filters) if filters else {}
-        filt["category"] = category
-        return cat_index.search(query=query, filters=filt, limit=limit)
+        return cat_index.search(query=query, allowed_ids=allowed_ids, limit=limit)
 
 
-# Global singleton keyword engine
+# Cached keyword engine, plus the key of the collection it was built from.
 _KEYWORD_ENGINE: Optional[KeywordSearchEngine] = None
+_KEYWORD_ENGINE_KEY: Optional[Tuple[str, int]] = None
+
+
+def _collection_key(chroma_coll) -> Tuple[str, int]:
+    """Identity of the indexed data: which collection, and how many parts it holds."""
+    return (str(getattr(chroma_coll, "id", None) or getattr(chroma_coll, "name", "")), chroma_coll.count())
 
 
 def get_keyword_engine(chroma_coll=None, force_reload: bool = False) -> KeywordSearchEngine:
     """
-    Get or initialize the global KeywordSearchEngine from Chroma collection.
-    Loads documents and metadatas into memory once and caches them.
+    Get (or build) the BM25 engine for a Chroma collection.
+
+    The engine is cached, and rebuilt when a DIFFERENT collection is passed in or the
+    collection's size changes (parts added/removed by build_index.py). It used to be built
+    once from the first collection and reused forever. Prices/stock shown to the user are
+    re-read from Chroma by hybrid_search, so the cached copy only matters for ranking text.
     """
-    global _KEYWORD_ENGINE
-    if _KEYWORD_ENGINE is not None and not force_reload:
-        return _KEYWORD_ENGINE
+    global _KEYWORD_ENGINE, _KEYWORD_ENGINE_KEY
 
     if chroma_coll is None:
         from build_index import get_chroma_client, get_collection
         client = get_chroma_client()
         chroma_coll = get_collection(client)
+
+    key = _collection_key(chroma_coll)
+    if _KEYWORD_ENGINE is not None and _KEYWORD_ENGINE_KEY == key and not force_reload:
+        return _KEYWORD_ENGINE
 
     data = chroma_coll.get(include=["documents", "metadatas"])
     items = []
@@ -293,4 +198,5 @@ def get_keyword_engine(chroma_coll=None, force_reload: bool = False) -> KeywordS
         })
 
     _KEYWORD_ENGINE = KeywordSearchEngine(items)
+    _KEYWORD_ENGINE_KEY = key
     return _KEYWORD_ENGINE

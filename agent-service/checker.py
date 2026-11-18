@@ -1,13 +1,14 @@
 """
 checker.py - Deterministic Code-Based Compatibility Checker (Day 7)
 
-Evaluates PC builds against 8 physical, electrical, and budgetary compatibility rules:
-1. all_categories: All 9 required component categories are present.
+Evaluates PC builds against 9 physical, electrical, and budgetary compatibility rules:
+1. all_categories: All 9 required component categories are present (UNKNOWN for partial builds).
+1b. one_per_slot: At most one CPU, motherboard, PSU, case and CPU cooler.
 2. socket_match: CPU socket matches Motherboard socket.
-3. ram_type_match: RAM generation (DDR4/DDR5) matches Motherboard and CPU.
-4. psu_headroom: PSU wattage >= (CPU TDP + GPU TDP + 80W) * 1.4.
+3. ram_type_match: EVERY RAM kit's generation (DDR4/DDR5) matches Motherboard and CPU.
+4. psu_headroom: PSU wattage >= (CPU TDP + sum of all GPU TDPs + 80W) * 1.4.
 5. formfactor_fit: Motherboard form factor fits in Cabinet (handling EATX, MicroATX Mid Tower, Mini DTX, HTPC).
-6. gpu_length: GPU length <= Case maximum GPU clearance.
+6. gpu_length: EVERY GPU length <= Case maximum GPU clearance.
 7. cooler_height: Air cooler height <= Case maximum CPU cooler clearance.
 8. within_budget: Total build price <= User budget.
 
@@ -27,7 +28,7 @@ import math
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-from normalize import get_part_by_category, normalize_build, normalize_part
+from normalize import get_part_by_category, get_parts_by_category, normalize_build, normalize_part
 
 BASE_DIR = Path(__file__).resolve().parent
 CURATED_DIR = BASE_DIR / "data" / "curated"
@@ -203,10 +204,15 @@ def is_part_checkable(part: Dict[str, Any]) -> bool:
 def check_all_categories(
     parts: List[Dict[str, Any]],
     unresolved: Optional[List[str]] = None,
+    partial: bool = False,
 ) -> Tuple[str, str]:
     """
     Check that all 9 required component categories are present.
     If unknown/unresolved part identifiers were passed, report them clearly.
+
+    partial=True is for an agent that is still building step by step: a missing
+    category means "not chosen yet", so it is UNKNOWN rather than FAIL.
+    Unresolved IDs are always a FAIL, partial or not.
     """
     found_categories = {p.get("category") for p in parts if p.get("category")}
     missing = [cat for cat in REQUIRED_CATEGORIES if cat not in found_categories]
@@ -219,7 +225,28 @@ def check_all_categories(
         msg_parts.append(f"Missing required categories: {', '.join(missing)}")
     if unresolved:
         msg_parts.append(f"Unresolved part identifiers: {', '.join(unresolved)}")
+    if partial and not unresolved:
+        return "UNKNOWN", "Partial build. " + ". ".join(msg_parts) + "."
     return "FAIL", ". ".join(msg_parts) + "."
+
+
+# ─── At Most One Part per Single Slot ────────────────────────────────
+# A PC has one CPU socket, one motherboard, one PSU, one case and one CPU cooler.
+# RAM kits, GPUs and drives may legitimately appear more than once, so the
+# rules below check EVERY RAM kit and EVERY GPU instead of only the first one.
+SINGLE_SLOT_CATEGORIES = ["processor", "motherboard", "psu", "cabinet", "cooling"]
+
+
+def check_one_per_slot(parts: List[Dict[str, Any]]) -> Tuple[str, str]:
+    """FAIL if a one-per-build category (e.g. two CPUs) appears more than once."""
+    duplicated = [
+        f"{cat} x{len(found)}"
+        for cat in SINGLE_SLOT_CATEGORIES
+        if len(found := get_parts_by_category(parts, cat)) > 1
+    ]
+    if duplicated:
+        return "FAIL", f"A build can only hold one of each: {', '.join(duplicated)}."
+    return "PASS", "At most one CPU, motherboard, PSU, case and CPU cooler."
 
 
 # ─── Rule 2: CPU Socket Matches Motherboard Socket ────────────────────────────
@@ -244,88 +271,109 @@ def check_socket_match(parts: List[Dict[str, Any]]) -> Tuple[str, str]:
 
 # ─── Rule 3: RAM Generation Matches Motherboard and CPU ───────────────────────
 def check_ram_generation(parts: List[Dict[str, Any]]) -> Tuple[str, str]:
-    """Check that RAM type (DDR4/DDR5) matches what the motherboard and CPU support."""
-    ram = get_part_by_category(parts, "ram")
+    """Check that EVERY RAM kit's type (DDR4/DDR5) matches what the motherboard and CPU support."""
+    rams = get_parts_by_category(parts, "ram")
     mobo = get_part_by_category(parts, "motherboard")
     cpu = get_part_by_category(parts, "processor")
 
-    if not ram or not mobo:
+    if not rams or not mobo:
         return "UNKNOWN", "RAM or Motherboard not present in build."
 
-    ram_type = ram.get("ram_type")
     mobo_ram_type = mobo.get("ram_type")
-
-    if not ram_type or not mobo_ram_type:
-        return "UNKNOWN", "RAM type data missing from RAM or Motherboard specs."
-
+    if not mobo_ram_type:
+        return "UNKNOWN", "RAM type data missing from Motherboard specs."
     # Parse supported motherboard types (e.g., "DDR4", "DDR5", or "DDR4/DDR5")
     supported_mobo_types = [t.strip() for t in mobo_ram_type.split("/")]
-    if ram_type not in supported_mobo_types:
-        return "FAIL", f"RAM ({ram_type}) is not supported by Motherboard ({mobo_ram_type})."
 
-    # Verify CPU memory controller support if present
-    if cpu:
-        cpu_ram_type = cpu.get("ram_type")
-        if cpu_ram_type:
-            cpu_supported = [t.strip() for t in cpu_ram_type.split("/")]
-            if ram_type not in cpu_supported:
-                return "FAIL", f"RAM ({ram_type}) is not supported by CPU memory controller ({cpu.get('name')}: {cpu_ram_type})."
-        elif cpu.get("socket"):
-            sock = cpu.get("socket")
-            if sock in ("AM5", "LGA1851") and ram_type != "DDR5":
-                return "FAIL", f"CPU socket {sock} strictly requires DDR5 RAM, got {ram_type}."
-            if sock == "AM4" and ram_type != "DDR4":
-                return "FAIL", f"CPU socket AM4 strictly requires DDR4 RAM, got {ram_type}."
+    # A FAIL on any kit wins; otherwise a kit with missing data makes the rule UNKNOWN.
+    missing_data = False
+    for ram in rams:
+        ram_type = ram.get("ram_type")
+        if not ram_type:
+            missing_data = True
+            continue
 
-    return "PASS", f"RAM ({ram_type}) is compatible with Motherboard ({mobo_ram_type}) and CPU."
+        if ram_type not in supported_mobo_types:
+            return "FAIL", f"RAM '{ram.get('name')}' ({ram_type}) is not supported by Motherboard ({mobo_ram_type})."
+
+        # Verify CPU memory controller support if present
+        if cpu:
+            cpu_ram_type = cpu.get("ram_type")
+            if cpu_ram_type:
+                cpu_supported = [t.strip() for t in cpu_ram_type.split("/")]
+                if ram_type not in cpu_supported:
+                    return "FAIL", f"RAM '{ram.get('name')}' ({ram_type}) is not supported by CPU memory controller ({cpu.get('name')}: {cpu_ram_type})."
+            elif cpu.get("socket"):
+                sock = cpu.get("socket")
+                if sock in ("AM5", "LGA1851") and ram_type != "DDR5":
+                    return "FAIL", f"CPU socket {sock} strictly requires DDR5 RAM, got {ram_type}."
+                if sock == "AM4" and ram_type != "DDR4":
+                    return "FAIL", f"CPU socket AM4 strictly requires DDR4 RAM, got {ram_type}."
+
+    if missing_data:
+        return "UNKNOWN", "RAM type data missing from at least one RAM kit."
+    kit_types = ", ".join(sorted({r["ram_type"] for r in rams}))
+    return "PASS", f"RAM ({kit_types}, {len(rams)} kit(s)) is compatible with Motherboard ({mobo_ram_type}) and CPU."
 
 
 # ─── Rule 4: PSU Wattage & Headroom (Issue 2: Strict Exact/Alias Lookup) ──────
+def _resolve_gpu_tdp(gpu: Dict[str, Any]) -> Optional[float]:
+    """GPU TDP from the part's own specs, else an exact/alias match in gpu_tdp.json, else None."""
+    gpu_tdp = gpu.get("tdp")
+    if gpu_tdp is not None:
+        return float(gpu_tdp)
+
+    chipset = (gpu.get("chipset") or "").strip()
+    gname = (gpu.get("name") or "").strip()
+
+    # 1. Exact match in table
+    curated_info = GPU_TDP_TABLE.get(chipset) or GPU_TDP_TABLE.get(gname)
+
+    # 2. Case-insensitive exact match or explicit alias table
+    if not curated_info:
+        cs_lower = chipset.lower()
+        gn_lower = gname.lower()
+        canonical = GPU_TDP_ALIASES.get(cs_lower) or GPU_TDP_ALIASES.get(gn_lower)
+        if canonical and canonical in GPU_TDP_TABLE:
+            curated_info = GPU_TDP_TABLE[canonical]
+        else:
+            for k, v in GPU_TDP_TABLE.items():
+                if k.lower() == cs_lower or k.lower() == gn_lower:
+                    curated_info = v
+                    break
+
+    # NOTE (Issue 2): Strict exact/alias resolution only! Substring fallback completely removed.
+    if curated_info and "tdp_w" in curated_info:
+        return float(curated_info["tdp_w"])
+    return None
+
+
 def check_psu_headroom(parts: List[Dict[str, Any]]) -> Tuple[str, str]:
     """
     Check PSU wattage >= (CPU TDP + GPU TDP + 80W overhead) * 1.4 safety margin.
     Uses exact key or explicit alias matching in GPU_TDP_TABLE (no fuzzy substring matching).
     """
     cpu = get_part_by_category(parts, "processor")
-    gpu = get_part_by_category(parts, "gpu")
+    gpus = get_parts_by_category(parts, "gpu")
     psu = get_part_by_category(parts, "psu")
 
-    if not cpu or not gpu or not psu:
+    if not cpu or not gpus or not psu:
         return "UNKNOWN", "CPU, GPU, or PSU not present in build."
 
     cpu_tdp = cpu.get("tdp")
     psu_wattage = psu.get("wattage")
 
-    # Resolve GPU TDP (from part specs, or exact/alias match in curated table)
-    gpu_tdp = gpu.get("tdp")
-    if gpu_tdp is None:
-        chipset = (gpu.get("chipset") or "").strip()
-        gname = (gpu.get("name") or "").strip()
-
-        # 1. Exact match in table
-        curated_info = GPU_TDP_TABLE.get(chipset) or GPU_TDP_TABLE.get(gname)
-
-        # 2. Case-insensitive exact match or explicit alias table
-        if not curated_info:
-            cs_lower = chipset.lower()
-            gn_lower = gname.lower()
-            canonical = GPU_TDP_ALIASES.get(cs_lower) or GPU_TDP_ALIASES.get(gn_lower)
-            if canonical and canonical in GPU_TDP_TABLE:
-                curated_info = GPU_TDP_TABLE[canonical]
-            else:
-                for k, v in GPU_TDP_TABLE.items():
-                    if k.lower() == cs_lower or k.lower() == gn_lower:
-                        curated_info = v
-                        break
-
-        # NOTE (Issue 2): Strict exact/alias resolution only! Substring fallback completely removed.
-        if curated_info and "tdp_w" in curated_info:
-            gpu_tdp = float(curated_info["tdp_w"])
-
     if cpu_tdp is None:
         return "UNKNOWN", "CPU TDP missing from specifications."
-    if gpu_tdp is None:
-        return "UNKNOWN", f"GPU TDP missing or uncurated for '{gpu.get('chipset') or gpu.get('name')}'."
+
+    # Every GPU draws power at the same time, so their TDPs add up.
+    gpu_tdp = 0.0
+    for gpu in gpus:
+        one_tdp = _resolve_gpu_tdp(gpu)
+        if one_tdp is None:
+            return "UNKNOWN", f"GPU TDP missing or uncurated for '{gpu.get('chipset') or gpu.get('name')}'."
+        gpu_tdp += one_tdp
+
     if psu_wattage is None:
         return "UNKNOWN", "PSU wattage missing from specifications."
 
@@ -399,13 +447,11 @@ def check_gpu_length(parts: List[Dict[str, Any]]) -> Tuple[str, str]:
     Check that GPU card length <= Cabinet maximum GPU clearance limit.
     Matches exact case ID or exact name only (no fuzzy substring matching).
     """
-    gpu = get_part_by_category(parts, "gpu")
+    gpus = get_parts_by_category(parts, "gpu")
     cab = get_part_by_category(parts, "cabinet")
 
-    if not gpu or not cab:
+    if not gpus or not cab:
         return "UNKNOWN", "GPU or Cabinet not present in build."
-
-    gpu_length = gpu.get("length")
 
     # Look up case limit from raw part or curated table (exact ID or exact name only)
     case_limit = None
@@ -423,14 +469,26 @@ def check_gpu_length(parts: List[Dict[str, Any]]) -> Tuple[str, str]:
         if curated_case and "max_gpu_length_mm" in curated_case:
             case_limit = float(curated_case["max_gpu_length_mm"])
 
-    if gpu_length is None:
-        return "UNKNOWN", f"GPU length missing for '{gpu.get('name')}'."
     if case_limit is None:
         return "UNKNOWN", f"Case GPU clearance limit missing or uncurated for '{cab.get('name')}'."
 
-    if gpu_length <= case_limit:
-        return "PASS", f"GPU length ({int(gpu_length)} mm) <= Case maximum clearance ({int(case_limit)} mm)."
-    return "FAIL", f"GPU length ({int(gpu_length)} mm) exceeds Case maximum clearance ({int(case_limit)} mm) by {int(gpu_length - case_limit)} mm!"
+    # Every GPU has to fit. A FAIL on any card wins; a card with no length makes it UNKNOWN.
+    missing_length = None
+    for gpu in gpus:
+        gpu_length = gpu.get("length")
+        if gpu_length is None:
+            missing_length = missing_length or gpu.get("name")
+            continue
+        if gpu_length > case_limit:
+            return "FAIL", (
+                f"GPU '{gpu.get('name')}' length ({int(gpu_length)} mm) exceeds Case maximum clearance "
+                f"({int(case_limit)} mm) by {int(gpu_length - case_limit)} mm!"
+            )
+
+    if missing_length is not None:
+        return "UNKNOWN", f"GPU length missing for '{missing_length}'."
+    longest = max(float(g["length"]) for g in gpus)
+    return "PASS", f"GPU length ({int(longest)} mm) <= Case maximum clearance ({int(case_limit)} mm)."
 
 
 # ─── Rule 7: Cooler Height vs Case Limit (Issue 4: Exact Match Only) ───────────
@@ -485,10 +543,27 @@ def check_cooler_height(parts: List[Dict[str, Any]]) -> Tuple[str, str]:
 
 
 # ─── Rule 8: Within Budget ────────────────────────────────────────────────────
-def check_within_budget(parts: List[Dict[str, Any]], budget: Optional[float] = None) -> Tuple[str, str]:
+def compute_total_price(parts: List[Dict[str, Any]], unresolved: Optional[List[str]] = None) -> Optional[float]:
+    """Sum of part prices, or None when any price is unknown (unresolved part or missing price)."""
+    if unresolved:
+        return None
+    if any(p.get("price") is None for p in parts):
+        return None
+    return float(sum(float(p["price"]) for p in parts))
+
+
+def check_within_budget(
+    parts: List[Dict[str, Any]],
+    budget: Optional[float] = None,
+    unresolved: Optional[List[str]] = None,
+) -> Tuple[str, str]:
     """Check that total build price does not exceed the user's budget."""
     if budget is None:
         return "UNKNOWN", "No budget specified."
+
+    # A part we could not find has an unknown price, so the total is unknown too.
+    if unresolved:
+        return "UNKNOWN", f"Unresolved part(s) {', '.join(unresolved)} have no known price. Cannot compute total."
 
     total = 0.0
     for p in parts:
@@ -507,14 +582,17 @@ def check_build(
     build: List[Any],
     budget: Optional[float] = None,
     part_lookup: Optional[Dict[str, Any]] = None,
+    partial: bool = False,
 ) -> Dict[str, Any]:
     """
-    Run all 8 deterministic compatibility rules on a build.
+    Run all 9 deterministic compatibility rules on a build.
 
     Parameters:
         build: List of part dicts, raw MongoDB documents, or part ID strings.
         budget: Optional maximum spending threshold in INR.
         part_lookup: Optional dictionary mapping part IDs to documents (for resolving non-seed IDs).
+        partial: True while the build is still being assembled; missing categories
+                 become UNKNOWN instead of FAIL, so `valid` can be True mid-build.
 
     Returns:
         Dictionary containing:
@@ -524,7 +602,7 @@ def check_build(
         - fails: List of rule names that returned FAIL
         - unknowns: List of rule names that returned UNKNOWN
         - unresolved: List of string identifiers that could not be resolved (Issue 3)
-        - total_price: float
+        - total_price: float, or None when any part's price is unknown
         - checkable_parts: List of part names that have full physical/electrical data (Issue 5)
         - uncheckable_parts: List of part names that yield UNKNOWN due to missing data (Issue 5)
     """
@@ -532,8 +610,11 @@ def check_build(
 
     rules: Dict[str, Dict[str, str]] = {}
 
-    v1, m1 = check_all_categories(parts, unresolved=unresolved)
+    v1, m1 = check_all_categories(parts, unresolved=unresolved, partial=partial)
     rules["all_categories"] = {"verdict": v1, "message": m1}
+
+    v1b, m1b = check_one_per_slot(parts)
+    rules["one_per_slot"] = {"verdict": v1b, "message": m1b}
 
     v2, m2 = check_socket_match(parts)
     rules["socket_match"] = {"verdict": v2, "message": m2}
@@ -553,13 +634,13 @@ def check_build(
     v7, m7 = check_cooler_height(parts)
     rules["cooler_height"] = {"verdict": v7, "message": m7}
 
-    v8, m8 = check_within_budget(parts, budget=budget)
+    v8, m8 = check_within_budget(parts, budget=budget, unresolved=unresolved)
     rules["within_budget"] = {"verdict": v8, "message": m8}
 
     fails = [r for r, res in rules.items() if res["verdict"] == "FAIL"]
     unknowns = [r for r, res in rules.items() if res["verdict"] == "UNKNOWN"]
 
-    total_price = sum(p["price"] for p in parts if p.get("price") is not None)
+    total_price = compute_total_price(parts, unresolved=unresolved)
 
     # Attach checkability status for Day 8 tools
     checkable_parts = []

@@ -115,6 +115,9 @@ To ensure clear before-and-after comparisons without confusion:
 
 Full per-request table: [`docs/eval-v1.md`](./docs/eval-v1.md).
 
+> [!NOTE]
+> **Re-scored 17 Nov for the 20 Nov comparison** (same saved replies, no re-run). The new system is judged by `agent-service/checker.py`, so the baseline is now judged by it too (`python eval/run_eval.py --rescore`). Every result above stays the same, except the unknown rate: it is now **10/10**, and **0/10** builds are fully verified (every rule PASS), because the old parts have no cooler-height data. Compare the **median** time (9.36 s): the 8 Nov times may include waits before retries.
+
 **What the baseline shows**
 - Of the 6 invalid builds: 4 went over budget, 2 had a RAM-type mismatch, 2 had too weak a PSU, 1 had a socket mismatch.
 - Results vary between runs. Run 1 and run 2 both scored 40% valid builds, but different builds passed: one flipped to valid, one to invalid. Treat a one-build difference (10 points) as noise. Run 1 is kept in `eval/archive/` for history only; it did not save build IDs and cannot be re-scored.

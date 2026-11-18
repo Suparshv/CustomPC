@@ -282,6 +282,20 @@ def compute_meta_hash(metadata: dict) -> str:
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
 
 
+def metadata_for_write(new_meta: dict, old_meta: Optional[dict]) -> dict:
+    """
+    Metadata to send to Chroma update()/upsert() so the stored record ends up EXACTLY new_meta.
+
+    Chroma MERGES metadata on update/upsert: keys you leave out are kept. So when a field
+    disappears (e.g. a GPU's length becomes unknown), its old value would stay in Chroma
+    and filters would keep trusting it. Sending key=None tells Chroma to delete that key.
+    """
+    if not old_meta:
+        return dict(new_meta)
+    removed = {k: None for k in old_meta if k not in new_meta}
+    return {**removed, **new_meta}
+
+
 # ─── 2. CHROMA & MONGO CONNECTION ─────────────────────────────────────────────
 def get_chroma_client() -> chromadb.ClientAPI:
     """Connect to Chroma via HTTP server. Fails loudly if unreachable unless explicit fallback is enabled."""
@@ -356,8 +370,10 @@ def sync_index(mongo_uri: str = MONGODB_URI) -> dict:
     # 3. Fetch existing Chroma items (IDs and hashes)
     existing = chroma_coll.get(include=["metadatas"])
     existing_items = {}
+    existing_metas = {}  # full old metadata, so removed keys can be deleted on write
     if existing and existing.get("ids"):
         for id_, meta in zip(existing["ids"], existing["metadatas"]):
+            existing_metas[id_] = meta or {}
             if meta:
                 existing_items[id_] = (meta.get("doc_hash"), meta.get("meta_hash"))
             else:
@@ -433,7 +449,7 @@ def sync_index(mongo_uri: str = MONGODB_URI) -> dict:
         for i in range(0, len(meta_only_items), BATCH_SIZE):
             batch = meta_only_items[i:i + BATCH_SIZE]
             batch_ids = [it["id"] for it in batch]
-            batch_metas = [it["metadata"] for it in batch]
+            batch_metas = [metadata_for_write(it["metadata"], existing_metas.get(it["id"])) for it in batch]
             chroma_coll.update(
                 ids=batch_ids,
                 metadatas=batch_metas,
@@ -447,7 +463,7 @@ def sync_index(mongo_uri: str = MONGODB_URI) -> dict:
             batch = to_embed[i:i + BATCH_SIZE]
             batch_texts = [it["text"] for it in batch]
             batch_ids = [it["id"] for it in batch]
-            batch_metas = [it["metadata"] for it in batch]
+            batch_metas = [metadata_for_write(it["metadata"], existing_metas.get(it["id"])) for it in batch]
 
             batch_embs = embeddings.embed_documents(batch_texts, batch_size=BATCH_SIZE)
 

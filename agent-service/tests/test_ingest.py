@@ -142,3 +142,15 @@ def test_dataset_category_parsers_real():
     for m in mbs:
         assert m["category"] == "motherboard"
         assert m["ram_type"] in ["DDR4", "DDR5"]
+
+
+# ─── Code-review fix (Day 5): CPUs carry their memory generation ──────────────
+# Written BEFORE the fix: CPU docs had no ram_type, so the search tool's
+# ram_type filter (Chroma drops records missing the key) returned 0 CPUs.
+@pytest.mark.skipif(not (RAW_DATA_DIR / "cpu.json").exists(), reason="raw dataset not downloaded")
+def test_every_ingested_cpu_has_ram_type_from_its_socket():
+    expected = {"AM4": "DDR4", "AM5": "DDR5", "LGA1851": "DDR5", "LGA1700": "DDR4/DDR5"}
+    cpus = load_cpus()
+    assert cpus, "expected CPUs in the raw dataset"
+    for cpu in cpus:
+        assert cpu.get("ram_type") == expected[cpu["socket"]], cpu["name"]

@@ -51,6 +51,34 @@ def find_spec(part_identifier):
     return SPEC_BY_NAME.get(key) or SPEC_BY_ID.get(key)
 
 
+# ─── Normalising spec strings before comparing ────────────────────────────────
+# Spec data is typed by hand, so the same value can be spelled several ways
+# ("LGA 1700" / "lga1700", "ddr4" / "DDR4", "Micro-ATX" / "mATX"). Comparing raw
+# strings would turn a spelling difference into a fake FAIL, so every comparison
+# goes through these helpers. This file is a standalone judge, so the helpers
+# live here instead of importing the agent's normalize.py.
+
+def _squash(value):
+    """Uppercase and drop spaces, hyphens and underscores: 'lga 1700' -> 'LGA1700'."""
+    return "".join(ch for ch in str(value).upper() if ch not in " -_")
+
+
+# Every spelling we recognise, mapped to one canonical form factor name.
+# Anything not in this table is "unrecognised" and the rule returns UNKNOWN.
+FORM_FACTOR_ALIASES = {
+    "ATX": "ATX",
+    "MATX": "mATX", "MICROATX": "mATX", "UATX": "mATX",
+    "MITX": "mITX", "MINIITX": "mITX", "ITX": "mITX",
+}
+
+
+def normalize_form_factor(value):
+    """Return 'ATX', 'mATX' or 'mITX', or None if the spelling is not recognised."""
+    if not value:
+        return None
+    return FORM_FACTOR_ALIASES.get(_squash(value))
+
+
 def find_part_in_build(build, category):
     """Find a part in the build list by its category."""
     for part in build:
@@ -92,7 +120,7 @@ def rule_socket_match(build):
     if not cpu_socket or not mobo_socket:
         return "UNKNOWN", "Socket data missing from specs."
 
-    if cpu_socket == mobo_socket:
+    if _squash(cpu_socket) == _squash(mobo_socket):
         return "PASS", f"Both use {cpu_socket}."
     else:
         return "FAIL", f"CPU socket ({cpu_socket}) != Motherboard socket ({mobo_socket})."
@@ -115,14 +143,16 @@ def rule_ram_type_match(build):
         return "UNKNOWN", "RAM type data missing from specs."
 
     # Handle mobos that support dual/split (e.g., "DDR4/DDR5")
-    supported_mobo_types = [t.strip() for t in mobo_ram_type.split("/")]
-    if ram_type not in supported_mobo_types:
+    # Compare squashed forms so "ddr4" and "DDR4" count as the same type.
+    ram_key = _squash(ram_type)
+    supported_mobo_types = [_squash(t) for t in mobo_ram_type.split("/")]
+    if ram_key not in supported_mobo_types:
         return "FAIL", f"RAM ({ram_type}) is NOT supported by Motherboard ({mobo_ram_type})."
 
     # Also verify CPU memory controller support if present
     if cpu and cpu.get("ramType"):
-        cpu_supported = [t.strip() for t in cpu["ramType"].split("/")]
-        if ram_type not in cpu_supported:
+        cpu_supported = [_squash(t) for t in cpu["ramType"].split("/")]
+        if ram_key not in cpu_supported:
             return "FAIL", f"RAM ({ram_type}) is NOT supported by CPU ({cpu.get('name')}: {cpu['ramType']})."
 
     return "PASS", f"RAM ({ram_type}) is supported by Motherboard ({mobo_ram_type})."
@@ -181,9 +211,15 @@ def rule_formfactor_fit(build):
         "mITX": ["mITX"],
     }
 
-    allowed = compatibility.get(cab_ff, [])
+    mobo_key = normalize_form_factor(mobo_ff)
+    cab_key = normalize_form_factor(cab_ff)
 
-    if mobo_ff in allowed:
+    # A size we do not recognise (e.g. "E-ATX") is missing knowledge, not a
+    # failure: we cannot say whether it fits, so do not guess.
+    if mobo_key is None or cab_key is None:
+        return "UNKNOWN", f"Unrecognised form factor (Motherboard: {mobo_ff}, Cabinet: {cab_ff})."
+
+    if mobo_key in compatibility[cab_key]:
         return "PASS", f"Motherboard ({mobo_ff}) fits in Cabinet ({cab_ff})."
     else:
         return "FAIL", f"Motherboard ({mobo_ff}) does NOT fit in Cabinet ({cab_ff})."
@@ -201,10 +237,14 @@ def rule_within_budget(build, budget):
     total = 0
     for part in build:
         spec = find_spec(part)
-        if spec:
-            total += spec.get("price", 0)
-        else:
+        if not spec:
             return "UNKNOWN", f"Part '{part}' not found in database. Cannot calculate total."
+        price = spec.get("price")
+        # A missing price must NOT count as Rs.0: that would make the total
+        # look cheaper than it is and wrongly PASS the budget check.
+        if not isinstance(price, (int, float)) or isinstance(price, bool):
+            return "UNKNOWN", f"Part '{part}' has no price in the database. Cannot calculate total."
+        total += price
 
     if total <= budget:
         return "PASS", f"Total (Rs.{total:,}) <= Budget (Rs.{budget:,})."

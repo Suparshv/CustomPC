@@ -290,9 +290,21 @@ def normalize_build(
 
 
 def get_part_by_category(parts: List[Dict[str, Any]], category: str) -> Optional[Dict[str, Any]]:
-    """Retrieve the first normalized part matching the target category."""
+    """
+    Retrieve the first normalized part matching the target category.
+
+    Only safe for one-per-build slots (CPU, motherboard, PSU, case, CPU cooler);
+    the checker's `one_per_slot` rule FAILs builds that contain two of those.
+    For RAM and GPUs use get_parts_by_category, because a build can hold several.
+    """
     target = normalize_category(category)
     for p in parts:
         if p.get("category") == target:
             return p
     return None
+
+
+def get_parts_by_category(parts: List[Dict[str, Any]], category: str) -> List[Dict[str, Any]]:
+    """Retrieve EVERY normalized part matching the target category."""
+    target = normalize_category(category)
+    return [p for p in parts if p.get("category") == target]

@@ -27,6 +27,20 @@ DOCS_DIR.mkdir(parents=True, exist_ok=True)
 DEMO_MD_PATH = DOCS_DIR / "day8-tool-demo.md"
 
 
+def require_cards(res: dict, label: str) -> list:
+    """
+    Return the search result's cards, or stop the demo with a clear message.
+    Indexing res["cards"][0] directly crashed with KeyError/IndexError when Chroma
+    was down (error result) or the filters matched nothing.
+    """
+    if res.get("error"):
+        sys.exit(f"[demo stopped] {label} search failed: {res['error']}")
+    cards = res.get("cards") or []
+    if not cards:
+        sys.exit(f"[demo stopped] no {label} candidates: {res.get('message', 'empty result')}")
+    return cards
+
+
 def main():
     print("Starting Day 8 Tool Demo...")
     output_lines = [
@@ -68,7 +82,7 @@ def main():
         "limit": 4,
     }
     cpu_res = run_tool("search_parts", cpu_args)
-    top_cpu = cpu_res["cards"][0]
+    top_cpu = require_cards(cpu_res, "CPU")[0]
     selected_parts.append(top_cpu)
     selected_ids.append(top_cpu["id"])
     target_socket = top_cpu.get("socket", "AM5")
@@ -94,7 +108,7 @@ def main():
         "limit": 4,
     }
     mb_res = run_tool("search_parts", mb_args)
-    top_mb = mb_res["cards"][0]
+    top_mb = require_cards(mb_res, "motherboard")[0]
     selected_parts.append(top_mb)
     selected_ids.append(top_mb["id"])
     target_form_factor = top_mb.get("form_factor", "Micro ATX")
@@ -121,7 +135,7 @@ def main():
         "limit": 4,
     }
     ram_res = run_tool("search_parts", ram_args)
-    top_ram = ram_res["cards"][0]
+    top_ram = require_cards(ram_res, "RAM")[0]
     selected_parts.append(top_ram)
     selected_ids.append(top_ram["id"])
 
@@ -146,7 +160,7 @@ def main():
     }
     gpu_res = run_tool("search_parts", gpu_args)
     # Select seed GPU g1 for physical clearance validation
-    top_gpu = next((c for c in gpu_res["cards"] if c["id"] == "g1"), gpu_res["cards"][0])
+    top_gpu = next((c for c in require_cards(gpu_res, "GPU") if c["id"] == "g1"), require_cards(gpu_res, "GPU")[0])
     selected_parts.append(top_gpu)
     selected_ids.append(top_gpu["id"])
 
@@ -170,7 +184,7 @@ def main():
     }
     psu_res = run_tool("search_parts", psu_args)
     # Select psu1 for fully verified headroom
-    top_psu = next((c for c in psu_res["cards"] if c["id"] == "psu1"), psu_res["cards"][0])
+    top_psu = next((c for c in require_cards(psu_res, "PSU") if c["id"] == "psu1"), require_cards(psu_res, "PSU")[0])
     selected_parts.append(top_psu)
     selected_ids.append(top_psu["id"])
 
@@ -195,7 +209,7 @@ def main():
     }
     case_res = run_tool("search_parts", case_args)
     # Select cab2 for verified case dimensions
-    top_case = next((c for c in case_res["cards"] if c["id"] == "cab2"), case_res["cards"][0])
+    top_case = next((c for c in require_cards(case_res, "case") if c["id"] == "cab2"), require_cards(case_res, "case")[0])
     selected_parts.append(top_case)
     selected_ids.append(top_case["id"])
 
@@ -220,7 +234,7 @@ def main():
         "limit": 4,
     }
     cooler_res = run_tool("search_parts", cooler_args)
-    top_cooler = next((c for c in cooler_res["cards"] if c["checkable"]), cooler_res["cards"][0])
+    top_cooler = next((c for c in require_cards(cooler_res, "cooler") if c["checkable"]), require_cards(cooler_res, "cooler")[0])
     selected_parts.append(top_cooler)
     selected_ids.append(top_cooler["id"])
 
@@ -244,7 +258,7 @@ def main():
         "limit": 4,
     }
     ps_res = run_tool("search_parts", ps_args)
-    top_ps = ps_res["cards"][0]
+    top_ps = require_cards(ps_res, "primary storage")[0]
     selected_parts.append(top_ps)
     selected_ids.append(top_ps["id"])
 
@@ -267,7 +281,7 @@ def main():
         "limit": 4,
     }
     ss_res = run_tool("search_parts", ss_args)
-    top_ss = ss_res["cards"][0]
+    top_ss = require_cards(ss_res, "secondary storage")[0]
     selected_parts.append(top_ss)
     selected_ids.append(top_ss["id"])
 

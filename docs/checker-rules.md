@@ -25,13 +25,19 @@ Every rule yields one of three mutually exclusive verdicts:
 
 ---
 
-## 3. Specification of the 8 Compatibility Rules
+## 3. Specification of the 9 Compatibility Rules
 
 ### Rule 1: `all_categories`
 - **Data Needed:** Component `category` across all build parts.
 - **Requirement:** All 9 canonical categories must be present: `processor`, `motherboard`, `gpu`, `ram`, `ps` (primary SSD), `ss` (secondary HDD), `psu`, `cabinet`, `cooling`.
 - **`PASS`:** All 9 categories exist in the build with 0 unresolved identifiers.
 - **`FAIL`:** Any category is missing or unresolved part identifiers exist (lists exact missing categories and unresolved IDs).
+- **`UNKNOWN`:** Only with `partial=True` (an agent still choosing parts) and no unresolved IDs: missing categories mean "not chosen yet".
+
+### Rule 1b: `one_per_slot` (added in code review, 17 Nov)
+- **Requirement:** At most one `processor`, `motherboard`, `psu`, `cabinet` and `cooling` part.
+- **`FAIL`:** Two of any of those (e.g. two CPUs).
+- **Note:** RAM kits, GPUs and drives may repeat. `ram_type_match` checks **every** RAM kit, `psu_headroom` adds up **every** GPU's TDP and `gpu_length` checks **every** GPU. (Before the review, every rule only looked at the first part of each category.)
 
 ### Rule 2: `socket_match`
 - **Data Needed:** CPU `socket`, Motherboard `socket`.
@@ -93,7 +99,7 @@ Every rule yields one of three mutually exclusive verdicts:
 - **Data Needed:** Component prices (`price_inr` / `price`), user `budget` (INR).
 - **`PASS`:** $\sum \text{Part prices} \le \text{Budget}$.
 - **`FAIL`:** $\sum \text{Part prices} > \text{Budget}$ (reports exact overage in INR).
-- **`UNKNOWN`:** No budget provided (`budget is None`), or any part lacks a price.
+- **`UNKNOWN`:** No budget provided (`budget is None`), any part lacks a price, or any part ID is unresolved (its price is unknown). `total_price` is `None` in those cases.
 
 ---
 

@@ -16,7 +16,6 @@ import pytest
 
 from keyword_search import (
     tokenize,
-    matches_filters,
     CategoryBM25Index,
     KeywordSearchEngine,
 )
@@ -112,40 +111,9 @@ def test_rrf_merge_respects_limit():
 
 
 # ─── 3. KEYWORD METADATA FILTER TESTS ─────────────────────────────────────────
-def test_matches_filters_category_and_price():
-    """Verify metadata filtering logic matches price and category boundaries."""
-    meta = {"category": "processor", "price": 15000.0, "in_stock": True}
-
-    assert matches_filters(meta, {"category": "processor", "max_price": 20000.0})
-    assert not matches_filters(meta, {"category": "gpu", "max_price": 20000.0})
-    assert not matches_filters(meta, {"category": "processor", "max_price": 10000.0})
-
-    out_of_stock_meta = {"category": "processor", "price": 15000.0, "in_stock": False}
-    assert not matches_filters(out_of_stock_meta, {"in_stock_only": True})
-    assert matches_filters(out_of_stock_meta, {"in_stock_only": False})
-
-
-def test_matches_filters_socket_and_ram():
-    """Verify socket and ram_type filters normalize variants correctly."""
-    meta = {"category": "motherboard", "socket": "AM5", "ram_type": "DDR5"}
-
-    assert matches_filters(meta, {"socket": "am5", "ram_type": "ddr-5"})
-    assert not matches_filters(meta, {"socket": "LGA1700"})
-    assert not matches_filters(meta, {"ram_type": "DDR4"})
-
-
-def test_matches_filters_cabinet_form_factor():
-    """Verify allowed motherboard form factors translate to case_type values."""
-    atx_case = {"category": "cabinet", "case_type": "ATX Mid Tower"}
-    mini_case = {"category": "cabinet", "case_type": "Mini ITX Desktop"}
-
-    # ATX board in cabinet filters
-    assert matches_filters(atx_case, {"allowed_form_factors": ["ATX"]})
-    assert not matches_filters(mini_case, {"allowed_form_factors": ["ATX"]})
-
-    # Mini-ITX board fits in both Mini-ITX cases and ATX cases
-    assert matches_filters(atx_case, {"allowed_form_factors": ["Mini ITX"]})
-    assert matches_filters(mini_case, {"allowed_form_factors": ["Mini ITX"]})
+# (matches_filters tests removed in the code review: BM25 no longer has its own
+#  copy of the filters. Chroma's where clause is the only filter, tested in test_tools.py,
+#  and BM25 is restricted to the IDs that pass it -- see the tests at the end of this file.)
 
 
 # ─── 4. CATEGORY BM25 INDEX OFFLINE TESTS ─────────────────────────────────────
@@ -161,8 +129,8 @@ def test_category_bm25_search_offline():
     assert len(results) >= 1
     assert results[0]["id"] == "p1"
 
-    # With price filter under 15000:
-    results_budget = index.search(query="processor", filters={"max_price": 12000.0}, limit=3)
+    # Restricted to an allow-list (the IDs that passed Chroma's filters, e.g. price <= 12000):
+    results_budget = index.search(query="processor", allowed_ids={"p1"}, limit=3)
     assert len(results_budget) == 1
     assert results_budget[0]["id"] == "p1"
 
@@ -203,3 +171,79 @@ def test_search_parts_input_retriever_validation():
 
     with pytest.raises(Exception):
         SearchPartsInput(category="processor", retriever="invalid_strategy")
+
+
+# ─── Code-review fixes (Day 9): one source of truth for filters, no stale BM25 ───
+# Written BEFORE the fix. All three go end to end through search_parts with an
+# in-memory Chroma collection and a fake embedder (no Ollama needed).
+import chromadb
+import keyword_search
+import embeddings as embeddings_module
+
+
+def _gpu_collection(name, docs):
+    """docs: list of (id, document, metadata)."""
+    coll = chromadb.EphemeralClient().get_or_create_collection(name)
+    coll.add(
+        ids=[d[0] for d in docs],
+        documents=[d[1] for d in docs],
+        metadatas=[d[2] for d in docs],
+        embeddings=[[1.0, float(i)] for i in range(len(docs))],
+    )
+    return coll
+
+
+@pytest.fixture
+def fresh_hybrid(monkeypatch):
+    monkeypatch.setattr(keyword_search, "_KEYWORD_ENGINE", None, raising=False)
+    monkeypatch.setattr(keyword_search, "_KEYWORD_ENGINE_KEY", None, raising=False)
+    monkeypatch.setattr(embeddings_module, "embed_query", lambda q, **kw: [1.0, 0.0])
+
+
+def test_hybrid_never_returns_parts_the_chroma_filter_excluded(fresh_hybrid):
+    """
+    Old bug: BM25 had its own filter copy (matches_filters) that let a GPU with NO
+    length through max_gpu_length, while Chroma's $lte excluded it. RRF then merged it in.
+    """
+    coll = _gpu_collection("review_hybrid_filter", [
+        ("g_short", "RTX 4060 compact 200 mm", {"category": "gpu", "price": 1.0, "in_stock": True, "length": 200.0}),
+        ("g_nolen", "RTX 4060 compact compact compact", {"category": "gpu", "price": 1.0, "in_stock": True}),
+    ])
+    res = search_parts(
+        SearchPartsInput(category="gpu", keywords="RTX 4060 compact", max_gpu_length=250, retriever="hybrid"),
+        collection=coll,
+    )
+    ids = [c["id"] for c in res["cards"]]
+    assert "g_nolen" not in ids
+    assert ids == ["g_short"]
+
+
+def test_hybrid_keyword_engine_follows_the_collection_it_is_given(fresh_hybrid):
+    """Old bug: the BM25 engine was built once from the FIRST collection and reused forever."""
+    coll_a = _gpu_collection("review_hybrid_a", [
+        ("a_only", "Radeon RX 7600", {"category": "gpu", "price": 1.0, "in_stock": True}),
+    ])
+    coll_b = _gpu_collection("review_hybrid_b", [
+        ("b_only", "Radeon RX 7600", {"category": "gpu", "price": 1.0, "in_stock": True}),
+    ])
+    p = SearchPartsInput(category="gpu", keywords="RX 7600", retriever="hybrid")
+    assert [c["id"] for c in search_parts(p, collection=coll_a)["cards"]] == ["a_only"]
+    assert [c["id"] for c in search_parts(p, collection=coll_b)["cards"]] == ["b_only"]
+
+
+def test_hybrid_cards_show_current_price_after_reindex(fresh_hybrid, monkeypatch):
+    """
+    Old bug: a part found ONLY by BM25 got its card from metadata cached inside the
+    BM25 engine at first use, so a price change in Chroma never showed up.
+    (The vector leg is switched off so the hit is keyword-only.)
+    """
+    import hybrid_search
+    monkeypatch.setattr(hybrid_search, "run_vector_search", lambda *a, **kw: [])
+    coll = _gpu_collection("review_hybrid_price", [
+        ("g1", "GeForce RTX 4070", {"category": "gpu", "price": 50000.0, "in_stock": True}),
+    ])
+    p = SearchPartsInput(category="gpu", keywords="RTX 4070", retriever="hybrid")
+    assert search_parts(p, collection=coll)["cards"][0]["price"] == 50000.0
+
+    coll.update(ids=["g1"], metadatas=[{"category": "gpu", "price": 45000.0, "in_stock": True}])
+    assert search_parts(p, collection=coll)["cards"][0]["price"] == 45000.0

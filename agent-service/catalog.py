@@ -2,47 +2,76 @@ import re
 from compat import ALL_SPECS
 
 
+# ─── Budget extraction ────────────────────────────────────────────────────────
+_BUDGET_NUMBER_RE = re.compile(
+    r"(?<!\w)(?<!\w-)(?<!\d\.)"
+    r"(?P<num>\d{1,3}(?:,\d{2,3})+|\d+(?:\.\d+)?)"
+    r"(?:\s?(?P<suffix>lakhs?|lacs?|l|k))?"
+    r"(?![\w])",
+    re.IGNORECASE,
+)
+
+_MONEY_BEFORE_RE = re.compile(r"(?:₹|\brs\.?|\binr)\s*$", re.IGNORECASE)
+_MONEY_AFTER_RE = re.compile(r"^\s*(?:₹|rupees?\b|rs\b|inr\b|/-)", re.IGNORECASE)
+
+# "for" is weak: "for 4K gaming" is not money, so it is kept out of the strong list.
+_STRONG_BUDGET_WORDS = r"budget|under|below|within|max|maximum|upto|up\s+to|around|about|less\s+than|approx(?:imately)?"
+_BUDGET_WORD_BEFORE_RE = re.compile(
+    r"\b(?P<word>" + _STRONG_BUDGET_WORDS + r"|for)"
+    r"\s*(?:is|of|:|=)?\s*(?:around|about|approx(?:imately)?|roughly)?\s*(?:₹|rs\.?|inr)?\s*$",
+    re.IGNORECASE,
+)
+_BUDGET_WORD_AFTER_RE = re.compile(r"^\s*(?:budget|max)\b", re.IGNORECASE)
+
+
+def _budget_from_match(text: str, m: re.Match) -> float | None:
+    """Return the rupee amount for one number match, or None if it is not money."""
+    raw = m.group("num")
+    value = float(raw.replace(",", ""))
+    suffix = (m.group("suffix") or "").lower()
+    before, after = text[: m.start()], text[m.end():]
+
+    has_money_marker = bool(_MONEY_BEFORE_RE.search(before) or _MONEY_AFTER_RE.search(after))
+    word = _BUDGET_WORD_BEFORE_RE.search(before)
+    strong_word = bool(word and word.group("word").lower() != "for") or bool(_BUDGET_WORD_AFTER_RE.search(after))
+    any_word = bool(word) or strong_word
+
+    if suffix.startswith("la") or suffix == "l":
+        return value * 100_000
+    if suffix == "k":
+        # "4K"/"8K" with nothing saying "money" is a screen resolution, not Rs.4000.
+        if value < 10 and not (has_money_marker or strong_word):
+            return None
+        return value * 1_000
+    if has_money_marker:
+        return value
+    if "," in raw:
+        return value
+    # A bare number needs a budget word, and must be a plausible amount: "for 2 monitors" is not Rs.2.
+    if any_word and value >= 1000:
+        return value
+    return None
+
+
 def extract_budget(text: str) -> float | None:
-    """Extract budget number from user text via regex (e.g. 75000, 75k, 60,000, 1 lakh)."""
+    """
+    Extract the user's budget in rupees from their own words, or None if they gave none.
+
+    Examples: "80k" -> 80000, "1.5 lakh" -> 150000, "₹1,20,000" -> 120000,
+    "RTX 4060 build under 80000" -> 80000, "4K gaming PC" -> None.
+    If several amounts are written, the largest is the budget ("under 80k, ideally 70k").
+    """
     if not text:
         return None
 
-    # If full architect prompt was passed, only inspect the user request section
+    # Safety net: if the full architect prompt was passed, only read the user's part.
+    # The parts list above it is full of prices ("Rs.10500") that are NOT the budget.
+    # Callers should pass the raw request (llm.generate's budget_source) anyway.
     if "User request:" in text:
         text = text.split("User request:")[-1]
 
-    # Check for lakh (e.g. "1 lakh", "1.5 lakh", "2 lakhs", "1 lac")
-    lakh_match = re.search(r'(\d+(?:\.\d+)?)\s*(?:lakh|lac)s?\b', text, re.IGNORECASE)
-    if lakh_match:
-        try:
-            return float(lakh_match.group(1)) * 100000.0
-        except ValueError:
-            pass
-
-    # Check for "k" notation (e.g. "75k", "50 k", "100k")
-    k_match = re.search(r'\b(\d+(?:\.\d+)?)\s*k\b', text, re.IGNORECASE)
-    if k_match:
-        try:
-            return float(k_match.group(1)) * 1000.0
-        except ValueError:
-            pass
-
-    # Check for 4-7 digit numbers, optionally with commas (e.g. "75,000", "75000", "105000")
-    nums = re.findall(
-        r'(?:rs\.?|inr|₹|under|budget|for|around)?\s*(\d{1,3}(?:,\d{3})+|\d{4,7})\b',
-        text,
-        re.IGNORECASE,
-    )
-    for n in nums:
-        clean = n.replace(',', '')
-        try:
-            val = float(clean)
-            if 1000 <= val <= 2000000:
-                return val
-        except ValueError:
-            continue
-
-    return None
+    amounts = [a for a in (_budget_from_match(text, m) for m in _BUDGET_NUMBER_RE.finditer(text)) if a]
+    return float(max(amounts)) if amounts else None
 
 
 def check_build(draft) -> list[str]:

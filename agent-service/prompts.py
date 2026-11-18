@@ -25,8 +25,9 @@ EXAMPLE OUTPUT FORMAT:
     {"category": "cabinet", "id": "cab1"},
     {"category": "cooling", "id": "c1"}
   ],
-  "budget": 75000.0
-}"""
+  "budget": null
+}
+(Leave "budget" as null. The code reads the budget from the user's own words and fills it in.)"""
 
 PARTS_TEXT = "\n".join(
     f"{k} | {v['category']} | {v['name']} | Rs.{v['price']}"

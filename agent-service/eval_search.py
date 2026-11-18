@@ -33,6 +33,41 @@ from tools import search_parts
 logger = logging.getLogger(__name__)
 
 
+STRATEGY_LABELS = {
+    "vector": "Vector-only",
+    "hybrid": "Hybrid (BM25 + vector, RRF)",
+    "hybrid_rerank": "Hybrid + cross-encoder rerank",
+}
+
+
+def _as_float(value: Any) -> Any:
+    """float(value), or None if missing/unparsable (e.g. '65 W'). Never raises."""
+    if value is None:
+        return None
+    try:
+        return float(value)
+    except (ValueError, TypeError):
+        return None
+
+
+def score_cards(cards: List[Dict[str, Any]], rules: Dict[str, Any], top_k: int = 5) -> Dict[str, Any]:
+    """
+    Grade the top_k cards for one query.
+
+    Precision@k always divides by k: a strategy that returns only 1 card (correct) scores
+    1/5, not 100%. Otherwise returning FEWER results would look like higher precision.
+    """
+    cards = cards[:top_k]
+    graded = [evaluate_card(c, rules) for c in cards]
+    n_correct = sum(1 for ok, _ in graded if ok)
+    return {
+        "n_correct": n_correct,
+        "hit": 1 if n_correct > 0 else 0,
+        "precision": n_correct / top_k if top_k else 0.0,
+        "reasons": [r for _, r in graded],
+    }
+
+
 def evaluate_card(card: Dict[str, Any], rules: Dict[str, Any]) -> Tuple[bool, List[str]]:
     """
     Check if a candidate PartCard satisfies all criteria specified in rules.
@@ -210,18 +245,22 @@ def evaluate_card(card: Dict[str, Any], rules: Dict[str, Any]) -> Tuple[bool, Li
         elif cores is None and not name_has:
             reasons.append(f"could not confirm {target_cores} cores")
 
-    # 17. Max GPU length
+    # 17. Max GPU length -- unknown length is "could not confirm", never a free pass
     if "max_length" in rules:
         max_l = rules["max_length"]
-        cand_l = card.get("length_mm") or raw.get("length")
-        if cand_l is not None and float(cand_l) > max_l:
+        cand_l = _as_float(card.get("length_mm") or raw.get("length"))
+        if cand_l is None:
+            reasons.append(f"could not confirm gpu length <= {max_l}mm (length unknown)")
+        elif cand_l > max_l:
             reasons.append(f"gpu length {cand_l}mm > {max_l}mm")
 
-    # 18. Max TDP (Processor)
+    # 18. Max TDP (Processor) -- same rule: missing or unparsable TDP is not a pass
     if "max_tdp" in rules:
         max_t = rules["max_tdp"]
-        cand_t = card.get("tdp") or raw.get("tdp")
-        if cand_t is not None and float(cand_t) > max_t:
+        cand_t = _as_float(card.get("tdp") or raw.get("tdp"))
+        if cand_t is None:
+            reasons.append(f"could not confirm tdp <= {max_t}W (tdp unknown)")
+        elif cand_t > max_t:
             reasons.append(f"tdp {cand_t}W > {max_t}W")
 
     # 19. GPU memory
@@ -276,6 +315,19 @@ def run_evaluation(
         for strat in strategies
     }
 
+    # Warm-up (not timed): the first hybrid call builds the BM25 index over the whole
+    # collection and the first rerank call loads the cross-encoder model. Without this,
+    # those one-off costs land on query 1 and inflate the average latency.
+    warm = queries[0]
+    for strat in strategies:
+        search_parts(
+            SearchPartsInput(category=warm["category"], keywords=warm["query"], retriever=strat,
+                             limit=top_k, in_stock_only=False),
+            collection=chroma_coll,
+        )
+
+    per_query: Dict[str, Dict[str, Any]] = {}
+
     print(f"\nEvaluating {len(queries)} frozen queries across {strategies}...")
     print("=" * 80)
 
@@ -302,17 +354,10 @@ def run_evaluation(
             elapsed_ms = (time.perf_counter() - t0) * 1000.0
 
             cards = tool_res.get("cards", [])[:top_k]
-            correct_flags = []
-            reasons_list = []
-
-            for c in cards:
-                ok, reasons = evaluate_card(c, rules)
-                correct_flags.append(ok)
-                reasons_list.append(reasons)
-
-            n_correct = sum(1 for f in correct_flags if f)
-            hit = 1 if n_correct > 0 else 0
-            prec = (n_correct / len(cards)) if cards else 0.0
+            scored = score_cards(cards, rules, top_k=top_k)
+            n_correct, hit, prec = scored["n_correct"], scored["hit"], scored["precision"]
+            reasons_list = scored["reasons"]
+            per_query.setdefault(qid, {"query": q_text})[strat] = hit
 
             res = results_by_mode[strat]
             res["hits"] += hit
@@ -341,7 +386,12 @@ def run_evaluation(
             })
 
     # Summary calculations
-    summary: Dict[str, Any] = {"strategies": {}}
+    summary: Dict[str, Any] = {
+        "strategies": {},
+        "per_query": per_query,
+        "n_queries": len(queries),
+        "corpus_size": chroma_coll.count(),  # measured, not hard-coded
+    }
     print("\n" + "=" * 80)
     print(f"{'Strategy':<18} | {'Hit@5':<10} | {'Precision@5':<14} | {'Avg Latency (ms)':<18} | {'Fails'}")
     print("-" * 80)
@@ -361,8 +411,8 @@ def run_evaluation(
             "failing_queries": data["failing_queries"],
             "group_breakdown": {
                 g: {
-                    "hit_at_5": round((data["group_scores"][g]["hits"] / 10.0) * 100.0, 1),
-                    "precision_at_5": round((sum(data["group_scores"][g]["prec"]) / 10.0) * 100.0, 1) if data["group_scores"][g]["prec"] else 0.0,
+                    "hit_at_5": round((data["group_scores"][g]["hits"] / max(len(data["group_scores"][g]["prec"]), 1)) * 100.0, 1),
+                    "precision_at_5": round((sum(data["group_scores"][g]["prec"]) / max(len(data["group_scores"][g]["prec"]), 1)) * 100.0, 1),
                 }
                 for g in ["exact", "attribute", "descriptive"]
             },
@@ -372,6 +422,53 @@ def run_evaluation(
 
     print("=" * 80)
     return summary
+
+
+def build_takeaways(summary: Dict[str, Any]) -> str:
+    """
+    Write the report's conclusions FROM the measured summary.
+
+    The first version of this report had hand-written conclusions that contradicted its
+    own table (it called hybrid the most accurate when the reranker was, and quoted a
+    latency that was never measured). Generating the text from the data prevents that.
+    """
+    strats = summary["strategies"]
+    order = ["vector", "hybrid", "hybrid_rerank"]
+    vec, hyb, rer = (strats[k] for k in order)
+    n_queries = summary.get("n_queries", 30)
+
+    # Winner: highest Hit@5, then highest Precision@5, then lowest latency.
+    best = max(order, key=lambda k: (strats[k]["hit_at_5"], strats[k]["precision_at_5"], -strats[k]["avg_latency_ms"]))
+
+    fixed, broke = [], []
+    for qid, row in sorted(summary.get("per_query", {}).items()):
+        if row.get("vector") == 0 and row.get("hybrid") == 1:
+            fixed.append(f"{qid} ({row.get('query', '')})")
+        elif row.get("vector") == 1 and row.get("hybrid") == 0:
+            broke.append(f"{qid} ({row.get('query', '')})")
+
+    def delta(a: float, b: float) -> str:
+        return f"{a - b:+.1f} ms"
+
+    lines = [
+        "1. **Accuracy (Hit@5 / Precision@5):**",
+        f"   - {STRATEGY_LABELS['vector']}: {vec['hit_at_5']}% / {vec['precision_at_5']}%",
+        f"   - {STRATEGY_LABELS['hybrid']}: {hyb['hit_at_5']}% / {hyb['precision_at_5']}%",
+        f"   - {STRATEGY_LABELS['hybrid_rerank']}: {rer['hit_at_5']}% / {rer['precision_at_5']}%",
+        "",
+        "2. **What BM25 changed versus vector-only (Hit@5 per query):**",
+        f"   - Hybrid fixed: {', '.join(fixed) if fixed else 'none'}",
+        f"   - Hybrid broke: {', '.join(broke) if broke else 'none'}",
+        "",
+        "3. **Latency (average per query, after an untimed warm-up):**",
+        f"   - Hybrid vs vector-only: {delta(hyb['avg_latency_ms'], vec['avg_latency_ms'])}",
+        f"   - Rerank vs hybrid: {delta(rer['avg_latency_ms'], hyb['avg_latency_ms'])}",
+        "",
+        "4. **Recommendation (by Hit@5, then Precision@5, then latency):**",
+        f"   - {STRATEGY_LABELS[best]} scored best on this run. With {n_queries} queries, one query is "
+        f"{100.0 / max(n_queries, 1):.1f} points, so treat small gaps as noise.",
+    ]
+    return "\n".join(lines)
 
 
 def write_markdown_report(summary: Dict[str, Any], output_path: Path) -> None:
@@ -385,8 +482,8 @@ def write_markdown_report(summary: Dict[str, Any], output_path: Path) -> None:
     content = f"""# Day 9 Search Evaluation Report: Vector vs. Hybrid vs. Hybrid+Rerank
 
 **Evaluation Date:** {time.strftime('%Y-%m-%d %H:%M:%S')}  
-**Corpus Size:** 2,820 real PC components in ChromaDB & MongoDB  
-**Queries:** 30 frozen evaluation queries (10 Exact Names, 10 Attribute Requirements, 10 Descriptive Requests)  
+**Corpus Size:** {summary['corpus_size']:,} PC components in ChromaDB
+**Queries:** {summary['n_queries']} frozen evaluation queries (10 Exact Names, 10 Attribute Requirements, 10 Descriptive Requests)  
 **Evaluation Rules:** Strict deterministic attribute matching against catalog metadata
 
 ---
@@ -395,9 +492,9 @@ def write_markdown_report(summary: Dict[str, Any], output_path: Path) -> None:
 
 | Search Strategy | Hit@5 (Recall@5) | Precision@5 | Avg Latency | Failed Queries (Hit@5=0) |
 |:---|:---:|:---:|:---:|:---:|
-| **Vector-only (Chroma nomic-embed)** | **{vec['hit_at_5']}%** | **{vec['precision_at_5']}%** | **{vec['avg_latency_ms']:.1f} ms** | {vec['fail_count']} of 30 |
-| **Hybrid (Vector + BM25 via RRF)** | **{hyb['hit_at_5']}%** | **{hyb['precision_at_5']}%** | **{hyb['avg_latency_ms']:.1f} ms** | {hyb['fail_count']} of 30 |
-| **Hybrid + Reranker (ms-marco-MiniLM)** | **{rer['hit_at_5']}%** | **{rer['precision_at_5']}%** | **{rer['avg_latency_ms']:.1f} ms** | {rer['fail_count']} of 30 |
+| **Vector-only (Chroma nomic-embed)** | **{vec['hit_at_5']}%** | **{vec['precision_at_5']}%** | **{vec['avg_latency_ms']:.1f} ms** | {vec['fail_count']} of {summary['n_queries']} |
+| **Hybrid (Vector + BM25 via RRF)** | **{hyb['hit_at_5']}%** | **{hyb['precision_at_5']}%** | **{hyb['avg_latency_ms']:.1f} ms** | {hyb['fail_count']} of {summary['n_queries']} |
+| **Hybrid + Reranker (ms-marco-MiniLM)** | **{rer['hit_at_5']}%** | **{rer['precision_at_5']}%** | **{rer['avg_latency_ms']:.1f} ms** | {rer['fail_count']} of {summary['n_queries']} |
 
 ---
 
@@ -433,19 +530,9 @@ def write_markdown_report(summary: Dict[str, Any], output_path: Path) -> None:
     content += f"""
 ---
 
-## 4. Key Takeaways & Architectural Decision
+## 4. Key Takeaways (generated from the numbers above)
 
-1. **Resolution of Day 6 Misses:**
-   - *Miss 1 ("quiet 120 mm cooler"):* Vector search confused 240mm liquid coolers due to dense semantic proximity to "quiet cooler". BM25 exact matching on "120" and "air" ranked genuine 120mm air coolers directly in the top 3!
-   - *Miss 2 ("DDR5 32GB kit"):* Vector search previously surfaced 16GB and DDR4 kits. Keyword tokenization isolating `32` and `gb` ensures exact 32GB DDR5 kits dominate the top positions.
-
-2. **Latency Trade-off:**
-   - Hybrid adds near-zero latency (~2-5ms) because BM25 is in-memory and category-sharded.
-   - The Cross-Encoder reranker adds ~50-120ms per query on CPU.
-   
-3. **Recommendation:**
-   - **Hybrid search (BM25 + Vector via RRF)** delivers the highest accuracy gains with negligible overhead.
-   - The Cross-Encoder reranker should be kept available as an optional high-precision mode (`retriever="hybrid_rerank"`), with `hybrid` set as the robust default for agent loops.
+{build_takeaways(summary)}
 """
 
     with open(output_path, "w", encoding="utf-8") as f:

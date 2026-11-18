@@ -136,3 +136,82 @@ def test_model_matches_exact_tag_rejection():
     assert _model_matches("llama3.1:8b", "llama3.1:8b-instruct-q4_0") is False
     assert _model_matches("llama3.1:8b", "llama3.1:70b") is False
 
+
+
+# ─── Provider blocks raise LLMError (not retried as "empty text") ─────────────
+# Fakes only: no real Gemini/Ollama calls. object.__new__ skips __init__, which
+# would need an API key or a running Ollama.
+from types import SimpleNamespace
+from google.genai import types as genai_types
+import ollama
+from llm import GeminiLLM, OllamaLLM, LLMError
+
+
+class FakeGeminiModels:
+    def __init__(self, *responses):
+        self.responses = list(responses)
+        self.calls = 0
+
+    def generate_content(self, **kwargs):
+        self.calls += 1
+        return self.responses.pop(0)
+
+
+def fake_gemini(*responses):
+    llm = object.__new__(GeminiLLM)
+    llm.model = "fake-gemini"
+    llm.client = SimpleNamespace(models=FakeGeminiModels(*responses))
+    return llm
+
+
+def gemini_response(text=None, finish_reason=None, block_reason=None):
+    parts = [genai_types.Part(text=text)] if text else None
+    return genai_types.GenerateContentResponse(
+        candidates=[genai_types.Candidate(
+            content=genai_types.Content(role="model", parts=parts) if parts else None,
+            finish_reason=finish_reason,
+        )] if finish_reason or text else None,
+        prompt_feedback=genai_types.GenerateContentResponsePromptFeedback(block_reason=block_reason)
+        if block_reason else None,
+    )
+
+
+def test_gemini_safety_block_raises_llm_error_without_retry():
+    llm = fake_gemini(gemini_response(finish_reason=genai_types.FinishReason.SAFETY))
+    with pytest.raises(LLMError, match="SAFETY"):
+        llm.generate("s", "u", DraftBuild)
+    assert llm.client.models.calls == 1  # a block is final; retrying the same prompt is pointless
+
+
+def test_gemini_prompt_block_raises_llm_error():
+    llm = fake_gemini(gemini_response(block_reason=genai_types.BlockedReason.PROHIBITED_CONTENT))
+    with pytest.raises(LLMError, match="PROHIBITED_CONTENT"):
+        llm.generate("s", "u", DraftBuild)
+
+
+def test_gemini_max_tokens_empty_is_still_retried():
+    llm = fake_gemini(
+        gemini_response(finish_reason=genai_types.FinishReason.MAX_TOKENS),
+        gemini_response(text=GOOD, finish_reason=genai_types.FinishReason.STOP),
+    )
+    r = llm.generate("s", "u", DraftBuild)
+    assert r.attempts == 2 and r.parsed.build[0].id == "g1"
+
+
+def test_ollama_response_error_becomes_llm_error():
+    def chat(**kwargs):
+        raise ollama.ResponseError("model 'llama3.1:8b' not found", 404)
+
+    llm = object.__new__(OllamaLLM)
+    llm.model, llm.num_ctx = "llama3.1:8b", 8192
+    llm.client = SimpleNamespace(chat=chat)
+    with pytest.raises(LLMError, match="not found"):
+        llm.generate("s", "u", DraftBuild)
+
+
+def test_endpoint_maps_llm_error_to_502(monkeypatch):
+    llm = fake_gemini(gemini_response(finish_reason=genai_types.FinishReason.SAFETY))
+    monkeypatch.setattr(main, "get_current_llm", lambda: llm)
+    response = TestClient(app).post("/debug/draft-build", json={"message": "Build me a PC"})
+    assert response.status_code == 502
+    assert response.json()["detail"]["error"] == "LLMError"

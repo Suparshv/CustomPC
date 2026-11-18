@@ -1,5 +1,13 @@
 # Day 9 Search Evaluation Report: Vector vs. Hybrid vs. Hybrid+Rerank
 
+> [!WARNING]
+> **Stale report (code review, 17 Nov 2026). Re-run `python agent-service/eval_search.py` to regenerate.**
+> The tables below were measured, but section 4's text was hand-written and contradicts them: hybrid
+> *failed* q21 and tied vector-only on Hit@5; only hybrid + rerank improved it. The "~2-5 ms" latency
+> was never measured. Precision@5 divided by the number of cards returned instead of 5, unknown GPU
+> length / CPU TDP counted as correct, and query 1's timing included index build and model load.
+> All of these are fixed in `eval_search.py`, and the hybrid search now uses Chroma's filters only.
+
 **Evaluation Date:** 2026-11-16 10:48:40  
 **Corpus Size:** 2,820 real PC components in ChromaDB & MongoDB  
 **Queries:** 30 frozen evaluation queries (10 Exact Names, 10 Attribute Requirements, 10 Descriptive Requests)  

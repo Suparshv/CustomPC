@@ -171,6 +171,13 @@ class CheckCompatibilityInput(BaseModel):
         default=None,
         description="Optional maximum budget threshold in INR to test against total build price.",
     )
+    partial: bool = Field(
+        default=False,
+        description=(
+            "True while the build is still being assembled: categories not chosen yet are "
+            "reported as UNKNOWN instead of FAIL. Use false (default) for the final check."
+        ),
+    )
 
     @field_validator("budget")
     @classmethod

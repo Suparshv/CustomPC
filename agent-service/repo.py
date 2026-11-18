@@ -110,15 +110,14 @@ class MongoPartRepo(BasePartRepo):
         from pymongo import MongoClient
 
         self.uri = uri or MONGODB_URI
-        # Extract db name from URI or default to "PC"
-        if not db_name:
-            if "/" in self.uri.split("?")[0]:
-                inferred = self.uri.split("?")[0].rstrip("/").split("/")[-1]
-                self.db_name = inferred if inferred and not inferred.startswith("mongodb") else "PC"
-            else:
-                self.db_name = "PC"
-        else:
+        # Database name: explicit argument, else the /dbname part of the URI, else "PC".
+        # pymongo's URI parser handles host lists, credentials and ?options correctly;
+        # hand-splitting on "/" turned "mongodb://host:27017" into the DB name "host:27017".
+        if db_name:
             self.db_name = db_name
+        else:
+            from pymongo.uri_parser import parse_uri
+            self.db_name = parse_uri(self.uri).get("database") or "PC"
 
         self._client = MongoClient(self.uri, serverSelectionTimeoutMS=2000)
         self._db = self._client[self.db_name]
@@ -171,10 +170,18 @@ class MongoPartRepo(BasePartRepo):
         return results
 
 
+class RepoUnavailableError(RuntimeError):
+    """The parts database could not be reached. A server problem, not a bad part ID."""
+
+
 def get_repo(in_memory_data: Optional[List[Dict[str, Any]]] = None) -> BasePartRepo:
     """
     Factory function: returns InMemoryPartRepo if data is supplied,
     otherwise connects to MongoPartRepo.
+
+    Raises RepoUnavailableError if MongoDB is unreachable. It used to fall back to an
+    EMPTY in-memory repo, which made every part ID look "unknown" and every total ₹0:
+    the agent would blame its own part choices for what was really a database outage.
     """
     if in_memory_data is not None:
         return InMemoryPartRepo(parts=in_memory_data)
@@ -183,6 +190,5 @@ def get_repo(in_memory_data: Optional[List[Dict[str, Any]]] = None) -> BasePartR
         # Verify connection
         repo._client.admin.command("ping")
         return repo
-    except Exception:
-        # Fallback to empty in-memory repo if Mongo is unavailable
-        return InMemoryPartRepo()
+    except Exception as exc:
+        raise RepoUnavailableError(f"MongoDB is unavailable: {exc}") from exc

@@ -360,3 +360,34 @@ def test_metadata_for_write_without_old_meta_is_unchanged():
     from build_index import metadata_for_write
 
     assert metadata_for_write({"a": 1}, None) == {"a": 1}
+
+
+# ─── Day 10: GPU power (TDP) on search cards. Written BEFORE the change. ──────────
+# Only 4 of 313 GPUs had a TDP in the index (the old seed parts). The dataset has no
+# power field; it lives in data/curated/gpu_tdp.json by chip name, and only the checker
+# looked it up. So GPU comparisons had no TDP row and the AI never saw a GPU's power.
+from build_index import build_metadata as _build_metadata
+
+
+def test_gpu_metadata_gets_tdp_from_the_curated_table():
+    meta = _build_metadata({"_id": "gpu_x", "category": "gpu", "name": "MSI RTX 4060 Ventus 2X",
+                            "chipset": "GeForce RTX 4060", "price_inr": 30000})
+    assert meta["tdp"] == 115.0
+
+
+def test_gpu_own_tdp_is_kept():
+    meta = _build_metadata({"_id": "g1", "category": "gpu", "name": "Gigabyte RTX 4060 OC 8GB",
+                            "chipset": "GeForce RTX 4060", "tdp": 120, "price_inr": 25000})
+    assert meta["tdp"] == 120.0
+
+
+def test_gpu_with_an_unknown_chip_gets_no_tdp_never_a_guess():
+    meta = _build_metadata({"_id": "gpu_y", "category": "gpu", "name": "Mystery Card",
+                            "chipset": "Radeon RX 1", "price_inr": 9000})
+    assert "tdp" not in meta
+
+
+def test_non_gpu_parts_do_not_get_a_gpu_tdp():
+    meta = _build_metadata({"_id": "cab_z", "category": "cabinet", "name": "GeForce RTX 4060 case",
+                            "chipset": "GeForce RTX 4060", "price_inr": 4000})
+    assert "tdp" not in meta

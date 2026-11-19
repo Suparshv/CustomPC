@@ -348,6 +348,30 @@ def _resolve_gpu_tdp(gpu: Dict[str, Any]) -> Optional[float]:
     return None
 
 
+def resolve_gpu_tdp(gpu: Dict[str, Any]) -> Optional[float]:
+    """
+    Public name for the GPU power lookup (part's own TDP, else gpu_tdp.json by chip name).
+    build_index.py uses it too, so search cards and the checker always agree on a GPU's power.
+    """
+    return _resolve_gpu_tdp(gpu)
+
+
+def required_psu_watts(parts: List[Dict[str, Any]]) -> Optional[int]:
+    """
+    Minimum PSU watts for this build: ceil((CPU TDP + all GPU TDPs + 80) * 1.4).
+    Needs only the CPU and GPU(s), so the agent can use it to filter PSUs BEFORE choosing one.
+    None when the CPU or a GPU is missing, or any TDP is unknown (never guessed).
+    """
+    cpu = get_part_by_category(parts, "processor")
+    gpus = get_parts_by_category(parts, "gpu")
+    if not cpu or not gpus or cpu.get("tdp") is None:
+        return None
+    gpu_tdps = [_resolve_gpu_tdp(g) for g in gpus]
+    if any(t is None for t in gpu_tdps):
+        return None
+    return math.ceil((float(cpu["tdp"]) + sum(gpu_tdps) + 80) * 1.4)
+
+
 def check_psu_headroom(parts: List[Dict[str, Any]]) -> Tuple[str, str]:
     """
     Check PSU wattage >= (CPU TDP + GPU TDP + 80W overhead) * 1.4 safety margin.
@@ -664,6 +688,7 @@ def check_build(
         "unknowns": unknowns,
         "unresolved": unresolved,
         "total_price": total_price,
+        "required_psu_watts": required_psu_watts(parts),  # a number the agent can act on
         "checkable_parts": checkable_parts,
         "uncheckable_parts": uncheckable_parts,
     }

@@ -31,6 +31,7 @@ from dotenv import load_dotenv
 from pymongo import MongoClient
 
 import embeddings
+from checker import resolve_gpu_tdp
 
 logger = logging.getLogger(__name__)
 
@@ -240,6 +241,14 @@ def build_metadata(
                 meta[float_key] = float(val)
             except (ValueError, TypeError):
                 pass
+
+    # GPU power: the dataset has no TDP field. Use the same curated lookup as the checker
+    # (gpu_tdp.json by chip name), so cards, comparisons and the checker agree.
+    # A chip that is not in the table gets NO tdp (never a guess).
+    if meta.get("category") == "gpu" and "tdp" not in meta:
+        gpu_tdp = resolve_gpu_tdp({"chipset": doc.get("chipset"), "name": doc.get("name")})
+        if gpu_tdp is not None:
+            meta["tdp"] = float(gpu_tdp)
 
     for str_key in ["chipset", "efficiency"]:
         val = doc.get(str_key) or (doc.get("rating") if str_key == "efficiency" else None)

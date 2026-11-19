@@ -5,6 +5,12 @@ from pydantic import BaseModel, Field
 import httpx
 from google.genai import errors
 
+import os
+from contextlib import asynccontextmanager
+from typing import Any, Dict, Optional
+
+from agent_config import AgentConfig
+from agent_graph import run_agent, warm_up
 from llm import get_llm, LLMError, LLMValidationError
 from schemas import DraftBuild
 from catalog import check_build
@@ -13,7 +19,21 @@ from prompts import ARCHITECT_SYSTEM, format_architect_user_prompt
 logger = logging.getLogger("agent-service")
 logging.basicConfig(level=logging.INFO)
 
-app = FastAPI(title="PC Builder agent service")
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    # Load the slow parts (Chroma, Ollama embedding model, keyword index, reranker) once at
+    # start-up, so no user request pays the 9-33 s cold start. AGENT_WARMUP=0 turns it off.
+    if os.getenv("AGENT_WARMUP", "1").strip().lower() not in ("0", "false", "no", "off"):
+        try:
+            llm = get_current_llm()          # Ollama: its chat model gets loaded too
+        except Exception as e:               # e.g. no API key: the requests will report it
+            logger.warning("Warm-up: LLM not available (%s)", e)
+            llm = None
+        logger.info("Warm-up: %s", warm_up(AgentConfig.from_env(), llm=llm))
+    yield
+
+
+app = FastAPI(title="PC Builder agent service", lifespan=lifespan)
 
 # Lazy LLM loader so importing main.py does not crash if API keys/environment are missing
 _llm = None
@@ -28,6 +48,39 @@ def get_current_llm():
 
 class Ask(BaseModel):
     message: str = Field(min_length=1, max_length=500, description="User request (max 500 characters)")
+
+
+class AgentRequest(BaseModel):
+    message: str = Field(min_length=1, max_length=500, description="User request (max 500 characters)")
+    overrides: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Switches for this request only, e.g. {\"use_checker\": false, \"repair_loops\": 0}",
+    )
+
+
+@app.post("/agent/build")
+def agent_build(req: AgentRequest):
+    """
+    Run the Day 10 agent on one request.
+    200: the agent answered (valid, no_valid_build, unverified, refused, comparison, step_limit...).
+    422: bad request or bad switch values.  503: the AI or a data service is unavailable.
+    """
+    try:
+        config = AgentConfig.from_env().with_overrides(req.overrides)
+    except (ValueError, TypeError) as e:
+        raise HTTPException(status_code=422, detail={"error": "InvalidSwitches", "message": str(e)})
+    try:
+        llm = get_current_llm()
+    except Exception as e:
+        return JSONResponse(status_code=503, content={"status": "error", "error": f"LLM not available: {e}"})
+
+    result = run_agent(req.message, llm, config)   # never raises: failures come back as status "error"
+    # Say which AI produced the answer, so eval reports describe the system that actually ran.
+    result["provider"] = getattr(llm, "provider", None)
+    result["model"] = getattr(llm, "model", None)
+    if result.get("status") == "error":
+        return JSONResponse(status_code=503, content=result)
+    return result
 
 
 @app.get("/health")

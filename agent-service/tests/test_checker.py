@@ -510,3 +510,56 @@ def test_partial_build_mode_still_fails_on_unresolved_ids():
     partial = check_build(["p3", "ghost_board_1"], partial=True)
     assert partial["valid"] is False
     assert "ghost_board_1" in partial["unresolved"]
+
+
+# ─── Day 10: numbers as data, not only text ─────────────────────────────────────
+# Written BEFORE the change. The agent needs the required PSU watts as a NUMBER
+# (to filter PSUs, and to repair a too-weak PSU), even before a PSU is chosen.
+def test_check_build_returns_required_psu_watts_as_data():
+    res = check_build([
+        {"category": "processor", "name": "CPU", "tdp": 65},
+        {"category": "gpu", "name": "GPU", "tdp": 115},
+    ], partial=True)
+    assert res["required_psu_watts"] == 364   # ceil((65 + 115 + 80) * 1.4)
+
+
+def test_required_psu_watts_is_none_when_a_tdp_is_unknown():
+    res = check_build([
+        {"category": "processor", "name": "CPU", "tdp": 65},
+        {"category": "gpu", "name": "Mystery GPU"},
+    ], partial=True)
+    assert res["required_psu_watts"] is None
+
+
+# ─── 19 Nov: GPU power ratings for the 17 catalogue models that had none ─────────
+# Written BEFORE the data was added. 75 of 313 catalogue GPUs had no TDP, so the
+# PSU rule was UNKNOWN for them and the agent could not filter PSUs by watts.
+import json as _json
+import pytest as _pytest
+from checker import _resolve_gpu_tdp
+
+CONFIRMED_GPU_TDP = {   # reference-design values from nvidia.com / amd.com (sources in the JSON)
+    "GeForce RTX 5050": 130, "GeForce RTX 5060": 145, "GeForce RTX 5060 Ti": 180,
+    "Radeon RX 9060 XT": 160, "Radeon RX 9070": 220, "Radeon RX 9070 XT": 304,
+    "Radeon RX 6950 XT": 335, "GeForce RTX 2060": 160, "GeForce RTX 2060 12GB": 185,
+    "GeForce RTX 2060 SUPER": 175, "GeForce RTX 2070": 175, "GeForce RTX 2070 SUPER": 215,
+    "GeForce RTX 2080": 215, "GeForce RTX 2080 SUPER": 250, "GeForce RTX 2080 Ti": 250,
+}
+
+
+@_pytest.mark.parametrize("chipset,watts", sorted(CONFIRMED_GPU_TDP.items()))
+def test_catalogue_gpu_models_have_a_sourced_tdp(chipset, watts):
+    assert _resolve_gpu_tdp({"chipset": chipset, "name": "Some partner card"}) == watts
+
+
+# RX 6500 XT / RX 6400: checked by hand on AMD's pages (the research agent could not open them).
+# The table holds one value per chip, so the RX 6500 XT uses the higher of 4 GB 107 W / 8 GB 113 W.
+@_pytest.mark.parametrize("chipset,watts", [("Radeon RX 6500 XT", 113), ("Radeon RX 6400", 53)])
+def test_hand_checked_amd_gpu_tdp(chipset, watts):
+    assert _resolve_gpu_tdp({"chipset": chipset, "name": "Some partner card"}) == watts
+
+
+def test_every_gpu_tdp_entry_has_a_source():
+    table = _json.load(open(BASE_DIR / "data" / "curated" / "gpu_tdp.json", encoding="utf-8"))
+    for chipset, info in table.items():
+        assert info.get("source_url", "").startswith("https://"), chipset

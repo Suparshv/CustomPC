@@ -43,6 +43,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "agent-service"
 #  new system with different judges would not be a fair comparison, and compat.py would
 #  have called every new-catalogue part "unknown".)
 from checker import check_build
+from catalog import extract_budget   # the same budget reader the agent uses
 
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -54,7 +55,8 @@ def pct(num, denom):
 
 
 # ─── Config ───────────────────────────────────────────────────────────────────
-BACKEND_URL = "http://localhost:5000/api/chat/builder"
+BACKEND_URL = "http://localhost:5000/api/chat/builder"          # old v1 system (Node backend)
+AGENT_URL = "http://127.0.0.1:8001/agent/build"                 # new Day 10 agent (agent-service)
 REQUESTS_PATH = os.path.join(os.path.dirname(__file__), "requests.jsonl")
 RESULTS_PATH = os.path.join(os.path.dirname(__file__), "results.jsonl")
 DOCS_DIR = os.path.join(os.path.dirname(__file__), "..", "docs")
@@ -102,7 +104,8 @@ def load_requests(path):
 
 
 # ─── Sending a request ────────────────────────────────────────────────────────
-def execute_request_with_retries(req_text, base_session_id, post=None, sleep=time.sleep, clock=time.perf_counter):
+def execute_request_with_retries(req_text, base_session_id, post=None, sleep=time.sleep, clock=time.perf_counter,
+                                 url=BACKEND_URL, extra_payload=None):
     """
     Executes a request to backend, automatically retrying if rate limits occur.
     Uses unique session ID per attempt to prevent conversation state pollution.
@@ -133,9 +136,9 @@ def execute_request_with_retries(req_text, base_session_id, post=None, sleep=tim
         start_time = clock()  # restarted for every attempt
         try:
             resp = post(
-                BACKEND_URL,
-                json={"message": req_text, "sessionId": session_id},
-                timeout=120,
+                url,
+                json={"message": req_text, "sessionId": session_id, **(extra_payload or {})},
+                timeout=300,   # a full agent build (9 picks + up to 2 repairs) can take minutes
             )
             elapsed = round(clock() - start_time, 2)
 
@@ -361,6 +364,18 @@ def score_result(req_type, success, reply, build_part_ids, critique, comparison_
     return {}
 
 
+def judged_budget(row):
+    """
+    The budget a build is judged against: the one the request TEXT states, read by code.
+
+    Rule decided on Day 10: 9 of the 10 build requests state no budget in their text; their
+    test-file "budget" was never shown to either system, so judging against it measured
+    guessing, not building. A request that states no budget has no price limit to break.
+    (The frozen test file is not edited; its budget field is just not used for judging.)
+    """
+    return extract_budget(row.get("text") or "")
+
+
 def rescore_results(results, part_lookup=None):
     """
     Score saved replies again with the CURRENT scorer and judge. No requests are sent.
@@ -374,7 +389,7 @@ def rescore_results(results, part_lookup=None):
         new = dict(r)
         new["score"] = score_result(
             r["type"], r.get("success", True), r.get("reply", "") or "", r.get("build_part_ids") or [],
-            r.get("critique"), r.get("comparison_data"), r.get("budget"), part_lookup,
+            r.get("critique"), r.get("comparison_data"), judged_budget(r), part_lookup,
         )
         rescored.append(new)
     return rescored
@@ -469,7 +484,7 @@ def compute_metrics(results):
 
     builds_produced = [r for r in build_requests_scored if r["score"].get("produced_build")]
     builds_valid = [r for r in build_requests_scored if r["score"].get("valid")]
-    builds_with_budget = [r for r in builds_produced if r.get("budget") is not None]
+    builds_with_budget = [r for r in builds_produced if judged_budget(r) is not None]
     builds_budget_pass = [r for r in builds_with_budget
                           if r["score"].get("judge_details", {}).get("within_budget") == "PASS"]
     builds_refused = [r for r in build_requests_scored if r["score"].get("refused")]
@@ -478,7 +493,7 @@ def compute_metrics(results):
     # Success rate = valid AND within budget (or no budget constraint)
     builds_successful = [
         r for r in build_requests_scored
-        if r["score"].get("valid") and (r.get("budget") is None or r["score"].get("judge_details", {}).get("within_budget") == "PASS")
+        if r["score"].get("valid") and (judged_budget(r) is None or r["score"].get("judge_details", {}).get("within_budget") == "PASS")
     ]
 
     def correct(rs):
@@ -564,6 +579,28 @@ def print_scorecard(m):
     print(f"{'='*60}")
 
 
+def system_notes(results):
+    """Describe the system that ACTUALLY produced these results (old v1 backend or the Day 10 agent)."""
+    agent_rows = [r for r in results if r.get("target") == "agent"]
+    if not agent_rows:
+        return (
+            "- **Model**: Gemini 3.5 Flash Lite via `@google/genai` SDK\n"
+            "- **Architecture**: LangGraph multi-agent (Supervisor, Architect, Critic, Reviewer, Comparator)\n"
+            "- **RAG**: ChromaDB vector database (Docker)\n"
+            "- **Function Calling**: Strict mode (`toolConfig.functionCallingConfig.mode: \"ANY\"`)\n"
+            f"- **Pacing**: {WAIT_SECONDS}s wait between requests to stay under 15 RPM"
+        )
+    models = sorted({r.get("model") or "unknown" for r in agent_rows})
+    switches = agent_rows[0].get("overrides")
+    return (
+        "- **System**: Day 10 agent (`agent-service`, `POST /agent/build`): rule-based router, step-by-step "
+        "part picks with code filters, code compatibility checker with repairs, price and verdict written by code\n"
+        f"- **Model**: {', '.join(models)}\n"
+        f"- **Switches**: {json.dumps(switches) if switches else 'defaults (all upgrades on)'}\n"
+        "- **Search**: ChromaDB + BM25 keyword index (Day 9), retriever set by the switches"
+    )
+
+
 def render_eval_md(results, m, n_requests, timestamp, title="v1-baseline", preface=""):
     eval_md = f"""# Evaluation Report: {title}
 
@@ -605,7 +642,8 @@ def render_eval_md(results, m, n_requests, timestamp, title="v1-baseline", prefa
 """
 
     for r in results:
-        budget_str = f"Rs.{r['budget']:,}" if r.get("budget") else "-"
+        stated = judged_budget(r)
+        budget_str = f"Rs.{int(stated):,}" if stated else "- (not stated)"
         reply_snippet = (r.get("reply", "") or "")[:75].replace("\n", " ")
 
         if r["type"] == "normal_build":
@@ -644,11 +682,7 @@ def render_eval_md(results, m, n_requests, timestamp, title="v1-baseline", prefa
     eval_md += f"""
 ## Notes
 
-- **Model**: Gemini 3.5 Flash Lite via `@google/genai` SDK
-- **Architecture**: LangGraph multi-agent (Supervisor, Architect, Critic, Reviewer, Comparator)
-- **RAG**: ChromaDB vector database (Docker)
-- **Function Calling**: Strict mode (`toolConfig.functionCallingConfig.mode: "ANY"`)
-- **Pacing**: {WAIT_SECONDS}s wait between requests to stay under 15 RPM
+{system_notes(results)}
 - **Pricing Rule**: Consistent 1x part pricing (no automatic RAM doubling).
 - **Strict Scoring**:
   - Impossible requests are hand-graded from the saved replies (`eval/manual_grades.json`). Correct = refuses, or names the conflict without claiming the build satisfies it. Partial = names it but makes a false claim. Incorrect = no warning in the reply, or the reply contradicts the build. Only "correct" counts toward the headline.
@@ -662,7 +696,33 @@ def render_eval_md(results, m, n_requests, timestamp, title="v1-baseline", prefa
 
 
 # ─── Main ─────────────────────────────────────────────────────────────────────
-def run_one_request(req):
+def agent_to_backend_shape(data):
+    """
+    Convert a POST /agent/build answer into the shape the scorer already reads
+    (the old backend's: reply, build, critique, comparisonData, tokenLog).
+
+    Only a build the agent OFFERS counts as a build: status "valid", or "unverified"
+    (checker switched off). With "no_valid_build" the agent lists a best attempt that it
+    clearly marks NOT valid; that is a refusal, not an invalid build.
+    """
+    status = data.get("status")
+    picks = data.get("picks") or {}
+    offered = status in ("valid", "unverified")
+    tokens = data.get("tokens") or {}
+    comparison = data.get("comparison")
+    return {
+        "reply": data.get("reply", "") or "",
+        "build": [{"id": card["id"], "category": cat} for cat, card in picks.items()] if offered else [],
+        "critique": None,                      # the critic is code now; its verdict is in the reply
+        "comparisonData": comparison if comparison and comparison.get("rows") else None,
+        "tokenLog": [{"agent": "agent-service", "tokens": {
+            "promptTokenCount": tokens.get("prompt", 0), "candidatesTokenCount": tokens.get("output", 0)}}],
+        "agentStatus": status,
+        "model": " / ".join(x for x in (data.get("provider"), data.get("model")) if x) or None,
+    }
+
+
+def run_one_request(req, target="backend", overrides=None, agent_url=AGENT_URL):
     """Send one test request and return the full raw record for results.jsonl."""
     req_id = req["id"]
     req_text = req["text"]
@@ -670,7 +730,14 @@ def run_one_request(req):
     req_type = req["type"]
 
     base_session_id = f"eval-{uuid.uuid4().hex[:8]}"
-    success, error_msg, elapsed, data, retry_info = execute_request_with_retries(req_text, base_session_id)
+    if target == "agent":
+        success, error_msg, elapsed, data, retry_info = execute_request_with_retries(
+            req_text, base_session_id, url=agent_url,
+            extra_payload={"overrides": overrides} if overrides else None)
+        if success:
+            data = agent_to_backend_shape(data)
+    else:
+        success, error_msg, elapsed, data, retry_info = execute_request_with_retries(req_text, base_session_id)
 
     reply = data.get("reply", "") or ""
     build = data.get("build", None)
@@ -683,7 +750,8 @@ def run_one_request(req):
 
     if not success:
         print(f"  [Skip scoring] Request failed after {MAX_RETRIES} retries. Error: {error_msg}")
-    score = score_result(req_type, success, reply, build_part_ids, critique, comparison_data, req_budget)
+    score = score_result(req_type, success, reply, build_part_ids, critique, comparison_data,
+                         judged_budget(req))
 
     # Assemble raw record with all detailed fields
     return {
@@ -705,24 +773,37 @@ def run_one_request(req):
         "total_tokens": total_prompt_tokens + total_candidate_tokens,
         "prompt_tokens": total_prompt_tokens,
         "candidate_tokens": total_candidate_tokens,
+        "target": target,                     # backend (v1) or agent (Day 10)
+        "agent_status": data.get("agentStatus"),  # valid / no_valid_build / refused ... (agent only)
+        "model": data.get("model"),           # e.g. "ollama / llama3.1:8b" (agent only)
+        "overrides": overrides,               # the agent switches used for this run
         "score": score,
     }
 
 
 BASELINE_PREFACE = """
-> **Re-scored on 17 Nov 2026 for the 20 Nov before/after comparison.** No requests were re-run:
-> these are the saved 8 Nov replies (`eval/results.jsonl`, Gemini 3.5 Flash Lite, commit `a4ed31e`)
-> scored again with the CURRENT scorer and judge, so the old and the new system are measured the same way.
+> **Re-scored for the before/after comparison** (re-scored on project Day 10). No requests were
+> re-run: these are the saved 8 Nov replies (`eval/results.jsonl`, Gemini 3.5 Flash Lite, commit
+> `a4ed31e`) scored again with the CURRENT scorer and judge, so the old and the new system are
+> measured the same way.
 >
 > - **Judge:** `agent-service/checker.py` with parts read from MongoDB, the same code the new
 >   system's `check_compatibility` tool uses. The 8 Nov report used `compat.py` (6 rules, 24 parts),
->   which cannot judge the new ~3,000-part catalogue.
-> - **Same as 8 Nov:** valid builds 4/10, within budget 5/9, success 4/10, refusals 0/10,
->   comparisons 5/5, impossible 1/5 (hand-graded), off-topic 4/5, vague 4/5. `checker.py` agrees
->   with `compat.py` on every saved build.
-> - **Changed:** the unknown rate was 1/10 and is now 10/10. The new judge also checks cooler height,
->   and the old parts have no cooler-height data, so that check cannot run for any old build. For the
->   same reason, 0/10 old builds are "fully verified" (a new measure: every rule PASS).
+>   which cannot judge the new ~3,000-part catalogue. `checker.py` agrees with `compat.py` on every
+>   saved build.
+> - **Budget rule (changed on Day 10):** a build is judged against the budget the request TEXT
+>   states (read by code), and only then. 9 of the 10 build requests state no budget; the 8 Nov
+>   scoring judged them against a hidden budget in the test file that the system never saw. With no
+>   stated budget there is no price limit to break, so any compatible build is valid. The test file
+>   is not edited; its `budget` field is no longer used for judging. Only request #2 ("under 1 lakh")
+>   states a budget, so "within budget" rests on 1 build: compare **valid builds** first.
+> - **Old rule -> new rule:** valid builds 4/10 -> **6/10**, within budget 5/9 -> **1/1**,
+>   success 4/10 -> **6/10**.
+> - **Unchanged:** refusals 0/10, comparisons 5/5, impossible 1/5 (hand-graded), off-topic 4/5,
+>   vague 4/5.
+> - **New judge, more rules:** the unknown rate was 1/10 and is now 10/10, because the new judge also
+>   checks cooler height and the old parts have no cooler-height data. For the same reason 0/10 old
+>   builds are "fully verified" (every rule PASS).
 > - **Time:** the 8 Nov times include any time the runner spent waiting before a retry (it did not
 >   record retries then). Ids 17 and 18 (about 60 s) probably include such a wait. Compare the
 >   **median** time; new runs record retry waits separately.
@@ -737,6 +818,13 @@ def parse_args(argv=None):
     ap.add_argument("--results", default=RESULTS_PATH, help="results .jsonl file (default: eval/results.jsonl)")
     ap.add_argument("--report", default=EVAL_MD_PATH, help="markdown report to write (default: docs/eval-v1.md)")
     ap.add_argument("--title", default="v1-baseline", help="report title, e.g. 'v2 upgrades on, Gemini'")
+    ap.add_argument("--target", choices=["backend", "agent"], default="backend",
+                    help="backend = old v1 Node system (port 5000); agent = new Day 10 agent (POST /agent/build)")
+    ap.add_argument("--agent-url", default=AGENT_URL, help=f"agent endpoint (default {AGENT_URL})")
+    ap.add_argument("--overrides", type=json.loads, default=None,
+                    help='agent switches as JSON, e.g. \'{"use_tools": false, "use_checker": false, "repair_loops": 0}\'')
+    ap.add_argument("--wait", type=float, default=WAIT_SECONDS,
+                    help=f"seconds between requests (default {WAIT_SECONDS} for Gemini's free tier; 0 is fine for Ollama)")
     return ap.parse_args(argv)
 
 
@@ -808,8 +896,9 @@ def main(argv=None):
 
     print(f"\n{'='*60}")
     print(f"  EVALUATION RUNNER - {len(test_requests)} requests total")
-    print(f"  Backend: {BACKEND_URL}")
-    print(f"  Pacing: {WAIT_SECONDS}s wait between requests (avoids 15 RPM cap)")
+    url = args.agent_url if args.target == "agent" else BACKEND_URL
+    print(f"  Target: {args.target} ({url})" + (f" | switches: {args.overrides}" if args.overrides else ""))
+    print(f"  Pacing: {args.wait}s wait between requests")
     print(f"{'='*60}\n")
 
     # ─── Run Requests ────────────────────────────────────────────────────────
@@ -822,7 +911,7 @@ def main(argv=None):
 
         print(f"[{i+1}/{len(test_requests)}] id={req['id']} type={req['type']}")
         print(f"  Prompt: \"{req['text']}\"")
-        result = run_one_request(req)
+        result = run_one_request(req, target=args.target, overrides=args.overrides, agent_url=args.agent_url)
         results.append(result)
 
         # Append incrementally to disk so progress is never lost
@@ -836,8 +925,9 @@ def main(argv=None):
 
         # Rate limit pacing wait
         if i < len(test_requests) - 1:
-            print(f"  Pacing wait {WAIT_SECONDS}s to respect 15 RPM limit...")
-            time.sleep(WAIT_SECONDS)
+            if args.wait > 0:
+                print(f"  Pacing wait {args.wait}s...")
+                time.sleep(args.wait)
 
     # ─── Final scores: every row (cached or new) judged by checker.py + MongoDB ──
     # Scores printed during the run are provisional: they were judged before the

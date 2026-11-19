@@ -116,7 +116,11 @@ To ensure clear before-and-after comparisons without confusion:
 Full per-request table: [`docs/eval-v1.md`](./docs/eval-v1.md).
 
 > [!NOTE]
-> **Re-scored 17 Nov for the 20 Nov comparison** (same saved replies, no re-run). The new system is judged by `agent-service/checker.py`, so the baseline is now judged by it too (`python eval/run_eval.py --rescore`). Every result above stays the same, except the unknown rate: it is now **10/10**, and **0/10** builds are fully verified (every rule PASS), because the old parts have no cooler-height data. Compare the **median** time (9.36 s): the 8 Nov times may include waits before retries.
+> **Re-scored for the before/after comparison** (same saved replies, no re-run; `python eval/run_eval.py --rescore`). The table above is the original 8 Nov scoring. Two scoring rules changed so the old and new systems are measured the same way:
+> - **Judge:** `agent-service/checker.py` (the new system's checker) instead of `compat.py`. It agrees on every saved build, but also checks cooler height, which the old parts have no data for: unknown rate **10/10**, fully verified **0/10**.
+> - **Budget (Day 10):** a build is judged only against a budget the request **text** states. 9 of the 10 build requests state none; the 8 Nov scoring judged them against a hidden test-file budget the system never saw. New baseline: valid builds **6/10** (was 4/10), within budget **1/1** (was 5/9; only request #2 states a budget), success **6/10** (was 4/10). Everything else is unchanged.
+>
+> Compare the **median** time (9.36 s): the 8 Nov times may include waits before retries. Current baseline report: [`docs/eval-v1.md`](./docs/eval-v1.md).
 
 **What the baseline shows**
 - Of the 6 invalid builds: 4 went over budget, 2 had a RAM-type mismatch, 2 had too weak a PSU, 1 had a socket mismatch.

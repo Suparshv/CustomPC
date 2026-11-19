@@ -151,6 +151,40 @@ def _enum_name(value) -> str | None:
     return getattr(value, "name", None) or str(value).split(".")[-1]
 
 
+def _find_retry_delay(obj) -> float | None:
+    """Gemini puts its wait hint in the error body as RetryInfo {"retryDelay": "37s"}."""
+    if isinstance(obj, dict):
+        value = obj.get("retryDelay")
+        if isinstance(value, str) and value.endswith("s"):
+            try:
+                return float(value[:-1])
+            except ValueError:
+                pass
+        for v in obj.values():
+            found = _find_retry_delay(v)
+            if found is not None:
+                return found
+    elif isinstance(obj, list):
+        for v in obj:
+            found = _find_retry_delay(v)
+            if found is not None:
+                return found
+    return None
+
+
+def _gemini_retry_wait(e: "errors.APIError", retry_attempt: int) -> float:
+    """
+    How long to wait before retrying a Gemini error.
+    503 (overloaded): short waits, 2 s then 4 s.
+    429 (too many requests): the free tier allows 15 calls per MINUTE, so 2-4 s is far too
+    short; wait as long as Gemini asks (capped at 60 s), else 30 s then 60 s.
+    """
+    if e.code == 429:
+        hint = _find_retry_delay(getattr(e, "details", None))
+        return min(hint, 60) if hint is not None else 30 * (retry_attempt + 1)
+    return 2 * (retry_attempt + 1)
+
+
 class GeminiLLM(BaseLLM):
     provider = "gemini"
 
@@ -185,8 +219,7 @@ class GeminiLLM(BaseLLM):
                 break
             except errors.APIError as e:
                 if e.code in (503, 429) and retry_attempt < 2:
-                    wait_time = (retry_attempt + 1) * 2  # 2s, 4s
-                    time.sleep(wait_time)
+                    time.sleep(_gemini_retry_wait(e, retry_attempt))
                     continue
                 raise
 
@@ -255,6 +288,14 @@ class OllamaLLM(BaseLLM):
         if not found:
             raise ValueError(f"Model '{self.model}' is not pulled in Ollama. Available: {pulled}")
         return {"status": "ok", "provider": self.provider, "model": self.model}
+
+    def preload(self) -> None:
+        """
+        Load the chat model into (GPU) memory without generating any text: Ollama loads a
+        model when it gets an empty prompt. Used by the service's start-up warm-up, so the
+        slow first load (and any failure in it) happens before the first user request.
+        """
+        self.client.generate(model=self.model, prompt="")
 
     def _complete(self, system: str, user: str, schema: type[BaseModel]) -> Raw:
         try:

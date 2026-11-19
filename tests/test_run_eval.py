@@ -8,6 +8,7 @@ No test here makes a network call.
 import importlib.util
 import json
 import os
+from types import SimpleNamespace
 
 
 ROOT = os.path.join(os.path.dirname(__file__), "..")
@@ -294,22 +295,151 @@ def test_metrics_include_fully_verified_and_median_time():
 
 def test_baseline_rescored_with_the_new_judge():
     """
-    The numbers the 20 Nov system will be compared against: the SAVED 8 Nov replies
+    The numbers the new system will be compared against: the SAVED 8 Nov replies
     (no new requests) re-scored by the current scorer and checker.py.
+
+    Budget rule (Day 10, decided by the project owner): the budget is judged only when the
+    request TEXT states one. 9 of the 10 build requests state none (their test-file budget
+    was never shown to either system), so for them any compatible build is valid.
+    Under the old rule (8 Nov) it was: valid 4/10, within budget 5/9, success 4/10.
     """
     results = run_eval.rescore_results(load_saved("results.jsonl"))
     run_eval.apply_manual_grades(results, run_eval.load_manual_grades(run_eval.MANUAL_GRADES_PATH))
     m = run_eval.compute_metrics(results)
-    # Same as published on 8 Nov:
-    assert m["valid"] == (4, 10)
-    assert m["within_budget"] == (5, 9)
-    assert m["success"] == (4, 10)
+    assert m["valid"] == (6, 10)
+    assert m["within_budget"] == (1, 1)        # only request #2 states a budget ("under 1 lakh")
+    assert m["success"] == (6, 10)
+    # Unchanged by the budget rule:
     assert m["refused"] == (0, 10)
     assert m["comparison"] == (5, 5)
     assert m["impossible_label"] == "1 correct, 2 partial, 2 incorrect (hand-graded)"
     assert m["off_topic"] == (4, 5)
     assert m["vague"] == (4, 5)
-    # Different, because the new judge has more rules (cooler height can't be checked
-    # for the old parts), so no old build is fully verified:
     assert m["fully_verified"] == (0, 10)
     assert m["unknown"] == (10, 10)
+
+
+# ─── Day 10: run the 30 requests against the NEW agent (POST /agent/build). ─────
+# Written BEFORE the change. The runner used to talk only to the old Node backend.
+AGENT_VALID = {
+    "status": "valid", "reply": "A balanced build.",
+    "picks": {"processor": {"id": "cpu_1"}, "motherboard": {"id": "mb_1"}},
+    "tokens": {"prompt": 5000, "output": 600}, "comparison": None,
+}
+
+
+def test_agent_answer_is_converted_to_the_shape_the_scorer_reads():
+    data = run_eval.agent_to_backend_shape(AGENT_VALID)
+    assert run_eval.extract_part_ids(data["build"]) == ["cpu_1", "mb_1"]
+    assert run_eval.sum_tokens(data["tokenLog"]) == (5000, 600)
+    assert data["reply"] == "A balanced build."
+    assert data["agentStatus"] == "valid"
+
+
+def test_no_valid_build_offers_no_build_even_with_a_best_attempt():
+    """'No valid build found' + a best attempt (NOT valid) is a refusal, not an invalid build."""
+    data = run_eval.agent_to_backend_shape({**AGENT_VALID, "status": "no_valid_build",
+                                            "reply": "No valid build found within this budget."})
+    assert data["build"] == []
+    score = run_eval.score_result("normal_build", True, data["reply"], [], None, None, 15000)
+    assert score["refused"] is True
+
+
+def test_agent_comparison_table_counts_as_a_comparison():
+    table = {"headers": ["Spec", "RTX 4060", "RX 7600"], "rows": [["Price", "₹30,000", "₹27,000"]]}
+    data = run_eval.agent_to_backend_shape({"status": "comparison", "reply": "The RX 7600 is cheaper.",
+                                            "picks": {}, "tokens": {}, "comparison": table})
+    assert run_eval.has_comparison_table(data["comparisonData"])
+
+
+def test_agent_requests_go_to_the_agent_url_with_the_switches():
+    sent = {}
+
+    def fake_post(url, json, timeout):
+        sent["url"], sent["json"] = url, json
+        return SimpleNamespace(status_code=200, json=lambda: AGENT_VALID, text="")
+
+    ok, *_ = run_eval.execute_request_with_retries(
+        "Gaming PC under 75000", "eval-x", post=fake_post,
+        url=run_eval.AGENT_URL, extra_payload={"overrides": {"use_checker": False}})
+    assert ok
+    assert sent["url"] == run_eval.AGENT_URL
+    assert sent["json"]["message"] == "Gaming PC under 75000"
+    assert sent["json"]["overrides"] == {"use_checker": False}
+
+
+def test_command_line_can_target_the_agent_with_switches():
+    args = run_eval.parse_args(["--target", "agent", "--overrides", '{"use_checker": false, "repair_loops": 0}',
+                                "--wait", "0"])
+    assert args.target == "agent"
+    assert args.overrides == {"use_checker": False, "repair_loops": 0}
+    assert args.wait == 0
+    assert run_eval.parse_args([]).target == "backend"   # the default is unchanged
+
+
+def test_agent_model_is_recorded():
+    data = run_eval.agent_to_backend_shape({**AGENT_VALID, "provider": "ollama", "model": "llama3.1:8b"})
+    assert data["model"] == "ollama / llama3.1:8b"
+
+
+def test_report_notes_describe_the_system_that_was_actually_run():
+    """Found in review: the notes always described the OLD system, even for an agent run."""
+    row = make_result(1, "normal_build", {"produced_build": True, "valid": True})
+    row.update({"target": "agent", "model": "ollama / llama3.1:8b", "overrides": {"use_checker": False}})
+    md = run_eval.render_eval_md([row], run_eval.compute_metrics([row]), 1, "now", title="v2 test")
+    notes = md.split("## Notes")[1]
+    assert "ollama / llama3.1:8b" in notes
+    assert "Day 10 agent" in notes
+    assert "use_checker" in notes
+    assert "Supervisor" not in notes
+
+
+def test_report_notes_for_the_old_system_are_unchanged():
+    row = make_result(1, "normal_build", {"produced_build": True, "valid": True})
+    md = run_eval.render_eval_md([row], run_eval.compute_metrics([row]), 1, "now")
+    assert "Supervisor, Architect, Critic, Reviewer, Comparator" in md.split("## Notes")[1]
+
+
+# ─── Day 10: judge the budget only when the request states one. Written BEFORE the change. ───
+NO_BUDGET_TEXT = "Build me a gaming PC for 1080p gaming"
+
+
+def _saved_row(text, file_budget, ids):
+    return {"id": 1, "type": "normal_build", "text": text, "budget": file_budget, "success": True,
+            "reply": "Here is a build.", "build_part_ids": ids, "critique": None,
+            "elapsed_s": 1.0, "total_tokens": 10}
+
+
+def test_judged_budget_is_read_from_the_request_text():
+    assert run_eval.judged_budget({"text": "PC for video editing under 1 lakh", "budget": 100000}) == 100000
+    assert run_eval.judged_budget({"text": NO_BUDGET_TEXT, "budget": 80000}) is None
+
+
+def test_a_budget_the_request_never_stated_is_not_judged():
+    """Old rule: the hidden test-file budget (here a tiny 1,000) made this compatible build invalid."""
+    row = run_eval.rescore_results([_saved_row(NO_BUDGET_TEXT, 1000, GOOD_IDS)])[0]
+    assert row["score"]["valid"] is True
+    assert row["score"]["judge_details"]["within_budget"] == "UNKNOWN"
+
+
+def test_a_stated_budget_is_still_judged():
+    row = run_eval.rescore_results([_saved_row("Gaming PC under 40000", 40000, GOOD_IDS)])[0]
+    assert row["score"]["valid"] is False
+    assert row["score"]["judge_details"]["within_budget"] == "FAIL"
+
+
+def test_within_budget_counts_only_requests_that_stated_a_budget():
+    ok = {"produced_build": True, "valid": True, "judge_details": {"within_budget": "UNKNOWN"}}
+    row = make_result(1, "normal_build", ok, build=GOOD_IDS)
+    row.update({"text": NO_BUDGET_TEXT, "budget": 80000})
+    m = run_eval.compute_metrics([row])
+    assert m["within_budget"] == (0, 0)
+    assert m["success"] == (1, 1)
+
+
+def test_report_shows_the_budget_that_was_judged():
+    row = make_result(1, "normal_build", {"produced_build": True, "valid": True}, build=GOOD_IDS)
+    row.update({"text": NO_BUDGET_TEXT, "budget": 80000})
+    md = run_eval.render_eval_md([row], run_eval.compute_metrics([row]), 1, "now")
+    line = [l for l in md.splitlines() if l.startswith("| 1 |")][0]
+    assert "80,000" not in line and "not stated" in line

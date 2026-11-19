@@ -628,6 +628,7 @@ def check_compatibility(
         "unknowns": check_result["unknowns"],
         "unresolved": check_result["unresolved"],
         "total_price": check_result["total_price"],
+        "required_psu_watts": check_result["required_psu_watts"],
         "checkable_parts": check_result["checkable_parts"],
         "uncheckable_parts": check_result["uncheckable_parts"],
     }

@@ -198,5 +198,81 @@
   "Radeon RX 7900 XTX": {
     "tdp_w": 355,
     "source_url": "https://www.amd.com/en/products/graphics/desktops/radeon-7000-series/amd-radeon-rx-7900-xtx.html"
+  },
+  "GeForce RTX 5050": {
+    "tdp_w": 130,
+    "source_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/50-series/rtx-5050/"
+  },
+  "GeForce RTX 5060": {
+    "tdp_w": 145,
+    "source_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/50-series/rtx-5060-family/"
+  },
+  "GeForce RTX 5060 Ti": {
+    "tdp_w": 180,
+    "source_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/50-series/rtx-5060-family/",
+    "note": "8 GB and 16 GB both 180 W"
+  },
+  "Radeon RX 9060 XT": {
+    "tdp_w": 160,
+    "source_url": "https://newsroom.amd.com/news/amd-introduces-new-radeon-graphics-cards-and-ryzen/",
+    "note": "AMD: 8 GB 'starting at 150W', 16 GB 'starting at 160W'. The catalogue chipset name does not say which, so the higher value is used (safe side for PSU sizing)."
+  },
+  "Radeon RX 9070": {
+    "tdp_w": 220,
+    "source_url": "https://ir.amd.com/news-events/press-releases/detail/1238/amd-unveils-next-generation-amd-rdna-4-architecture-with-the-launch-of-amd-radeon-rx-9000-series-graphics-cards"
+  },
+  "Radeon RX 9070 XT": {
+    "tdp_w": 304,
+    "source_url": "https://ir.amd.com/news-events/press-releases/detail/1238/amd-unveils-next-generation-amd-rdna-4-architecture-with-the-launch-of-amd-radeon-rx-9000-series-graphics-cards"
+  },
+  "Radeon RX 6950 XT": {
+    "tdp_w": 335,
+    "source_url": "https://ir.amd.com/news-events/press-releases/detail/1064/amd-announces-three-new-radeon-rx-6000-series-graphics-cards-and-first-games-adding-support-for-amd-fidelityfx-super-resolution-2-0"
+  },
+  "GeForce RTX 2060": {
+    "tdp_w": 160,
+    "source_url": "https://www.nvidia.com/content/nvidiaGDC/zz/en_ZZ/geforce/graphics-cards/rtx-2060.html"
+  },
+  "GeForce RTX 2060 12GB": {
+    "tdp_w": 185,
+    "source_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/?section=compare-20",
+    "note": "Compare page lists '185 / 160' beside '12 GB / 6 GB'"
+  },
+  "GeForce RTX 2060 SUPER": {
+    "tdp_w": 175,
+    "source_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/?section=compare-20"
+  },
+  "GeForce RTX 2070": {
+    "tdp_w": 175,
+    "source_url": "https://www.nvidia.com/content/nvidiaGDC/zz/en_ZZ/geforce/graphics-cards/rtx-2070.html",
+    "note": "Reference 175 W; Founders Edition 185 W"
+  },
+  "GeForce RTX 2070 SUPER": {
+    "tdp_w": 215,
+    "source_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/?section=compare-20"
+  },
+  "GeForce RTX 2080": {
+    "tdp_w": 215,
+    "source_url": "https://www.nvidia.com/content/nvidiaGDC/zz/en_ZZ/geforce/graphics-cards/rtx-2080.html",
+    "note": "Reference 215 W; Founders Edition 225 W"
+  },
+  "GeForce RTX 2080 SUPER": {
+    "tdp_w": 250,
+    "source_url": "https://www.nvidia.com/content/nvidiaGDC/zz/en_ZZ/geforce/graphics-cards/rtx-2080-super.html"
+  },
+  "GeForce RTX 2080 Ti": {
+    "tdp_w": 250,
+    "source_url": "https://www.nvidia.com/content/nvidiaGDC/zz/en_ZZ/geforce/graphics-cards/rtx-2080-ti.html",
+    "note": "Reference 250 W; Founders Edition 260 W"
+  },
+  "Radeon RX 6500 XT": {
+    "tdp_w": 113,
+    "source_url": "https://www.amd.com/en/products/graphics/desktops/radeon/6000-series/amd-radeon-rx-6500-xt.html",
+    "note": "Checked by hand by the project owner (Day 10): 4 GB 107 W, 8 GB 113 W. One value per chip, so the higher is used (safe side for PSU sizing)."
+  },
+  "Radeon RX 6400": {
+    "tdp_w": 53,
+    "source_url": "https://www.amd.com/en/products/graphics/desktops/radeon/6000-series/amd-radeon-rx-6400.html",
+    "note": "Checked by hand by the project owner (Day 10): 4 GB 53 W."
   }
 }

@@ -95,7 +95,14 @@ class CrossEncoderReranker:
         if self._model is None:
             logger.info("Loading CrossEncoder model '%s'...", self.model_name)
             from sentence_transformers import CrossEncoder
-            self._model = CrossEncoder(self.model_name)
+            try:
+                # Local cache first: no online "is there an update?" request to huggingface.co
+                # (measured: ~2 s on a good connection, far more on a slow one, on every start).
+                self._model = CrossEncoder(self.model_name, local_files_only=True)
+            except OSError:
+                # Not downloaded yet (first run on this machine): download it once.
+                logger.info("Reranker model not in the local cache; downloading it once.")
+                self._model = CrossEncoder(self.model_name)
         return self._model
 
     def rerank(

@@ -76,6 +76,33 @@ flowchart LR
    ```
    More detail in [`frontend/README.md`](./frontend/README.md).
 
+## Before and after (Day 13)
+
+The same 30 frozen requests through the old system (A) and the new agent with upgrades off and on
+(C–F), all scored by `checker.py`. Plan, settings and failure analysis: [`docs/eval.md`](./docs/eval.md).
+
+<!-- combined:start -->
+**Build requests** (10 per run)
+
+| Row | System | Valid builds | Within budget | Success | Refused | Unknown | Fully verified |
+|---|---|---|---|---|---|---|---|
+| A | Old Node system, Gemini | 6/10 (60%) | 1/1 (100%) | 6/10 (60%) | 0/10 (0%) | 10/10 (100%) | 0/10 (0%) |
+| C | New, upgrades off, Gemini | not run yet | not run yet | not run yet | not run yet | not run yet | not run yet |
+| D | New, upgrades on, Gemini | not run yet | not run yet | not run yet | not run yet | not run yet | not run yet |
+| E | New, upgrades off, Llama 3.1 8B | not run yet | not run yet | not run yet | not run yet | not run yet | not run yet |
+| F | New, upgrades on, Llama 3.1 8B | not run yet | not run yet | not run yet | not run yet | not run yet | not run yet |
+
+**Other requests, time, tokens and cost** (all 30 requests)
+
+| Row | System | Comparisons | Impossible (hand-graded) | Off-topic | Vague | Median s | Avg tokens | Paid-equivalent $/request | Errored | Code version |
+|---|---|---|---|---|---|---|---|---|---|---|
+| A | Old Node system, Gemini | 5/5 (100%) | 1/5 (20%) | 4/5 (80%) | 4/5 (80%) | 9.4 | 5,438 | $0.00368 | 0 | a4ed31e (8 Nov, from the baseline notes) |
+| C | New, upgrades off, Gemini | not run yet | not run yet | not run yet | not run yet | not run yet | not run yet | not run yet | not run yet | not run yet |
+| D | New, upgrades on, Gemini | not run yet | not run yet | not run yet | not run yet | not run yet | not run yet | not run yet | not run yet | not run yet |
+| E | New, upgrades off, Llama 3.1 8B | not run yet | not run yet | not run yet | not run yet | not run yet | not run yet | not run yet | not run yet | not run yet |
+| F | New, upgrades on, Llama 3.1 8B | not run yet | not run yet | not run yet | not run yet | not run yet | not run yet | not run yet | not run yet | not run yet |
+<!-- combined:end -->
+
 ## Evaluation of Baseline (Run 2)
 
 **Why:** you cannot show an upgrade without measuring the starting point.

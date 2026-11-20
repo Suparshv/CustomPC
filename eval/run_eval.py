@@ -20,6 +20,10 @@ Usage:
      python eval/run_eval.py --rescore
   A separate run for the 20 Nov comparison (keep each run in its own files):
      python eval/run_eval.py --results eval/results-v2-gemini.jsonl --report docs/eval-v2-gemini.md --title "v2 upgrades on, Gemini"
+  Give every run its own hand-grades file (requests 16-20), so grades never overwrite each other:
+     ... --grades eval/grades-v2-on-gemini.json
+  Every new row saves the git commit it ran on (and any uncommitted files) as "code_version".
+  The combined before/after table: python eval/combine_eval.py (see docs/eval.md).
 
 The scoring logic lives in small functions so tests (tests/test_run_eval.py) can
 import this file without sending any requests. Everything that touches the
@@ -31,6 +35,7 @@ import json
 import statistics
 import os
 import re
+import subprocess
 import sys
 import time
 import uuid
@@ -77,6 +82,52 @@ CONFLICT_PHRASES = [
     "underpowered", "insufficient wattage", "not enough power",
     "requires at least", "requires a higher", "conflict"
 ]
+
+
+# ─── Code version (Day 13) ────────────────────────────────────────────────────
+REPO_ROOT = os.path.join(os.path.dirname(__file__), "..")
+
+
+def git_state(run=None):
+    """
+    The code version a run used: {"commit": short hash, "uncommitted": [changed tracked files]}.
+    Saved on every result row, so anyone can check out the exact code that produced it.
+    If git can't tell us, both are None (unknown, never guessed).
+    """
+    run = run or subprocess.run
+    try:
+        opts = {"capture_output": True, "text": True, "cwd": REPO_ROOT, "check": True}
+        commit = run(["git", "rev-parse", "--short", "HEAD"], **opts).stdout.strip()
+        changed = run(["git", "diff", "--name-only", "HEAD"], **opts).stdout
+    except Exception:
+        return {"commit": None, "uncommitted": None}
+    return {"commit": commit or None, "uncommitted": [f.strip() for f in changed.splitlines() if f.strip()]}
+
+
+def code_version_text(results):
+    """One line for the report header: which code version(s) produced these rows."""
+    versions, missing = [], 0
+    for r in results:
+        v = r.get("code_version")
+        if not v:
+            missing += 1
+            continue
+        commit = f"`{v['commit']}`" if v.get("commit") else "unknown commit"
+        changed = v.get("uncommitted")
+        if changed is None:
+            text = f"{commit} (uncommitted changes unknown)"
+        elif changed:
+            text = f"{commit} + uncommitted changes in {', '.join(changed)}"
+        else:
+            text = f"{commit} (clean)"
+        if text not in versions:
+            versions.append(text)
+    if not versions:
+        return "not recorded by the runner"
+    out = "; ".join(versions)
+    if missing:
+        out += f"; not recorded for {missing} row(s)"
+    return out
 
 
 # ─── Loading files ────────────────────────────────────────────────────────────
@@ -606,6 +657,7 @@ def render_eval_md(results, m, n_requests, timestamp, title="v1-baseline", prefa
 
 > Measured on {n_requests} fixed test requests on {timestamp}.
 > This is a small sample. Results describe this specific test set, not general accuracy.
+> Code version: {code_version_text(results)}
 {preface}
 ## Summary Table
 
@@ -722,7 +774,7 @@ def agent_to_backend_shape(data):
     }
 
 
-def run_one_request(req, target="backend", overrides=None, agent_url=AGENT_URL):
+def run_one_request(req, target="backend", overrides=None, agent_url=AGENT_URL, code_version=None):
     """Send one test request and return the full raw record for results.jsonl."""
     req_id = req["id"]
     req_text = req["text"]
@@ -777,6 +829,7 @@ def run_one_request(req, target="backend", overrides=None, agent_url=AGENT_URL):
         "agent_status": data.get("agentStatus"),  # valid / no_valid_build / refused ... (agent only)
         "model": data.get("model"),           # e.g. "ollama / llama3.1:8b" (agent only)
         "overrides": overrides,               # the agent switches used for this run
+        "code_version": code_version,         # git commit + uncommitted files this row ran on
         "score": score,
     }
 
@@ -823,6 +876,9 @@ def parse_args(argv=None):
     ap.add_argument("--agent-url", default=AGENT_URL, help=f"agent endpoint (default {AGENT_URL})")
     ap.add_argument("--overrides", type=json.loads, default=None,
                     help='agent switches as JSON, e.g. \'{"use_tools": false, "use_checker": false, "repair_loops": 0}\'')
+    ap.add_argument("--grades", default=MANUAL_GRADES_PATH,
+                    help="hand grades for THIS run's impossible requests (default: eval/manual_grades.json, "
+                         "the baseline's). Give every run its own file so grades never overwrite each other.")
     ap.add_argument("--wait", type=float, default=WAIT_SECONDS,
                     help=f"seconds between requests (default {WAIT_SECONDS} for Gemini's free tier; 0 is fine for Ollama)")
     return ap.parse_args(argv)
@@ -842,9 +898,9 @@ def load_part_lookup_or_exit(results):
 
 
 def write_report(results, args, n_requests, timestamp, preface=""):
-    manual_grades = load_manual_grades(MANUAL_GRADES_PATH)
+    manual_grades = load_manual_grades(args.grades)
     if manual_grades:
-        print(f"[Manual] Loaded {len(manual_grades)} hand grades from manual_grades.json")
+        print(f"[Manual] Loaded {len(manual_grades)} hand grades from {args.grades}")
     apply_manual_grades(results, manual_grades)
 
     m = compute_metrics(results)
@@ -897,6 +953,8 @@ def main(argv=None):
     print(f"\n{'='*60}")
     print(f"  EVALUATION RUNNER - {len(test_requests)} requests total")
     url = args.agent_url if args.target == "agent" else BACKEND_URL
+    code_version = git_state()
+    print(f"  Code version: {code_version}")
     print(f"  Target: {args.target} ({url})" + (f" | switches: {args.overrides}" if args.overrides else ""))
     print(f"  Pacing: {args.wait}s wait between requests")
     print(f"{'='*60}\n")
@@ -911,7 +969,8 @@ def main(argv=None):
 
         print(f"[{i+1}/{len(test_requests)}] id={req['id']} type={req['type']}")
         print(f"  Prompt: \"{req['text']}\"")
-        result = run_one_request(req, target=args.target, overrides=args.overrides, agent_url=args.agent_url)
+        result = run_one_request(req, target=args.target, overrides=args.overrides, agent_url=args.agent_url,
+                                 code_version=code_version)
         results.append(result)
 
         # Append incrementally to disk so progress is never lost

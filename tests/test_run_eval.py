@@ -443,3 +443,83 @@ def test_report_shows_the_budget_that_was_judged():
     md = run_eval.render_eval_md([row], run_eval.compute_metrics([row]), 1, "now")
     line = [l for l in md.splitlines() if l.startswith("| 1 |")][0]
     assert "80,000" not in line and "not stated" in line
+
+
+# ═══ Day 13: code version on every row, one grades file per run (written BEFORE the code) ═══
+def _fake_git(outputs):
+    """A fake subprocess.run: answers each git command from `outputs`, or fails like a missing git."""
+    def run(cmd, **kwargs):
+        key = " ".join(cmd[1:3])
+        if key not in outputs:
+            raise FileNotFoundError("git not installed")
+        return SimpleNamespace(returncode=0, stdout=outputs[key])
+    return run
+
+
+def test_git_state_records_commit_and_uncommitted_files():
+    state = run_eval.git_state(run=_fake_git({
+        "rev-parse --short": "1738d27\n",
+        "diff --name-only": "eval/run_eval.py\nREADME.md\n",
+    }))
+    assert state == {"commit": "1738d27", "uncommitted": ["eval/run_eval.py", "README.md"]}
+
+
+def test_git_state_clean_tree_has_no_uncommitted_files():
+    state = run_eval.git_state(run=_fake_git({"rev-parse --short": "1738d27\n", "diff --name-only": ""}))
+    assert state == {"commit": "1738d27", "uncommitted": []}
+
+
+def test_git_state_unknown_when_git_fails():
+    # Missing data is UNKNOWN, never guessed.
+    assert run_eval.git_state(run=_fake_git({})) == {"commit": None, "uncommitted": None}
+
+
+def test_each_agent_row_records_the_code_version(monkeypatch):
+    monkeypatch.setattr(run_eval, "execute_request_with_retries",
+                        lambda *a, **kw: (True, None, 1.0, {"status": "refused", "reply": "no"},
+                                          {"retries": 0, "backoff_s": 0}))
+    version = {"commit": "1738d27", "uncommitted": []}
+    row = run_eval.run_one_request({"id": 21, "text": "hi", "type": "off_topic"}, target="agent",
+                                   code_version=version)
+    assert row["code_version"] == version
+
+
+def test_report_header_shows_the_code_version():
+    rows = [make_result(1, "off_topic", {"handled_correctly": True}),
+            make_result(2, "off_topic", {"handled_correctly": True})]
+    for r in rows:
+        r["code_version"] = {"commit": "1738d27", "uncommitted": []}
+    md = run_eval.render_eval_md(rows, run_eval.compute_metrics(rows), 2, "now", title="t")
+    assert "Code version: `1738d27` (clean)" in md
+
+
+def test_report_header_lists_uncommitted_files():
+    rows = [make_result(1, "off_topic", {"handled_correctly": True})]
+    rows[0]["code_version"] = {"commit": "1738d27", "uncommitted": ["eval/run_eval.py"]}
+    md = run_eval.render_eval_md(rows, run_eval.compute_metrics(rows), 1, "now", title="t")
+    assert "Code version: `1738d27` + uncommitted changes in eval/run_eval.py" in md
+
+
+def test_report_header_says_when_the_code_version_was_not_recorded():
+    rows = [make_result(1, "off_topic", {"handled_correctly": True})]       # e.g. the 8 Nov baseline
+    md = run_eval.render_eval_md(rows, run_eval.compute_metrics(rows), 1, "now", title="t")
+    assert "Code version: not recorded by the runner" in md
+
+
+def test_each_run_can_have_its_own_grades_file():
+    assert run_eval.parse_args([]).grades == run_eval.MANUAL_GRADES_PATH       # baseline unchanged
+    args = run_eval.parse_args(["--grades", "eval/grades-v2-on-gemini.json"])
+    assert args.grades == "eval/grades-v2-on-gemini.json"
+
+
+def test_write_report_uses_the_runs_own_grades_file(tmp_path, monkeypatch):
+    reply = "Sorry, an RTX 5080 cannot fit a 15000 budget."
+    row = make_result(16, "impossible", {"handled_correctly": False, "sub_result": "x"}, reply=reply)
+    grades = tmp_path / "grades.json"
+    grades.write_text(json.dumps({"grades": [{"id": 16, "grade": "correct",
+                                              "fingerprint": run_eval.reply_fingerprint(reply, [])}]}))
+    report = tmp_path / "r.md"
+    monkeypatch.setattr(run_eval, "print_scorecard", lambda m: None)
+    args = run_eval.parse_args(["--grades", str(grades), "--report", str(report)])
+    run_eval.write_report([row], args, 1, "now")
+    assert "1 correct, 0 partial, 0 incorrect (hand-graded)" in report.read_text(encoding="utf-8")

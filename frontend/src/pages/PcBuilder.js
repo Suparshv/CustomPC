@@ -161,44 +161,49 @@ export default function PcBuilder() {
     }
 
     setCheckingItemId(item.id);
+    // Day 12: fail safe. Only a "compatible" answer from the code checker adds the part.
+    // "incompatible" shows the problems (the user may still decide to add it);
+    // "could_not_verify" or any error BLOCKS the add: unverified is never treated as compatible.
+    let verdict;
     try {
-      const res = await axios.post("http://localhost:5000/api/chat/compatibility", {
-        currentBuild,
-        newItem: item
-      });
-
-      if (res.data.isCompatible === false) {
-        setCompatibilityWarning({
-          show: true,
-          reason: res.data.reason,
-          category,
-          item,
-          qty
-        });
-        setCheckingItemId(null);
-        return;
-      }
+      const res = await axios.post("http://localhost:5000/api/chat/compatibility",
+        { currentBuild, newItem: item },
+        { validateStatus: () => true, timeout: 15000 });
+      verdict = res.data || {};
     } catch (err) {
       console.error("Compatibility check failed", err);
-      // Fallback: proceed to add if API fails so user isn't blocked completely
+      verdict = { status: "could_not_verify", reason: "Could not verify compatibility: the server is not reachable." };
+    }
+    setCheckingItemId(null);
+
+    if (verdict.status !== "compatible") {
+      setCompatibilityWarning({
+        show: true,
+        blocked: verdict.status !== "incompatible",
+        reason: verdict.reason || "Could not verify compatibility.",
+        category,
+        item,
+        qty
+      });
+      return;
     }
 
-    setCheckingItemId(null);
     addOrUpdateItem(category, item, qty);
     showNotification("Added to cart!", "success");
     closeModal();
   };
 
   const forceAddIncompatibleItem = () => {
-    const { category, item, qty } = compatibilityWarning;
+    const { category, item, qty, blocked } = compatibilityWarning;
+    if (blocked) return;   // unverified parts are never added
     addOrUpdateItem(category, item, qty);
     showNotification("Added to cart despite warning!", "warning");
-    setCompatibilityWarning({ show: false, reason: "", category: "", item: null, qty: 1 });
+    setCompatibilityWarning({ show: false, blocked: false, reason: "", category: "", item: null, qty: 1 });
     closeModal();
   };
 
   const closeWarningModal = () => {
-    setCompatibilityWarning({ show: false, reason: "", category: "", item: null, qty: 1 });
+    setCompatibilityWarning({ show: false, blocked: false, reason: "", category: "", item: null, qty: 1 });
   };
 
   const handleCheckout = () => {
@@ -375,16 +380,20 @@ export default function PcBuilder() {
               <div className="modal-body pt-4 pb-4">
                 <p style={{ fontSize: '16px', fontFamily: 'GothamM' }}>{compatibilityWarning.reason}</p>
                 <p className="text-muted mt-3 mb-0" style={{ fontSize: '14px' }}>
-                  Do you want to ignore this warning and add the component anyway, or go back to select another model?
+                  {compatibilityWarning.blocked
+                    ? "This part was not added, because its compatibility could not be checked. Please try again in a moment."
+                    : "Do you want to ignore this warning and add the component anyway, or go back to select another model?"}
                 </p>
               </div>
               <div className="modal-footer d-flex justify-content-end border-top pt-3">
                 <button className="btn btn-outline-secondary me-3 px-4 py-2" onClick={closeWarningModal}>
                   Select another model
                 </button>
-                <button className="btn btn-danger px-4 py-2 text-white" onClick={forceAddIncompatibleItem}>
-                  Ignore & Add Anyway
-                </button>
+                {!compatibilityWarning.blocked && (
+                  <button className="btn btn-danger px-4 py-2 text-white" onClick={forceAddIncompatibleItem}>
+                    Ignore & Add Anyway
+                  </button>
+                )}
               </div>
             </div>
           </div>

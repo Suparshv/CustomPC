@@ -6,6 +6,26 @@ import { useLocation } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { useAuth } from './AuthContext';
 
+const API = 'http://localhost:5000';
+const MAX_MESSAGE = 500;
+
+function errorText(data) {
+  return 'Sorry, something went wrong: ' + ((data && (data.error || data.message)) || 'unknown error');
+}
+
+const rupees = (n) => (n == null ? 'unknown' : '₹' + Math.round(n).toLocaleString('en-IN'));
+
+function verdictText(verdict) {
+  if (!verdict) return 'Could not verify compatibility.';
+  if (verdict.status === 'compatible') {
+    return verdict.unknowns && verdict.unknowns.length
+      ? `No problems found by code (could not check: ${verdict.unknowns.join(', ')}).`
+      : 'Compatible: all rules passed (checked by code).';
+  }
+  if (verdict.status === 'incompatible') return 'Not compatible: ' + (verdict.problems || []).join(' | ');
+  return 'Could not verify compatibility.';
+}
+
 export default function AIAssistant() {
   const [isOpen, setIsOpen] = useState(false);
   const [activeReport, setActiveReport] = useState(null);
@@ -22,6 +42,20 @@ export default function AIAssistant() {
   const { user } = useAuth();
 
   const isSupportMode = location.pathname === '/support';
+  // One agent thread per chat session: a RANDOM id, not the email. Approving and claiming a
+  // build needs the thread id, so it must not be guessable (and emails stay out of the agent DB).
+  const [threadId] = useState(() => {
+    try {
+      let id = localStorage.getItem('agent_thread_id');
+      if (!id) {
+        id = crypto.randomUUID();
+        localStorage.setItem('agent_thread_id', id);
+      }
+      return id;
+    } catch {
+      return crypto.randomUUID();
+    }
+  });
 
   // --- PHASE 3: Conversational Memory (Tied to Account) ---
   useEffect(() => {
@@ -93,14 +127,30 @@ export default function AIAssistant() {
     setIsTyping(true);
 
     try {
-      const endpoint = isSupportMode 
-        ? 'http://localhost:5000/api/chat/support'
-        : 'http://localhost:5000/api/chat/builder';
+      if (!isSupportMode) {
+        // Day 12: the Python agent (through Express). A valid build comes back PAUSED,
+        // waiting for the user's Approve/Reject; it is never added to the cart by itself.
+        const response = await fetch(`${API}/api/agent/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: userMessage.text, threadId })
+        });
+        const data = await response.json();
+        setMessages(prev => [...prev, {
+          sender: 'bot',
+          text: data.reply || errorText(data),
+          approval: data.status === 'awaiting_approval' ? data.approval : null,
+          threadId: data.thread_id || threadId,
+          comparisonData: data.comparison && data.comparison.rows && data.comparison.rows.length
+            ? data.comparison : null,
+        }]);
+        return;
+      }
 
       // Send the last few messages for context
       const chatHistory = messages.slice(-5);
 
-      const response = await fetch(endpoint, {
+      const response = await fetch(`${API}/api/chat/support`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: userMessage.text, chatHistory, sessionId })
@@ -130,33 +180,48 @@ export default function AIAssistant() {
     }
   };
 
-  const applyBuildToCart = (buildArray) => {
-    const qtyMap = {};
-    buildArray.forEach(item => {
-      qtyMap[item.id] = (qtyMap[item.id] || 0) + 1;
-    });
-
-    const uniqueIds = new Set();
-    buildArray.forEach(itemInfo => {
-      const { category, id } = itemInfo;
-      if (!uniqueIds.has(id) && componentsData[category]) {
-        uniqueIds.add(id);
-        const item = componentsData[category].find(c => c.id === id);
-        if (item) {
-          addOrUpdateItem(category, item, qtyMap[id]);
-        }
-      }
-    });
-    alert("Build applied to cart! Check your PC Builder or Cart to see the parts.");
+  const updateMessage = (index, changes) => {
+    setMessages(prev => prev.map((m, i) => (i === index ? { ...m, ...changes } : m)));
   };
 
-  const handleAddToCart = (msg, index) => {
-    applyBuildToCart(msg.build);
-    setMessages(prev => {
-      const newMsgs = [...prev];
-      newMsgs[index] = { ...newMsgs[index], addedToCart: true };
-      return newMsgs;
-    });
+  // Day 12: Approve -> the server records the approval for THIS exact build (its hash) ->
+  // the server cart route re-checks it and returns the parts -> only then do they enter the cart.
+  const handleDecision = async (index, approved) => {
+    const msg = messages[index];
+    const body = { threadId: msg.threadId, buildHash: msg.approval.build_hash };
+    updateMessage(index, { approvalBusy: true, approvalError: null });
+    try {
+      const res = await fetch(`${API}/api/agent/approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...body, approved })
+      });
+      const decision = await res.json();
+      if (!approved) {
+        updateMessage(index, { approvalBusy: false, approvalState: 'rejected', approvalNote: decision.reply });
+        return;
+      }
+      if (decision.status !== 'approved') {
+        updateMessage(index, { approvalBusy: false, approvalError: decision.reply || errorText(decision) });
+        return;
+      }
+      const cartRes = await fetch(`${API}/api/cart/add-build`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const cart = await cartRes.json();
+      if (!cartRes.ok || cart.status !== 'added') {
+        updateMessage(index, { approvalBusy: false, approvalError: cart.message || errorText(cart) });
+        return;
+      }
+      cart.items.forEach(item => {
+        addOrUpdateItem(item.category, { id: item.id, name: item.name, price: item.price, category: item.category }, 1);
+      });
+      updateMessage(index, { approvalBusy: false, approvalState: 'added' });
+    } catch (err) {
+      updateMessage(index, { approvalBusy: false, approvalError: 'Could not reach the server. Nothing was added.' });
+    }
   };
 
   return (
@@ -173,30 +238,61 @@ export default function AIAssistant() {
           <div className="ai-chat-body">
             {messages.map((msg, index) => (
               <div key={index} className={`ai-message ${msg.sender}`}>
-                <p className="mb-2">{msg.text}</p>
+                <p className="mb-2" style={{ whiteSpace: 'pre-line' }}>{msg.text}</p>
 
                 {msg.sender === 'bot' && (msg.build?.length > 0 || msg.comparisonData) && !isSupportMode && (
                   <div className="d-flex flex-column gap-2 mt-3">
-                    <button 
+                    <button
                       className="btn btn-outline-dark btn-sm w-100"
                       onClick={() => setActiveReport(msg)}
                       style={{ borderRadius: '4px' }}
                     >
                       📄 View Detailed Report
                     </button>
-                    
-                    {msg.build && msg.build.length > 0 && (
-                      <button 
-                        className="btn btn-dark btn-sm w-100"
-                        onClick={() => handleAddToCart(msg, index)}
-                        disabled={msg.addedToCart}
-                        style={{ borderRadius: '4px' }}
-                      >
-                        {msg.addedToCart ? "Added to Cart" : "Add Build to Cart"}
-                      </button>
-                    )}
                   </div>
                 )}
+
+                {/* Day 12: nothing reaches the cart until the user approves THIS build */}
+                {msg.sender === 'bot' && msg.approval && !isSupportMode && (() => {
+                  const a = msg.approval;
+                  // Approval is disabled for a FAIL or could_not_verify verdict.
+                  const canApprove = a.can_approve === true && a.verdict && a.verdict.status === 'compatible';
+                  const decided = msg.approvalState === 'added' || msg.approvalState === 'rejected';
+                  return (
+                    <div className="mt-3 p-2 border rounded bg-white text-dark" style={{ fontSize: '0.85em' }}>
+                      <div className="fw-bold mb-1">Approve this build?</div>
+                      <table className="table table-sm mb-2">
+                        <tbody>
+                          {a.cards.map(card => (
+                            <tr key={card.id}>
+                              <td className="text-muted">{card.label}</td>
+                              <td>{card.name}</td>
+                              <td className="text-end text-nowrap">{rupees(card.price)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      <div className="fw-bold">Total: {rupees(a.total)} (calculated by code)</div>
+                      <div className={canApprove ? 'text-success' : 'text-danger'}>Verdict: {verdictText(a.verdict)}</div>
+                      {!decided && (
+                        <div className="d-flex gap-2 mt-2">
+                          <button className="btn btn-dark btn-sm flex-fill" disabled={!canApprove || msg.approvalBusy}
+                                  onClick={() => handleDecision(index, true)}>
+                            {msg.approvalBusy ? 'Checking…' : 'Approve & add to cart'}
+                          </button>
+                          <button className="btn btn-outline-secondary btn-sm flex-fill" disabled={msg.approvalBusy}
+                                  onClick={() => handleDecision(index, false)}>
+                            Reject
+                          </button>
+                        </div>
+                      )}
+                      {!canApprove && !decided && <div className="text-danger mt-1">This build can't be approved: it is not verified as compatible.</div>}
+                      {msg.approvalState === 'added' && <div className="text-success mt-2">Approved and added to your cart.</div>}
+                      {msg.approvalState === 'rejected' && <div className="text-muted mt-2">{msg.approvalNote || 'Rejected. Nothing was added.'}</div>}
+                      {msg.approvalError && <div className="text-danger mt-2">{msg.approvalError}</div>}
+                    </div>
+                  );
+                })()}
               </div>
             ))}
             {isTyping && (
@@ -208,6 +304,7 @@ export default function AIAssistant() {
             <textarea
               rows="1"
               placeholder="Ask me anything..."
+              maxLength={MAX_MESSAGE}
               value={input}
               onChange={(e) => {
                 setInput(e.target.value);
@@ -364,9 +461,11 @@ export default function AIAssistant() {
                       ))}
                     </tbody>
                   </table>
-                  <div className="alert alert-info mt-3 border-0 shadow-sm">
-                    <strong>Verdict:</strong> {activeReport.comparisonData.verdict}
-                  </div>
+                  {activeReport.comparisonData.verdict && (
+                    <div className="alert alert-info mt-3 border-0 shadow-sm">
+                      <strong>Verdict:</strong> {activeReport.comparisonData.verdict}
+                    </div>
+                  )}
                 </div>
               )}
 

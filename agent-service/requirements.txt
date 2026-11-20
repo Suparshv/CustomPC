@@ -14,3 +14,4 @@ rank-bm25
 sentence-transformers
 
 langgraph
+langgraph-checkpoint-sqlite

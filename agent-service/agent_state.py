@@ -23,7 +23,8 @@ class AgentState(TypedDict, total=False):
     total_price: Optional[float]         # computed by code, never by the AI
 
     # Set when the run must stop early. None while everything is fine.
-    #   no_valid_build | step_limit | error | could_not_verify
+    #   no_valid_build | step_limit | token_limit | error | could_not_verify
+    # Chat mode adds: approved | rejected (after the approval pause)
     status: Optional[str]
     failure_reasons: List[str]
 
@@ -31,3 +32,7 @@ class AgentState(TypedDict, total=False):
     history: List[Dict[str, Any]]        # one entry per step, for tests, debugging and tracing
     tokens: Dict[str, int]               # {"prompt": n, "output": n} over all AI calls
     comparison: Optional[Dict[str, Any]] # comparator table {"headers", "rows"}, built by code
+
+    # Day 12 approval (chat mode only)
+    approval_requested_at: Optional[float]  # set by finalize; the approval expires 15 min later
+    approval: Optional[Dict[str, Any]]      # {"build_hash", "decision": approved|rejected} once decided

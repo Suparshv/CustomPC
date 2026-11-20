@@ -4,6 +4,7 @@ const cors = require("cors");
 const mongoose = require("mongoose");
 const v = require("validator");
 const aiRoutes = require('./routes/aiRoutes');
+const { router: agentRoutes } = require('./routes/agentRoutes');
 const { initializeVectorStore } = require("./services/ragService");
 const app = express();
 app.use(cors({ origin: "http://localhost:3000", credentials: true }));
@@ -98,6 +99,7 @@ const AgentLog = mongoose.model("AgentLog", agentLogSchema);
 // AI Routes
 app.use('/api/chat', aiRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api', agentRoutes);   // Day 12: agent chat, approval, approved cart
 
 // Signup route
 app.post("/api/signup", async (req, res) => {

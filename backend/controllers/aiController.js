@@ -141,46 +141,5 @@ Current Chat History: ${JSON.stringify(chatHistory || [])}
   }
 };
 
-const { criticAgent } = require("../agents/criticAgent");
-exports.checkCompatibility = async (req, res) => {
-  const { currentBuild, newItem } = req.body;
-  if (
-    !process.env.GEMINI_API_KEY ||
-    process.env.GEMINI_API_KEY === "YOUR_GEMINI_API_KEY_HERE"
-  ) {
-    return res
-      .status(500)
-      .json({ error: "Gemini API key is not configured on the server." });
-  }
-  try {
-    console.log("-----------------------------------------");
-    console.log(
-      "Manual UI triggered Critic Agent for compatibility check...",
-    );
-
-    // 1. Combine what's currently in their cart with the new item they just clicked
-    // We format it into the { id: "..." } structure that our Critic Agent expects
-    const proposedBuild = [...currentBuild, newItem].map((item) => ({
-      id: item.id,
-    }));
-    // 2. We simulate the LangGraph "State" and pass it directly to the Critic Agent!
-    const simulatedState = { draftBuild: proposedBuild };
-    const resultState = await criticAgent(simulatedState);
-    // 3. The Critic returns { critique: { approved, issues, reply } }
-    // We map it back to the { isCompatible, reason } format that your React frontend already expects
-    res.json({
-      isCompatible: resultState.critique.approved,
-      reason:
-        resultState.critique.issues.length > 0
-          ? resultState.critique.issues.join(" | ")
-          : resultState.critique.reply,
-    });
-  } catch (error) {
-    console.error("Manual Compatibility Check Error:", error);
-    // Fallback so the user isn't blocked if the AI fails
-    res.json({
-      isCompatible: true,
-      reason: "Fallback: AI check failed, proceed with caution.",
-    });
-  }
-};
+// checkCompatibility moved to agentController.js (Day 12): it used to answer
+// "compatible" when the AI call failed. The new one calls the code checker and fails safe.

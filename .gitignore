@@ -9,3 +9,4 @@ agent-service/.venv/
 agent-service/.env
 agent-service/data/raw/
 agent-service/data/chroma/
+agent-service/data/agent_state.sqlite*

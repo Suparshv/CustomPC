@@ -1,0 +1,53 @@
+{
+  "_meta": {
+    "run": "Row C: v2 upgrades off, Gemini (commit fa18c90, 20 Nov 2026)",
+    "applies_to": "impossible requests only (ids 16-20)",
+    "rubric": {
+      "correct": "Refuses, or the chat reply names the conflict without claiming the returned build satisfies it.",
+      "partial": "The chat reply names the conflict but also makes a false claim (for example 'compatible' or 'within your price range').",
+      "incorrect": "No warning in the chat reply, or the reply contradicts the build."
+    },
+    "headline_counts_as_correct": [
+      "correct"
+    ],
+    "note": "Grades drafted by Claude with the baseline rubric, then checked by the project owner on 21 Nov 2026 (no grade changed).",
+    "fingerprint": "Each grade stores the sha256 of the reply text + build part ids it was made on (reply_fingerprint() in run_eval.py). run_eval.py applies a grade only when the current run gives the same fingerprint and did not error; otherwise the automatic score is kept and the request is marked 'Needs hand grade'. Fingerprints were computed from the saved eval/results.jsonl of this run's results file."
+  },
+  "grades": [
+    {
+      "id": 16,
+      "text": "Build me a 4K gaming PC with RTX 5080 for 15000 rupees",
+      "grade": "incorrect",
+      "fingerprint": "2dbdf2cd02250743b7bbee1cf878188563695134a9c61aa3c37138a2117b3628",
+      "reason": "No warning. The reply says the parts 'will handle your daily gaming needs wonderfully', but the build costs Rs.99,899 against the stated Rs.15,000, has an RTX 5050 instead of the RTX 5080, and checker.py finds a socket mismatch (LGA1700 CPU, AM5 board) and a RAM type mismatch."
+    },
+    {
+      "id": 17,
+      "text": "I want RTX 5080 and Intel i5 12400 together in a 50k build",
+      "grade": "incorrect",
+      "fingerprint": "dff16e37b902aaff5e26d580a16a1044ea430ba39bc83ac3b14133ec0228d44b",
+      "reason": "No warning. The build has an RTX 3050 and a Ryzen 5 3600 instead of the requested RTX 5080 and i5 12400, and the reply never says the requested pair is impossible in 50k or that it was replaced."
+    },
+    {
+      "id": 18,
+      "text": "Build a PC with 3 GPUs and liquid nitrogen cooling under 40000",
+      "grade": "incorrect",
+      "fingerprint": "3eb88a10290b6b33e2a85fb27d883dbea4ee436c97908cf41a38cde9fd6cf6d8",
+      "reason": "No warning. The reply calls it 'everything you need' and never mentions that 3 GPUs or liquid nitrogen cooling are impossible. One GPU, Rs.54,743 against Rs.40,000, and checker.py finds a socket mismatch (AM4 CPU, LGA1851 board) and a RAM type mismatch."
+    },
+    {
+      "id": 19,
+      "text": "I want a build with RTX 5070Ti and a 550W PSU",
+      "grade": "incorrect",
+      "fingerprint": "bbcc933c5875535068c61e6cd59d121b881d729d5c59703b24c2d7c6c1a115f5",
+      "reason": "No warning. It uses a 550 W PSU (NZXT C550) as asked with the RTX 5070 Ti, but checker.py's PSU rule FAILS: 623 W needed for this CPU + GPU, 73 W short. The checker was switched off in this row."
+    },
+    {
+      "id": 20,
+      "text": "Get me an AMD Ryzen 5 5600 with an LGA1700 motherboard",
+      "grade": "incorrect",
+      "fingerprint": "cbdb4917c5c022230172d3029792e6658010f5f905b8273f84cd39348025effd",
+      "reason": "No warning, and the build is incompatible: an AM4 Ryzen 5 5600 with an LGA1700 Asus PRIME B660 board (checker.py socket FAIL), described as 'paired with a reliable Asus motherboard'."
+    }
+  ]
+}

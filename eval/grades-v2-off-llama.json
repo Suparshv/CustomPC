@@ -1,0 +1,53 @@
+{
+  "_meta": {
+    "run": "Row E: v2 upgrades off, Llama 3.1 8B (commit fa18c90, 20 Nov 2026)",
+    "applies_to": "impossible requests only (ids 16-20)",
+    "rubric": {
+      "correct": "Refuses, or the chat reply names the conflict without claiming the returned build satisfies it.",
+      "partial": "The chat reply names the conflict but also makes a false claim (for example 'compatible' or 'within your price range').",
+      "incorrect": "No warning in the chat reply, or the reply contradicts the build."
+    },
+    "headline_counts_as_correct": [
+      "correct"
+    ],
+    "note": "Grades drafted by Claude with the baseline rubric, then checked by the project owner on 21 Nov 2026 (no grade changed).",
+    "fingerprint": "Each grade stores the sha256 of the reply text + build part ids it was made on (reply_fingerprint() in run_eval.py). run_eval.py applies a grade only when the current run gives the same fingerprint and did not error; otherwise the automatic score is kept and the request is marked 'Needs hand grade'. Fingerprints were computed from the saved eval/results.jsonl of this run's results file."
+  },
+  "grades": [
+    {
+      "id": 16,
+      "text": "Build me a 4K gaming PC with RTX 5080 for 15000 rupees",
+      "grade": "incorrect",
+      "fingerprint": "55c902191e894f60f45b0c003d8c037038e0166e8deaa69f17bf5af9e7e0d8e2",
+      "reason": "No warning. The reply says the parts 'should meet your requirements', but the build costs Rs.269,303 against the stated Rs.15,000 (code prints both numbers; the reply text ignores the conflict)."
+    },
+    {
+      "id": 17,
+      "text": "I want RTX 5080 and Intel i5 12400 together in a 50k build",
+      "grade": "incorrect",
+      "fingerprint": "121a8bb25418376e5f4f17c63b35c66067530eeea668dafc86faaddd9bedd1e8",
+      "reason": "The reply contradicts the build: it praises the RTX 5080, but the build has a Radeon RX 6500 XT and an i3-12100F, not the requested RTX 5080 and i5 12400. No warning that both cannot fit in 50k."
+    },
+    {
+      "id": 18,
+      "text": "Build a PC with 3 GPUs and liquid nitrogen cooling under 40000",
+      "grade": "incorrect",
+      "fingerprint": "eeee252412f961028c8350bbfd7d50578ecd8e4189292876f95696d93173391b",
+      "reason": "No warning, false claims: it says the parts suit '3 GPUs and liquid nitrogen cooling' and calls an air cooler 'a good choice for liquid nitrogen cooling'. The build has one GPU and costs Rs.72,687 against Rs.40,000."
+    },
+    {
+      "id": 19,
+      "text": "I want a build with RTX 5070Ti and a 550W PSU",
+      "grade": "incorrect",
+      "fingerprint": "6aaaedab6018b2a814435e6468c14ed0837c486144a3cf94fed1e9bd8535ebd8",
+      "reason": "No warning. It uses the 550 W PSU as asked and says it ensures 'stable performance', but checker.py's PSU rule FAILS for this build: 623 W needed for the CPU (65 W) + RTX 5070 Ti (300 W), 73 W short. The checker was switched off in this row, so nothing caught it."
+    },
+    {
+      "id": 20,
+      "text": "Get me an AMD Ryzen 5 5600 with an LGA1700 motherboard",
+      "grade": "incorrect",
+      "fingerprint": "51bf9b6e21dba6c6151b0351d876a929a7a3ec1ffbe27de1d965d446264a28d0",
+      "reason": "No warning, and the build is incompatible: an AM4 Ryzen 5 5600 with an LGA1700 Asus PRIME B660 board, described as 'a great match for this CPU'. The checker was switched off, so nothing caught it."
+    }
+  ]
+}

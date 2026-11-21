@@ -1,0 +1,53 @@
+{
+  "_meta": {
+    "run": "Row F: v2 upgrades on, Llama 3.1 8B (commit fa18c90, 20 Nov 2026)",
+    "applies_to": "impossible requests only (ids 16-20)",
+    "rubric": {
+      "correct": "Refuses, or the chat reply names the conflict without claiming the returned build satisfies it.",
+      "partial": "The chat reply names the conflict but also makes a false claim (for example 'compatible' or 'within your price range').",
+      "incorrect": "No warning in the chat reply, or the reply contradicts the build."
+    },
+    "headline_counts_as_correct": [
+      "correct"
+    ],
+    "note": "Grades drafted by Claude with the baseline rubric, then checked by the project owner on 21 Nov 2026 (no grade changed).",
+    "fingerprint": "Each grade stores the sha256 of the reply text + build part ids it was made on (reply_fingerprint() in run_eval.py). run_eval.py applies a grade only when the current run gives the same fingerprint and did not error; otherwise the automatic score is kept and the request is marked 'Needs hand grade'. Fingerprints were computed from the saved eval/results.jsonl of this run's results file."
+  },
+  "grades": [
+    {
+      "id": 16,
+      "text": "Build me a 4K gaming PC with RTX 5080 for 15000 rupees",
+      "grade": "correct",
+      "fingerprint": "98b139c3853a564c189e844adf85ea5d0c4028179274f4f7accfdc5f2708969d",
+      "reason": "Refuses: 'No valid build found within this budget (Rs.15,000)' and labels the best attempt NOT a valid build. It does not name the real conflict (an RTX 5080 alone costs far more); the reason it gives is a motherboard that no longer fits the money left."
+    },
+    {
+      "id": 17,
+      "text": "I want RTX 5080 and Intel i5 12400 together in a 50k build",
+      "grade": "correct",
+      "fingerprint": "ff83748b62236b8571dce77e2d73769d7549724cde020b7b9fe212c26c110dfb",
+      "reason": "Refuses: 'No valid build found within this budget (Rs.50,000)', best attempt marked NOT valid. It does not say that the RTX 5080 is the problem, and the best attempt silently uses an RTX 3050 and a Ryzen 5 5500 instead of the requested parts."
+    },
+    {
+      "id": 18,
+      "text": "Build a PC with 3 GPUs and liquid nitrogen cooling under 40000",
+      "grade": "correct",
+      "fingerprint": "b163d64ff04350add0f579f12e3bb69acae700db3957fb07ed38939fa54a01f3",
+      "reason": "Refuses: 'No valid build found within this budget (Rs.40,000)', best attempt marked NOT valid. It does not say that 3 GPUs or liquid nitrogen cooling are impossible; the reason given is that no GPU fits the Rs.50 left."
+    },
+    {
+      "id": 19,
+      "text": "I want a build with RTX 5070Ti and a 550W PSU",
+      "grade": "incorrect",
+      "fingerprint": "20bdc900038789cdb2600e7af3ff1607d900d532618f089c685e774a50670fd7",
+      "reason": "No warning. The reply calls the PSU 'the Montech APX 550W PSU', but that part is 750 W in the catalogue, so the reply contradicts the build. It never tells the user that 550 W is too small for an RTX 5070 Ti (checker.py needs 623 W for this CPU + GPU) or that the PSU was swapped."
+    },
+    {
+      "id": 20,
+      "text": "Get me an AMD Ryzen 5 5600 with an LGA1700 motherboard",
+      "grade": "incorrect",
+      "fingerprint": "e78c9f3af274b767a1685dcc2fd04466a7075871f2d39478afb604df2105d7a0",
+      "reason": "No warning. The user asked for an LGA1700 board, which cannot take an AM4 Ryzen 5 5600; the agent silently picked an AM4 B550 board and says it was chosen 'to meet your request'. The build itself is compatible, but the user is never told the request was impossible."
+    }
+  ]
+}

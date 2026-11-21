@@ -87,21 +87,28 @@ The same 30 frozen requests through the old system (A) and the new agent with up
 | Row | System | Valid builds | Within budget | Success | Refused | Unknown | Fully verified |
 |---|---|---|---|---|---|---|---|
 | A | Old Node system, Gemini | 6/10 (60%) | 1/1 (100%) | 6/10 (60%) | 0/10 (0%) | 10/10 (100%) | 0/10 (0%) |
-| C | New, upgrades off, Gemini | not run yet | not run yet | not run yet | not run yet | not run yet | not run yet |
-| D | New, upgrades on, Gemini | not run yet | not run yet | not run yet | not run yet | not run yet | not run yet |
-| E | New, upgrades off, Llama 3.1 8B | not run yet | not run yet | not run yet | not run yet | not run yet | not run yet |
-| F | New, upgrades on, Llama 3.1 8B | not run yet | not run yet | not run yet | not run yet | not run yet | not run yet |
+| C | New, upgrades off, Gemini | 5/10 (50%) | 1/1 (100%) | 5/10 (50%) | 0/10 (0%) | 9/10 (90%) | 1/10 (10%) |
+| D | New, upgrades on, Gemini | 10/10 (100%) | 1/1 (100%) | 10/10 (100%) | 0/10 (0%) | 10/10 (100%) | 0/10 (0%) |
+| E | New, upgrades off, Llama 3.1 8B | 2/10 (20%) | 1/1 (100%) | 2/10 (20%) | 0/10 (0%) | 9/10 (90%) | 1/10 (10%) |
+| F | New, upgrades on, Llama 3.1 8B | 10/10 (100%) | 1/1 (100%) | 10/10 (100%) | 0/10 (0%) | 10/10 (100%) | 0/10 (0%) |
 
 **Other requests, time, tokens and cost** (all 30 requests)
 
 | Row | System | Comparisons | Impossible (hand-graded) | Off-topic | Vague | Median s | Avg tokens | Paid-equivalent $/request | Errored | Code version |
 |---|---|---|---|---|---|---|---|---|---|---|
 | A | Old Node system, Gemini | 5/5 (100%) | 1/5 (20%) | 4/5 (80%) | 4/5 (80%) | 9.4 | 5,438 | $0.00368 | 0 | a4ed31e (8 Nov, from the baseline notes) |
-| C | New, upgrades off, Gemini | not run yet | not run yet | not run yet | not run yet | not run yet | not run yet | not run yet | not run yet | not run yet |
-| D | New, upgrades on, Gemini | not run yet | not run yet | not run yet | not run yet | not run yet | not run yet | not run yet | not run yet | not run yet |
-| E | New, upgrades off, Llama 3.1 8B | not run yet | not run yet | not run yet | not run yet | not run yet | not run yet | not run yet | not run yet | not run yet |
-| F | New, upgrades on, Llama 3.1 8B | not run yet | not run yet | not run yet | not run yet | not run yet | not run yet | not run yet | not run yet | not run yet |
+| C | New, upgrades off, Gemini | 4/5 (80%) | 0/5 (0%) | 5/5 (100%) | 0/5 (0%) | 10.3 | 2,723 | $0.00128 | 0 | fa18c90 |
+| D | New, upgrades on, Gemini | 4/5 (80%) | 2/5 (40%) | 5/5 (100%) | 5/5 (100%) | 14.0 | 4,764 | $0.00240 | 0 | fa18c90 |
+| E | New, upgrades off, Llama 3.1 8B | 4/5 (80%) | 0/5 (0%) | 5/5 (100%) | 0/5 (0%) | 6.7 | 2,225 | no per-token price | 0 | fa18c90 |
+| F | New, upgrades on, Llama 3.1 8B | 4/5 (80%) | 3/5 (60%) | 5/5 (100%) | 5/5 (100%) | 14.1 | 4,006 | no per-token price | 0 | fa18c90 |
 <!-- combined:end -->
+
+**In short:** with the upgrades on, valid builds went from 6/10 (old system) to 10/10, on Gemini and
+on the local Llama 3.1 8B alike, at about a third less paid-equivalent cost per request, but slower
+(median 9.4 s → 14.0 s). The upgrades are what does it: switched off, the same code scores 5/10
+(Gemini) and 2/10 (Llama). The biggest remaining problem: for impossible requests the agent quietly
+swaps parts instead of telling the user. **Limits:** 30 requests (one build = 10 points), one run per
+row, hand grades for requests 16–20 drafted by Claude and checked by the project owner, row B skipped. Details: [`docs/eval.md`](./docs/eval.md).
 
 ## Evaluation of Baseline (Run 2)
 
@@ -190,7 +197,7 @@ To re-run from scratch, move the old `eval/results.jsonl` into `eval/archive/` f
 - [ ] Hybrid keyword + vector search with filters and a reranker
 - [ ] Retries, a step limit and an out-of-stock fallback
 - [ ] Approval step before add-to-cart
-- [ ] Tracing with Langfuse
+- [ ] Tracing with Langfuse *(deferred: kept in the Summit Plan. Day 13's numbers (tokens, seconds, retries) come from our own results files.)*
 - [ ] Before/after results table, architecture diagram and demo video
 
 > [!NOTE]

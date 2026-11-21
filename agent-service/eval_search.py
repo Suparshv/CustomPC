@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-eval_search.py - Rigorous Evaluation of Search Strategies (Day 9)
+eval_search.py - Rigorous Evaluation of Search Strategies
 
 Evaluates Vector-Only, Hybrid (BM25 + Vector via RRF), and Hybrid + Cross-Encoder Rerank
 against 30 frozen evaluation queries spanning exact names, attribute queries, and descriptive queries.

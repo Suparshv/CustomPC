@@ -16,9 +16,9 @@ Usage:
   3. Make sure MongoDB is running (scoring reads part data from it)
   4. Run: python eval/run_eval.py
 
-  Re-score saved replies with today's rules, without sending any requests:
+  Re-score saved replies with the current rules, without sending any requests:
      python eval/run_eval.py --rescore
-  A separate run for the 20 Nov comparison (keep each run in its own files):
+  A separate run (keep each run in its own files):
      python eval/run_eval.py --results eval/results-v2-gemini.jsonl --report docs/eval-v2-gemini.md --title "v2 upgrades on, Gemini"
   Give every run its own hand-grades file (requests 16-20), so grades never overwrite each other:
      ... --grades eval/grades-v2-on-gemini.json
@@ -61,7 +61,7 @@ def pct(num, denom):
 
 # ─── Config ───────────────────────────────────────────────────────────────────
 BACKEND_URL = "http://localhost:5000/api/chat/builder"          # old v1 system (Node backend)
-AGENT_URL = "http://127.0.0.1:8001/agent/build"                 # new Day 10 agent (agent-service)
+AGENT_URL = "http://127.0.0.1:8001/agent/build"                 # new agent (agent-service)
 REQUESTS_PATH = os.path.join(os.path.dirname(__file__), "requests.jsonl")
 RESULTS_PATH = os.path.join(os.path.dirname(__file__), "results.jsonl")
 DOCS_DIR = os.path.join(os.path.dirname(__file__), "..", "docs")
@@ -84,7 +84,7 @@ CONFLICT_PHRASES = [
 ]
 
 
-# ─── Code version (Day 13) ────────────────────────────────────────────────────
+# ─── Code version ────────────────────────────────────────────────────
 REPO_ROOT = os.path.join(os.path.dirname(__file__), "..")
 
 
@@ -419,7 +419,7 @@ def judged_budget(row):
     """
     The budget a build is judged against: the one the request TEXT states, read by code.
 
-    Rule decided on Day 10: 9 of the 10 build requests state no budget in their text; their
+    Rule: 9 of the 10 build requests state no budget in their text; their
     test-file "budget" was never shown to either system, so judging against it measured
     guessing, not building. A request that states no budget has no price limit to break.
     (The frozen test file is not edited; its budget field is just not used for judging.)
@@ -631,7 +631,7 @@ def print_scorecard(m):
 
 
 def system_notes(results):
-    """Describe the system that ACTUALLY produced these results (old v1 backend or the Day 10 agent)."""
+    """Describe the system that ACTUALLY produced these results (old v1 backend or the new agent)."""
     agent_rows = [r for r in results if r.get("target") == "agent"]
     if not agent_rows:
         return (
@@ -825,7 +825,7 @@ def run_one_request(req, target="backend", overrides=None, agent_url=AGENT_URL, 
         "total_tokens": total_prompt_tokens + total_candidate_tokens,
         "prompt_tokens": total_prompt_tokens,
         "candidate_tokens": total_candidate_tokens,
-        "target": target,                     # backend (v1) or agent (Day 10)
+        "target": target,                     # backend (old v1) or agent (new)
         "agent_status": data.get("agentStatus"),  # valid / no_valid_build / refused ... (agent only)
         "model": data.get("model"),           # e.g. "ollama / llama3.1:8b" (agent only)
         "overrides": overrides,               # the agent switches used for this run
@@ -923,7 +923,7 @@ def main(argv=None):
 
     args = parse_args(argv)
 
-    # ─── Re-score only: no requests, saved replies judged with today's rules ──
+    # ─── Re-score only: no requests, saved replies judged with the current rules ──
     if args.rescore:
         saved = sorted(load_completed_results(args.results).values(), key=lambda r: r["id"])
         if not saved:

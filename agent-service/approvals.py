@@ -1,5 +1,5 @@
 """
-approvals.py - Day 12: who may put an AI build in the cart.
+approvals.py - Who may put an AI build in the cart.
 
   verdict_of   the ONE place that turns a checker result into compatible / incompatible /
                could_not_verify. A broken or missing check is never "compatible".
@@ -124,7 +124,7 @@ def claim_cart(store: ApprovalStore, repo: Any, thread_id: str, build_hash_: str
         return {"status": "build_changed",
                 "message": "Prices or parts changed since you approved. Nothing was added; ask for the build again."}
     # Stock must be confirmed. Unknown stock counts as not in stock.
-    # (Day 11's "swap in the next-best part" fallback is not built yet, so we only refuse.)
+    # (No "swap in the next-best part" fallback yet, so we only refuse.)
     gone = [item["name"] for item in rec["items"] if docs[item["id"]].get("in_stock") is not True]
     if gone:
         return {"status": "out_of_stock",

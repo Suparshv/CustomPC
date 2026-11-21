@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-run_agent_demo.py - Day 10 real run: one request through the agent on Gemini and/or Ollama.
+run_agent_demo.py - One real request through the agent on Gemini and/or Ollama.
 
 Needs MongoDB, the Chroma Docker server and Ollama (for search embeddings, and for the
 Ollama run), plus GEMINI_API_KEY for the Gemini run. Writes docs/day10-agent-run.md.

@@ -1,5 +1,5 @@
 """
-test_tools.py - Comprehensive Unit Tests for Day 8 Deterministic Tools
+test_tools.py - Unit tests for the deterministic agent tools
 
 Tests:
 1. build_chroma_where: Single filter gives single dict; multiple filters give $and.
@@ -202,7 +202,7 @@ def test_build_chroma_where_multiple_conditions_uses_and():
     assert {"price": {"$lte": 25000.0}} in where["$and"]
 
 
-# ─── 2. Case Form Factor Translation (Issue 3) ────────────────────────────────
+# ─── 2. Case Form Factor Translation ──────────────────────────────────────────
 def test_case_form_factor_translates_to_case_type():
     """Verify that allowed_form_factors for cabinet translates into case_type with $in."""
     params = SearchPartsInput(category="cabinet", allowed_form_factors=["ATX"], in_stock_only=False)
@@ -220,7 +220,7 @@ def test_case_form_factor_translates_to_case_type():
     assert "MicroATX Mid Tower" not in case_cond["case_type"]["$in"]
 
 
-# ─── 3. Spelling Variants Normalization (Issue 5) ─────────────────────────────
+# ─── 3. Spelling Variants Normalization ───────────────────────────────────────
 def test_spelling_variants_normalized():
     """Verify spelling variants like LGA 1700, AM 5, DDR 5, DDR-5, 5, m-ATX are normalized."""
     p1 = SearchPartsInput(category="processor", socket="LGA 1700", ram_type="DDR 5")
@@ -239,7 +239,7 @@ def test_spelling_variants_normalized():
     assert p4.ram_type == "DDR4"
 
 
-# ─── 4. Validation & Error Handling Tests (Issue 5 & 8) ───────────────────────
+# ─── 4. Validation & Error Handling Tests ─────────────────────────────────────
 def test_bad_category_returns_error():
     """Verify that invalid category returns clean error message without crashing."""
     res = run_tool("search_parts", {"category": "flying_carpet"})
@@ -280,7 +280,7 @@ def test_nonexistent_tool_returns_error():
 
 
 def test_tool_execution_error_sanitization():
-    """Verify execution errors do not leak internal exception details or hostnames (Issue 8)."""
+    """Verify execution errors do not leak internal exception details or hostnames."""
     # Force an execution failure
     def failing_fn(*args, **kwargs):
         raise ConnectionError("mongodb://admin:secret_pass@db.internal.corp:27017 connection refused")
@@ -395,11 +395,11 @@ def test_check_compatibility_fail_example(mock_parts_repo):
     assert "psu_headroom" in res["fails"]
 
 
-# ─── 8. Search Ranking: Soft Boost, Not Absolute Override (Issue 1) ───────────
+# ─── 8. Search Ranking: Soft Boost, Not Absolute Override ─────────────────────
 def test_search_parts_soft_boost_preserves_best_semantic_match(monkeypatch):
     """
     Verify that an exact semantic match (e.g. RX 7600 XT with low distance)
-    is NOT overridden by a poorly matching checkable part (Issue 1).
+    is NOT overridden by a poorly matching checkable part.
     """
     monkeypatch.setattr("embeddings.embed_query", lambda q: [0.1] * 768)
     mock_collection = MagicMock()
@@ -450,7 +450,7 @@ def test_search_parts_checkable_tie_break(monkeypatch):
     assert res["cards"][0]["checkable"] is True
 
 
-# ─── 9. Rich Card Fields (Issue 4) ────────────────────────────────────────────
+# ─── 9. Rich Card Fields ──────────────────────────────────────────────────────
 def test_search_parts_returns_rich_card_fields():
     """Verify cards include case_type, radiator_size, gpu_memory, speed_mhz, capacity_gb."""
     mock_collection = MagicMock()
@@ -517,8 +517,8 @@ def test_get_tool_definitions_has_valid_json_schemas():
         assert "properties" in params
 
 
-# ─── Code-review fixes (Day 5 + Day 8) ─────────────────────────────────────────
-# These tests were written BEFORE the fix and failed against the old code.
+# ─── Outages and edge cases in the tools ───────────────────────────────────────
+# Each test below failed against the old code.
 # Theme: an outage must look like an error, never like "no parts" or "bad IDs".
 
 def test_mongo_outage_is_reported_as_error_not_empty_catalog(monkeypatch):
@@ -596,7 +596,7 @@ def test_check_compatibility_partial_mode(mock_parts_repo):
 
 
 def test_demo_script_stops_with_a_clear_message_when_search_fails():
-    """Written BEFORE the fix: run_tool_demo indexed res['cards'][0] blindly (KeyError / IndexError)."""
+    """The demo must stop with a clear message; it used to index res['cards'][0] blindly (KeyError / IndexError)."""
     from run_tool_demo import require_cards
 
     with pytest.raises(SystemExit, match="unavailable"):
@@ -608,8 +608,8 @@ def test_demo_script_stops_with_a_clear_message_when_search_fails():
 
 def test_search_cards_include_cpu_tdp():
     """
-    Written BEFORE the fix (18 Nov): TDP was stored in Chroma but not put on the card,
-    so the agent (PSU maths) and the Day 9 grader (q29 'low TDP') could not see it.
+    TDP is stored in Chroma and must also be on the card, so the agent (PSU maths)
+    and the search-eval grader (q29 'low TDP') can see it.
     """
     import chromadb
 
@@ -624,9 +624,9 @@ def test_search_cards_include_cpu_tdp():
     assert res["cards"][0]["tdp"] == 60.0
 
 
-# ─── Chroma connection reuse (18 Nov, written BEFORE the fix) ──────────────────
+# ─── Chroma connection reuse ───────────────────────────────────────────────────
 # search_parts used to open a NEW Chroma connection on every call (~300 ms each).
-# The Day 10 agent calls it 8+ times per request, so: connect once, reuse it, and
+# The agent calls it 8+ times per request, so: connect once, reuse it, and
 # reconnect ONCE if a call fails (Chroma restarted, or build_index rebuilt the index).
 import tools as tools_module
 

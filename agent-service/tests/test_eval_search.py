@@ -1,7 +1,7 @@
 """
-test_eval_search.py - Tests for the Day 9 retrieval evaluation (code-review fixes).
+test_eval_search.py - Tests for the retrieval evaluation.
 
-Written BEFORE the fixes. They check that the evaluation itself is honest:
+They check that the evaluation itself is honest:
 - a card is only "correct" when the rule can actually be confirmed (missing data != pass),
 - Precision@5 always divides by 5, even if a strategy returns fewer cards,
 - the report's conclusions and corpus size come from the measured numbers, not hard-coded text.

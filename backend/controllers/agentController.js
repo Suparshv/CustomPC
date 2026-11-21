@@ -1,4 +1,4 @@
-// Day 12 - Express side of approval and safety.
+// Express side of approval and safety.
 // Express is a thin, careful proxy to the Python agent service:
 //   POST /api/agent/chat        -> Python /agent/chat     (answer, or a build awaiting approval)
 //   POST /api/agent/approve     -> Python /agent/approve  (human decision on that exact build)

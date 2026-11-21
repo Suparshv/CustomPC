@@ -78,7 +78,7 @@ const orderSchema = new mongoose.Schema({
 });
 const Order = mongoose.model("Order", orderSchema);
 
-// AI Conversation Schema (Phase 3)
+// AI conversation history (chat memory)
 const conversationSchema = new mongoose.Schema({
   sessionId: { type: String, required: true, unique: true },
   messages: { type: Array, default: [] },
@@ -86,7 +86,7 @@ const conversationSchema = new mongoose.Schema({
 });
 const Conversation = mongoose.model("Conversation", conversationSchema);
 
-// AI Guardrail Logs Schema (Phase 5)
+// Log of AI requests (blocked, routed, failed)
 const agentLogSchema = new mongoose.Schema({
   sessionId: { type: String },
   userPrompt: { type: String },
@@ -99,7 +99,7 @@ const AgentLog = mongoose.model("AgentLog", agentLogSchema);
 // AI Routes
 app.use('/api/chat', aiRoutes);
 app.use('/api/ai', aiRoutes);
-app.use('/api', agentRoutes);   // Day 12: agent chat, approval, approved cart
+app.use('/api', agentRoutes);   // agent chat, approval, approved cart
 
 // Signup route
 app.post("/api/signup", async (req, res) => {

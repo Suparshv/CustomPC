@@ -1,5 +1,5 @@
 """
-tools.py - Day 8 Deterministic Tools and Agent Tool Registry
+tools.py - Deterministic tools and the agent tool registry
 
 Provides three robust, validated tools for the PC building agent:
 1. search_parts: Semantic vector search + strict metadata filtering ($and) via ChromaDB.
@@ -363,7 +363,7 @@ def _search_parts_in(params: SearchPartsInput, collection: chromadb.Collection) 
             "message": _suggest_relaxation(params),
         }
 
-    # Enrich candidates with checkability & build PartCards (Issue 4: rich card fields)
+    # Enrich candidates with checkability & build PartCards with rich card fields
     cards: List[Dict[str, Any]] = []
     for cand in candidates:
         meta = cand["metadata"]

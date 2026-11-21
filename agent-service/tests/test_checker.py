@@ -1,13 +1,13 @@
 """
-test_checker.py - Unit tests for Deterministic Code-Based Compatibility Checker (Day 7)
+test_checker.py - Unit tests for Deterministic Code-Based Compatibility Checker
 
 Covers:
 - PASS, FAIL, UNKNOWN for each of the 8 compatibility rules.
-- Issue 1: Testing EVERY case type in the catalogue, verifying ATX boards FAIL in MicroATX Mid Tower.
-- Issue 2: Strict exact/alias matching for GPU TDP (RX 7600 XT is 190W not 165W, RTX 3060 Ti LHR is 200W, RTX 3060 8GB is 115W).
-- Issue 3: Unresolved string IDs returned explicitly in 'unresolved' list.
-- Issue 4: Exact name/ID matching for cases and coolers (no fuzzy substring inheriting).
-- Issue 5: 'checkable' flag calculation on components.
+- Testing EVERY case type in the catalogue, verifying ATX boards FAIL in MicroATX Mid Tower.
+- Strict exact/alias matching for GPU TDP (RX 7600 XT is 190W not 165W, RTX 3060 Ti LHR is 200W, RTX 3060 8GB is 115W).
+- Unresolved string IDs returned explicitly in 'unresolved' list.
+- Exact name/ID matching for cases and coolers (no fuzzy substring inheriting).
+- 'checkable' flag calculation on components.
 - Golden test: 100% verdict match with compat.py across all 30 baseline builds in eval/results.jsonl.
 """
 
@@ -31,7 +31,7 @@ from checker import (
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-# ─── 1. ALL CATEGORIES RULE & UNRESOLVED IDS (Issue 3) ────────────────────────
+# ─── 1. ALL CATEGORIES RULE & UNRESOLVED IDS ──────────────────────────────────
 def test_all_categories_pass_fail():
     complete_build = [
         {"category": "processor", "name": "CPU"},
@@ -55,7 +55,7 @@ def test_all_categories_pass_fail():
 
 
 def test_unresolved_string_ids_returned_in_list():
-    """Issue 3: Unknown string IDs must not vanish silently; returned in 'unresolved'."""
+    """Unknown string IDs must not vanish silently; returned in 'unresolved'."""
     res = check_build(["gpu_unknown_999", "cpu_unknown_888"])
     assert res["valid"] is False
     assert len(res["unresolved"]) == 2
@@ -134,7 +134,7 @@ def test_ram_generation_pass_fail_unknown():
     assert v == "UNKNOWN"
 
 
-# ─── 4. PSU HEADROOM & STRICT GPU LOOKUP (Issue 2) ───────────────────────────
+# ─── 4. PSU HEADROOM & STRICT GPU LOOKUP ─────────────────────────────────────
 def test_psu_headroom_pass_fail_unknown():
     # PASS: CPU 65W, GPU 115W, Overhead 80W -> (65+115+80)*1.4 = 364W <= 550W PSU
     parts_pass = [
@@ -157,7 +157,7 @@ def test_psu_headroom_pass_fail_unknown():
 
 def test_gpu_tdp_exact_matching_no_fuzzy_leak():
     """
-    Issue 2: Verify GPU TDP lookup does not use fuzzy substring matching.
+    Verify GPU TDP lookup does not use fuzzy substring matching.
     RX 7600 XT must get 190W (not 165W from RX 7600).
     RTX 3060 Ti LHR must get 200W (not 170W from RTX 3060).
     RTX 3060 8GB must get 115W (not 170W from RTX 3060 12GB).
@@ -206,9 +206,9 @@ def test_gpu_tdp_exact_matching_no_fuzzy_leak():
     assert v4 == "UNKNOWN"
 
 
-# ─── 5. FORM FACTOR FIT & EVERY CASE TYPE TEST (Issue 1) ──────────────────────
+# ─── 5. FORM FACTOR FIT & EVERY CASE TYPE TEST ────────────────────────────────
 def test_formfactor_microatx_mid_tower_rejects_atx():
-    """Issue 1: An ATX board in a 'MicroATX Mid Tower' case must return FAIL!"""
+    """An ATX board in a 'MicroATX Mid Tower' case must return FAIL!"""
     parts = [
         {"category": "motherboard", "form_factor": "ATX"},
         {"category": "cabinet", "case_type": "MicroATX Mid Tower"},
@@ -219,7 +219,7 @@ def test_formfactor_microatx_mid_tower_rejects_atx():
 
 def test_formfactor_fit_all_catalogue_case_types():
     """
-    Issue 1: Test EVERY case type in the catalogue against all motherboard form factors.
+    Test EVERY case type in the catalogue against all motherboard form factors.
     Catalogue case types:
     - 'ATX Full Tower'
     - 'ATX Mid Tower'
@@ -279,7 +279,7 @@ def test_formfactor_fit_all_catalogue_case_types():
         assert v_mitx == "PASS", f"Mini ITX should PASS in {ctype}, but got {v_mitx}"
 
 
-# ─── 6. GPU LENGTH RULE & NO FUZZY NAME LEAK (Issue 4) ────────────────────────
+# ─── 6. GPU LENGTH RULE & NO FUZZY NAME LEAK ──────────────────────────────────
 def test_gpu_length_pass_fail_unknown():
     # PASS: 192 mm GPU in cab1 (Deepcool Macube 110, limit 320 mm)
     parts_pass = [
@@ -299,7 +299,7 @@ def test_gpu_length_pass_fail_unknown():
 
 
 def test_case_no_fuzzy_name_matching():
-    """Issue 4: 'Corsair 4000D' must NOT inherit 'Corsair 4000D Airflow' limits via substring."""
+    """'Corsair 4000D' must NOT inherit 'Corsair 4000D Airflow' limits via substring."""
     parts = [
         {"category": "gpu", "length": 350, "name": "RTX 4080"},
         {"category": "cabinet", "id": "cab_uncured_diff", "name": "Corsair 4000D"},
@@ -308,7 +308,7 @@ def test_case_no_fuzzy_name_matching():
     assert v == "UNKNOWN"
 
 
-# ─── 7. COOLER HEIGHT RULE & NO FUZZY MATCH (Issue 4) ─────────────────────────
+# ─── 7. COOLER HEIGHT RULE & NO FUZZY MATCH ───────────────────────────────────
 def test_cooler_height_pass_fail_unknown():
     # PASS: Air cooler 154 mm in cab1 (limit 165 mm)
     parts_pass = [
@@ -355,9 +355,9 @@ def test_within_budget_pass_fail_unknown():
     assert v_unk_nobudget == "UNKNOWN"
 
 
-# ─── 9. CHECKABLE PARTS INSPECTOR (Issue 5) ───────────────────────────────────
+# ─── 9. CHECKABLE PARTS INSPECTOR ─────────────────────────────────────────────
 def test_is_part_checkable_flag():
-    """Issue 5: Verify 'checkable' flag detects parts with sufficient data."""
+    """Verify 'checkable' flag detects parts with sufficient data."""
     # Checkable CPU
     cpu = {"category": "processor", "socket": "AM5", "tdp": 65}
     assert is_part_checkable(cpu) is True
@@ -416,7 +416,7 @@ def test_golden_baseline_evaluation_matches_compat_py():
         compat_fails = {r for r, (v, _) in compat_results.items() if v == "FAIL"}
         compat_valid = len(compat_fails) == 0
 
-        # 2. Day 7 checker.py verdict on shared rules
+        # 2. checker.py verdict on shared rules
         checker_res = check_build(parts, budget=budget)
         checker_shared_fails = {
             old_name for old_name, new_name in shared_rule_map.items()
@@ -435,8 +435,8 @@ def test_golden_baseline_evaluation_matches_compat_py():
         )
 
 
-# ─── Code-review fixes (Day 7): every part is checked, unknown totals are UNKNOWN ──
-# These tests were written BEFORE the fix and failed against the old checker.
+# ─── Every part is checked, unknown totals are UNKNOWN ─────────────────────────────
+# Builds with two RAM kits, GPUs or CPUs, unknown prices, and partial (step-by-step) builds.
 
 def test_ram_rule_checks_every_ram_kit():
     """A second, incompatible RAM kit must not hide behind the first one."""
@@ -512,8 +512,8 @@ def test_partial_build_mode_still_fails_on_unresolved_ids():
     assert "ghost_board_1" in partial["unresolved"]
 
 
-# ─── Day 10: numbers as data, not only text ─────────────────────────────────────
-# Written BEFORE the change. The agent needs the required PSU watts as a NUMBER
+# ─── Numbers as data, not only text ─────────────────────────────────────────────
+# The agent needs the required PSU watts as a NUMBER
 # (to filter PSUs, and to repair a too-weak PSU), even before a PSU is chosen.
 def test_check_build_returns_required_psu_watts_as_data():
     res = check_build([
@@ -531,8 +531,8 @@ def test_required_psu_watts_is_none_when_a_tdp_is_unknown():
     assert res["required_psu_watts"] is None
 
 
-# ─── 19 Nov: GPU power ratings for the 17 catalogue models that had none ─────────
-# Written BEFORE the data was added. 75 of 313 catalogue GPUs had no TDP, so the
+# ─── GPU power ratings for the 17 catalogue models that had none ─────────────────
+# Before these ratings were added, 75 of 313 catalogue GPUs had no TDP, so the
 # PSU rule was UNKNOWN for them and the agent could not filter PSUs by watts.
 import json as _json
 import pytest as _pytest

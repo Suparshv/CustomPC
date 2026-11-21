@@ -1,5 +1,5 @@
 """
-agent_graph.py - The Day 10 PC-building agent, as a LangGraph flow.
+agent_graph.py - The PC-building agent, as a LangGraph flow.
 
     START -> route --build--> pick (x9, one category at a time) --> check --valid--> finalize -> END
                  |                ^                                  |
@@ -351,7 +351,7 @@ def _spent(picks: Dict[str, Dict[str, Any]]) -> float:
 def build_agent(llm: Any, config: Optional[AgentConfig] = None, tool_runner: Optional[ToolRunner] = None,
                 checkpointer: Any = None, approvals: Any = None, clock: Callable[[], float] = time.time):
     """
-    Compile the graph. `llm` needs .generate(); `tool_runner(name, args)` runs a Day 8 tool.
+    Compile the graph. `llm` needs .generate(); `tool_runner(name, args)` runs one tool from tools.py.
     checkpointer + approvals (an ApprovalStore): chat mode, a valid build pauses for approval.
     Without them (eval runs) the graph never pauses.
     """
@@ -711,7 +711,7 @@ def build_agent(llm: Any, config: Optional[AgentConfig] = None, tool_runner: Opt
         payload = {
             "type": "approve_build", "build_hash": h, "cards": cards, "total": state["total_price"],
             "budget": state.get("budget"), "verdict": verdict,
-            "swaps": [],                      # out-of-stock swaps: Day 11 fallback, not built yet
+            "swaps": [],                      # out-of-stock swaps: fallback not built yet
             "requested_at": requested_at, "expires_at": requested_at + APPROVAL_TTL_SECONDS,
             "can_approve": verdict["status"] == "compatible",
         }
@@ -770,7 +770,7 @@ def build_agent(llm: Any, config: Optional[AgentConfig] = None, tool_runner: Opt
             card = None
             if category:
                 # Top 10, not top 1: search finds the right part in the top 5 far more often than at
-                # rank 1 (Day 9 eval). Of the cards that are exactly this model, compare the
+                # rank 1 (search eval). Of the cards that are exactly this model, compare the
                 # CHEAPEST in-stock one (a fair price for the model, not one pricey partner card).
                 res = tool_runner("search_parts", {"category": category, "keywords": item[:200],
                                                    "retriever": cfg.retriever, "limit": 10, "in_stock_only": False})

@@ -244,8 +244,8 @@ def test_importing_run_eval_has_no_side_effects():
     assert callable(run_eval.main)
 
 
-# ─── Same judge for the old and the new system (written BEFORE the change) ─────
-# On 20 Nov the new system answers with catalogue IDs like "cpu_46f1874d7b4d".
+# ─── Same judge for the old and the new system ─────
+# The new system answers with catalogue IDs like "cpu_46f1874d7b4d".
 # The runner used compat.py, which only knows the 24 old parts, so every new build
 # would have been "unknown part -> invalid" (0%). Both systems must be scored by
 # the same judge: checker.py, with parts looked up the same way as the new tools.
@@ -298,7 +298,7 @@ def test_baseline_rescored_with_the_new_judge():
     The numbers the new system will be compared against: the SAVED 8 Nov replies
     (no new requests) re-scored by the current scorer and checker.py.
 
-    Budget rule (Day 10, decided by the project owner): the budget is judged only when the
+    Budget rule : the budget is judged only when the
     request TEXT states one. 9 of the 10 build requests state none (their test-file budget
     was never shown to either system), so for them any compatible build is valid.
     Under the old rule (8 Nov) it was: valid 4/10, within budget 5/9, success 4/10.
@@ -319,8 +319,8 @@ def test_baseline_rescored_with_the_new_judge():
     assert m["unknown"] == (10, 10)
 
 
-# ─── Day 10: run the 30 requests against the NEW agent (POST /agent/build). ─────
-# Written BEFORE the change. The runner used to talk only to the old Node backend.
+# ─── Run the 30 requests against the new agent (POST /agent/build) ─────
+# The runner used to talk only to the old Node backend.
 AGENT_VALID = {
     "status": "valid", "reply": "A balanced build.",
     "picks": {"processor": {"id": "cpu_1"}, "motherboard": {"id": "mb_1"}},
@@ -400,7 +400,7 @@ def test_report_notes_for_the_old_system_are_unchanged():
     assert "Supervisor, Architect, Critic, Reviewer, Comparator" in md.split("## Notes")[1]
 
 
-# ─── Day 10: judge the budget only when the request states one. Written BEFORE the change. ───
+# ─── Judge the budget only when the request states one ───
 NO_BUDGET_TEXT = "Build me a gaming PC for 1080p gaming"
 
 
@@ -445,7 +445,7 @@ def test_report_shows_the_budget_that_was_judged():
     assert "80,000" not in line and "not stated" in line
 
 
-# ═══ Day 13: code version on every row, one grades file per run (written BEFORE the code) ═══
+# ═══ Code version on every row, one grades file per run ═══
 def _fake_git(outputs):
     """A fake subprocess.run: answers each git command from `outputs`, or fails like a missing git."""
     def run(cmd, **kwargs):

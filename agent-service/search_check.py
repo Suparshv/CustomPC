@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-search_check.py - Vector search verification and baseline evaluation for Day 6
+search_check.py - Vector search verification and baseline evaluation
 
 Runs 5-8 test queries against the 'parts_nomic_v1' Chroma collection using
 nomic-embed-text via Ollama, including multi-condition $and filtering.
-Logs results and identifies vector search weaknesses/misses for Day 9 hybrid search.
+Logs results and identifies vector search weaknesses/misses, as a baseline for hybrid search.
 """
 
 import json

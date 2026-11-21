@@ -91,13 +91,13 @@ class BaseLLM:
             parsed = None
 
             if not raw.text or not raw.text.strip():
-                # Finding E: Include finish reason in error problem message
+                # Include the finish reason in the error message
                 reason_str = f" (finish reason: {raw.finish_reason})" if raw.finish_reason else ""
                 problems = [f"Provider returned empty response (no text){reason_str}"]
             else:
                 try:
                     parsed = schema.model_validate_json(raw.text)
-                    # Finding A: code, not the model, decides the budget.
+                    # Code, not the model, decides the budget.
                     # If the user's words contain no budget, the answer is None even
                     # when the model filled one in: a guessed number must not survive.
                     if hasattr(parsed, "budget"):
@@ -202,7 +202,7 @@ class GeminiLLM(BaseLLM):
         return {"status": "ok", "provider": self.provider, "model": self.model}
 
     def _complete(self, system: str, user: str, schema: type[BaseModel]) -> Raw:
-        # Finding B: Short retry with backoff for transient 503 / 429 overloads
+        # Short retry with backoff for temporary 503 / 429 overloads
         resp = None
         for retry_attempt in range(3):
             try:
@@ -281,7 +281,7 @@ class OllamaLLM(BaseLLM):
         self.client = Client(host=os.getenv("OLLAMA_HOST") or "http://127.0.0.1:11434")
 
     def check_health(self) -> dict:
-        # Finding D: Compare exact names, allowing :latest
+        # Compare exact model names, allowing a ':latest' tag
         models_info = self.client.list()
         pulled = [m.model for m in getattr(models_info, "models", [])]
         found = any(_model_matches(self.model, name) for name in pulled)

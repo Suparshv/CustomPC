@@ -161,7 +161,7 @@ export default function PcBuilder() {
     }
 
     setCheckingItemId(item.id);
-    // Day 12: fail safe. Only a "compatible" answer from the code checker adds the part.
+    // Fail safe. Only a "compatible" answer from the code checker adds the part.
     // "incompatible" shows the problems (the user may still decide to add it);
     // "could_not_verify" or any error BLOCKS the add: unverified is never treated as compatible.
     let verdict;

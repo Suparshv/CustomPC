@@ -255,7 +255,7 @@ def build_metadata(
         if val:
             meta[str_key] = str(val)
 
-    # Extended filter attributes (Day 8 preparation)
+    # Extra metadata fields that search filters can use
     if doc.get("cooler_kind"):
         meta["cooler_kind"] = str(doc["cooler_kind"])
     elif doc.get("category") == "cooling":

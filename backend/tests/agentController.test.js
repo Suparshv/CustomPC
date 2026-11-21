@@ -1,4 +1,4 @@
-// Day 12 - Express side of approval and safety. Written BEFORE agentController.js existed.
+// Express side of approval and safety (agentController.js).
 // Run: node --test backend/tests   (no Python, Mongo or Gemini needed: fetch is faked)
 const test = require("node:test");
 const assert = require("node:assert/strict");

@@ -1,7 +1,7 @@
 """
-combine_eval.py - Day 13: one combined results table for every row of the plan.
+combine_eval.py - One combined results table for every row of the eval plan.
 
-Every number comes from the SAVED results files, re-scored with today's rules by the same
+Every number comes from the SAVED results files, re-scored with the current rules by the same
 code as run_eval.py (checker.py + MongoDB part data), with each run's own hand grades.
 Nothing is typed by hand, and a row that has not run shows "not run yet", never a number.
 
@@ -31,7 +31,7 @@ START, END = "<!-- combined:start -->", "<!-- combined:end -->"
 # tokens; our calls use none (checked on one call: thoughts_token_count was empty).
 GEMINI_PRICE = {"input_per_m": 0.30, "output_per_m": 2.50}
 
-# The frozen plan (docs/eval.md). Row B was skipped by decision on 20 Nov 2026.
+# The frozen plan (docs/eval.md). Row B was skipped (see docs/eval.md).
 ROWS = [
     {"key": "A", "label": "Old Node system, Gemini", "results": "eval/results.jsonl",
      "grades": "eval/manual_grades.json", "price": GEMINI_PRICE,

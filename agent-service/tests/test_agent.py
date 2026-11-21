@@ -1,5 +1,5 @@
 """
-test_agent.py - Day 10 agent tests. Written BEFORE agent_graph.py existed.
+test_agent.py - Tests for the agent graph (agent_graph.py).
 
 Everything runs offline:
 - a FAKE AI that picks the first allowed candidate (or one a test asks for),
@@ -326,8 +326,7 @@ def test_verdict_does_not_say_compatible_when_some_checks_could_not_run(monkeypa
     assert not verdict.lower().startswith("verdict: compatible")
 
 
-# ─── 19 Nov: explanation fixes (Llama's text was rejected twice on Day 10's real run) ───
-# Written BEFORE the fix.
+# ─── Explanation: drop only the bad sentences, never the whole text ───
 from agent_graph import clean_explanation
 
 
@@ -371,9 +370,8 @@ def test_finalize_keeps_the_good_sentences(monkeypatch):
     assert first_paragraph == "Solid parts for 1080p gaming."
 
 
-# ─── 19 Nov: pick quality (Llama chose 8 GB RAM and an old HDD on Day 10's real run) ───
-# Written BEFORE the fix. These test the mechanics; whether picks really get better is
-# measured by the Day 13 eval, not by unit tests.
+# ─── Pick quality: guidance per part and search words that steer the candidates ───
+# These test the mechanics; whether picks really get better is measured by the eval.
 class PromptRecorder(FakeLLM):
     def __init__(self, **kw):
         super().__init__(**kw)
@@ -413,7 +411,7 @@ def test_ram_search_text_asks_for_a_sensible_capacity(monkeypatch):
     assert "16GB" in ram_search["keywords"] and "32GB" in ram_search["keywords"]
 
 
-# ─── 19 Nov: Comparator with prices and specs from code. Written BEFORE the code. ───
+# ─── Comparator: prices and specs come from code ───
 from agent_graph import guess_category, split_comparison
 
 COMPARE_CATALOGUE = [
@@ -472,7 +470,7 @@ def test_comparison_says_closest_match_when_the_model_is_not_in_the_catalogue(mo
     assert "closest match" in res["reply"]
 
 
-# ─── Day 10: compare the cheapest in-stock card of each model. Written BEFORE the change. ───
+# ─── Compare the cheapest in-stock card of each model ───
 from agent_graph import _is_exact_match
 
 

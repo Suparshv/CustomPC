@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-test_hybrid_search.py - Unit tests for Day 9 Hybrid Search and Reranker components.
+test_hybrid_search.py - Unit tests for the Hybrid Search and Reranker components.
 
 Tests:
 - Tokenizer preserving technical model codes, chipset names, and compound units.
@@ -173,8 +173,8 @@ def test_search_parts_input_retriever_validation():
         SearchPartsInput(category="processor", retriever="invalid_strategy")
 
 
-# ─── Code-review fixes (Day 9): one source of truth for filters, no stale BM25 ───
-# Written BEFORE the fix. All three go end to end through search_parts with an
+# ─── One source of truth for filters, no stale BM25 index ───
+# All three go end to end through search_parts with an
 # in-memory Chroma collection and a fake embedder (no Ollama needed).
 import chromadb
 import keyword_search

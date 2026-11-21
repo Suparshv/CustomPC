@@ -1,5 +1,5 @@
 """
-Day 12 - human approval before add-to-cart. Written BEFORE chat.py / approvals.py existed.
+Human approval before add-to-cart (chat.py, approvals.py).
 
 The graph PAUSES (LangGraph interrupt) after a valid build, saves its state in SQLite,
 and continues only when a human approves or rejects that exact build.
@@ -62,7 +62,7 @@ def test_a_valid_build_pauses_for_approval_with_the_full_payload(env):
     assert payload["total"] == res["total_price"]
     assert payload["verdict"]["status"] == "compatible"
     assert payload["can_approve"] is True
-    assert payload["swaps"] == []                      # filled by the Day 11 fallback, when built
+    assert payload["swaps"] == []                      # out-of-stock fallback not built yet
     assert payload["expires_at"] == env["clock"].t + APPROVAL_TTL_SECONDS
     assert env["store"].get("t1", payload["build_hash"]) is None   # nothing approved yet
 

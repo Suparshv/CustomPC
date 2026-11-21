@@ -1,5 +1,5 @@
 """
-agent_state.py - What the Day 10 agent remembers while it works.
+agent_state.py - What the agent remembers while it works.
 
 LangGraph passes this dictionary from box to box (node to node). Each node returns
 only the keys it changes; LangGraph merges them into the state.
@@ -33,6 +33,6 @@ class AgentState(TypedDict, total=False):
     tokens: Dict[str, int]               # {"prompt": n, "output": n} over all AI calls
     comparison: Optional[Dict[str, Any]] # comparator table {"headers", "rows"}, built by code
 
-    # Day 12 approval (chat mode only)
+    # Human approval (chat mode only)
     approval_requested_at: Optional[float]  # set by finalize; the approval expires 15 min later
     approval: Optional[Dict[str, Any]]      # {"build_hash", "decision": approved|rejected} once decided

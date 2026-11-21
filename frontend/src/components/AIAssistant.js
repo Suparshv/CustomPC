@@ -57,7 +57,7 @@ export default function AIAssistant() {
     }
   });
 
-  // --- PHASE 3: Conversational Memory (Tied to Account) ---
+  // --- Chat history: logged-in users by email, guests by a browser id ---
   useEffect(() => {
     let activeSessionId = '';
     
@@ -128,7 +128,7 @@ export default function AIAssistant() {
 
     try {
       if (!isSupportMode) {
-        // Day 12: the Python agent (through Express). A valid build comes back PAUSED,
+        // The Python agent (through Express). A valid build comes back PAUSED,
         // waiting for the user's Approve/Reject; it is never added to the cart by itself.
         const response = await fetch(`${API}/api/agent/chat`, {
           method: 'POST',
@@ -184,7 +184,7 @@ export default function AIAssistant() {
     setMessages(prev => prev.map((m, i) => (i === index ? { ...m, ...changes } : m)));
   };
 
-  // Day 12: Approve -> the server records the approval for THIS exact build (its hash) ->
+  // Approve -> the server records the approval for THIS exact build (its hash) ->
   // the server cart route re-checks it and returns the parts -> only then do they enter the cart.
   const handleDecision = async (index, approved) => {
     const msg = messages[index];
@@ -252,7 +252,7 @@ export default function AIAssistant() {
                   </div>
                 )}
 
-                {/* Day 12: nothing reaches the cart until the user approves THIS build */}
+                {/* Nothing reaches the cart until the user approves THIS build */}
                 {msg.sender === 'bot' && msg.approval && !isSupportMode && (() => {
                   const a = msg.approval;
                   // Approval is disabled for a FAIL or could_not_verify verdict.

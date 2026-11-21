@@ -71,7 +71,7 @@ class AgentRequest(BaseModel):
 @app.post("/agent/build")
 def agent_build(req: AgentRequest):
     """
-    Run the Day 10 agent on one request.
+    Run the agent on one request (no approval step: used by the eval).
     200: the agent answered (valid, no_valid_build, unverified, refused, comparison, step_limit...).
     422: bad request or bad switch values.  503: the AI or a data service is unavailable.
     """
@@ -93,7 +93,7 @@ def agent_build(req: AgentRequest):
     return result
 
 
-# ─── Day 12: chat with human approval, the cart rule, the fail-safe checker ─────
+# ─── Chat with human approval, the cart rule, the fail-safe checker ─────
 THREAD_ID_PATTERN = r"^[A-Za-z0-9._@:-]{1,128}$"
 BUILD_HASH_PATTERN = r"^[0-9a-f]{64}$"
 DB_PATH = os.getenv("AGENT_DB_PATH", str(Path(__file__).resolve().parent / "data" / "agent_state.sqlite"))
@@ -222,7 +222,7 @@ def agent_check(req: CheckRequest):
 
 @app.get("/health")
 def health():
-    # Finding E: Clean single Exception handler covering all connection/readiness errors
+    # One handler for every connection or readiness error
     try:
         llm = get_current_llm()
         health_info = llm.check_health()
@@ -268,7 +268,7 @@ def draft_build(ask: Ask):
             },
         )
     except errors.APIError as e:
-        # Finding B: Map Google API 503/429 to HTTP 503 with retry-after hint
+        # Gemini overloaded (503/429): answer 503 with a Retry-After hint
         if getattr(e, "code", None) in (503, 429):
             raise HTTPException(
                 status_code=503,
@@ -294,7 +294,7 @@ def draft_build(ask: Ask):
             detail={"error": "LLMError", "message": str(e)},
         )
     except Exception as e:
-        # Finding C: Log unexpected errors so server logs preserve stack traces
+        # Log unexpected errors with their stack trace
         logger.exception("Unexpected error in draft_build: %s", e)
         raise HTTPException(
             status_code=500,

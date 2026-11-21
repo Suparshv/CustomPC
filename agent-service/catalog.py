@@ -77,7 +77,7 @@ def extract_budget(text: str) -> float | None:
 def check_build(draft) -> list[str]:
     problems = []
 
-    # 1. Finding A: Make empty answers fail the check
+    # 1. Make empty answers fail the check
     if not draft.build:
         problems.append("build is empty, list every recommended part as {category, id} in build")
 
@@ -91,7 +91,7 @@ def check_build(draft) -> list[str]:
             problems.append(f"part '{item.id}' is a {spec['category']}, not a {item.category}")
         build_ids.add(item.id.strip().lower())
 
-    # 3. Finding A: Catch IDs hidden in the reply text but missing from build list
+    # 3. Catch IDs hidden in the reply text but missing from build list
     reply_tokens = set(re.findall(r'\b[a-z0-9]+\b', draft.reply.lower()))
     for spec_id in ALL_SPECS.keys():
         if spec_id.lower() in reply_tokens and spec_id.lower() not in build_ids:

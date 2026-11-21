@@ -1,7 +1,7 @@
 """
 test_embeddings.py - Ollama connection tests (no real Ollama needed).
 
-Why these exist (found 18 Nov from the Day 9 eval run): every search opened a NEW
+Why these exist (found in a search-eval run): every search opened a NEW
 connection to "localhost". On Windows, "localhost" tries IPv6 (::1) first; Ollama
 only listens on IPv4, so each new connection waited ~2 s before falling back.
 Measured: ~2,100 ms per embedding via localhost vs ~50 ms via 127.0.0.1.

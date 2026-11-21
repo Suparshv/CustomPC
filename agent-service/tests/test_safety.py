@@ -1,5 +1,5 @@
 """
-Day 12 - input and output guards. Written BEFORE safety.py existed.
+Input and output guards (safety.py).
 
 These are plain code checks (no AI): the guards must hold no matter what the model does.
 """

@@ -1,5 +1,5 @@
 """
-test_search_index.py - Offline unit tests for Day 6 vector search & indexing
+test_search_index.py - Offline unit tests for vector search & indexing
 
 Tests:
 - Prefix application (search_document: and search_query:) applied strictly once.
@@ -268,7 +268,7 @@ def test_meta_hash_sensitivity_and_fields():
     meta1 = build_metadata(doc1)
     hash1 = compute_meta_hash(meta1)
 
-    # Day 8 filter attributes preserved
+    # Filter attributes used by search_parts are preserved
     assert meta1["gpu_memory"] == 8.0
 
     # Changing price changes meta_hash
@@ -330,8 +330,8 @@ def test_metadata_update_without_reembedding():
 
 
 
-# ─── Code-review fix (Day 6): re-indexing must DELETE metadata keys that went away ──
-# Written BEFORE the fix. Chroma's update()/upsert() MERGE metadata, so if a part's
+# ─── Re-indexing must DELETE metadata keys that went away ──────────────────────────
+# Chroma's update()/upsert() MERGE metadata, so if a part's
 # `length` became unknown in Mongo, the old length stayed in Chroma forever and the
 # max_gpu_length filter kept trusting it.
 def test_metadata_for_write_clears_keys_that_disappeared():
@@ -362,7 +362,7 @@ def test_metadata_for_write_without_old_meta_is_unchanged():
     assert metadata_for_write({"a": 1}, None) == {"a": 1}
 
 
-# ─── Day 10: GPU power (TDP) on search cards. Written BEFORE the change. ──────────
+# ─── GPU power (TDP) on search cards ──────────────────────────────────────────────
 # Only 4 of 313 GPUs had a TDP in the index (the old seed parts). The dataset has no
 # power field; it lives in data/curated/gpu_tdp.json by chip name, and only the checker
 # looked it up. So GPU comparisons had no TDP row and the AI never saw a GPU's power.

@@ -1,4 +1,4 @@
-// Day 12 - routes to the Python agent service (mounted at /api).
+// Routes to the Python agent service (mounted at /api).
 const express = require("express");
 const { createAgentController } = require("../controllers/agentController");
 

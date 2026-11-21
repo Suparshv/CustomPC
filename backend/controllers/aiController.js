@@ -141,5 +141,5 @@ Current Chat History: ${JSON.stringify(chatHistory || [])}
   }
 };
 
-// checkCompatibility moved to agentController.js (Day 12): it used to answer
+// checkCompatibility moved to agentController.js: it used to answer
 // "compatible" when the AI call failed. The new one calls the code checker and fails safe.

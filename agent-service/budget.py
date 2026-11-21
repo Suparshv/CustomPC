@@ -1,5 +1,5 @@
 """
-budget.py - Splits the user's budget across the 9 part categories (Day 10).
+budget.py - Splits the user's budget across the 9 part categories.
 
 Code, not the AI, decides how much each part may cost. In the 8 Nov baseline the
 most common failure was going over budget (4 of 6 invalid builds), so each pick

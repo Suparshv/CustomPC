@@ -1,5 +1,5 @@
 """
-tool_models.py - Pydantic models for Day 8 Tool Inputs and Outputs
+tool_models.py - Pydantic models for tool inputs and outputs
 
 Provides strict schema validation, bounds checking, and input sanitization
 for search_parts, price_total, and check_compatibility tools.

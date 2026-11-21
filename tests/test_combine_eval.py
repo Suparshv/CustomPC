@@ -1,6 +1,6 @@
 """
-Tests for eval/combine_eval.py: the combined Day 13 results table.
-Written BEFORE the script existed. Offline: no MongoDB, no requests.
+Tests for eval/combine_eval.py: the combined results table.
+Offline: no MongoDB, no requests.
 
 The table must be built from the saved results files only (no hand-typed numbers),
 show counts AND percentages, and never invent a number for a row that has not run.

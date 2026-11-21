@@ -1,6 +1,6 @@
 """
-Day 10: fixes for the slow first request (measured: the first search took 9-33 s, all later ones ~0.3 s).
-Written BEFORE the fixes. No network, no real model, no real Gemini.
+Fixes for the slow first request (measured: the first search took 9-33 s, all later ones ~0.3 s).
+No network, no real model, no real Gemini.
 
 1. Load the reranker from the local cache first (no online "is there an update?" check).
 2. Warm everything up once when the service starts, so no user request pays the cold start.
@@ -176,7 +176,7 @@ def test_503_overloaded_still_uses_short_waits(waits):
 
 # ─── Found in the live check: the first request's Ollama /api/chat returned 500 once. ───
 # The chat model was not part of the warm-up, so its (slow, sometimes failing) first load
-# happened inside a user's request. Written BEFORE the change.
+# happened inside a user's request.
 def test_warm_up_preloads_a_local_chat_model(monkeypatch):
     import agent_graph
     from agent_config import AgentConfig

@@ -1,6 +1,5 @@
 """
-POST /agent/build - the HTTP door to the Day 10 agent (needed for Day 12's Approve button).
-Written BEFORE the endpoint existed. The agent itself is faked: these tests check the HTTP layer.
+HTTP endpoints of the agent service. The agent itself is faked: these tests check the HTTP layer.
 """
 
 from fastapi.testclient import TestClient
@@ -89,7 +88,7 @@ def test_answer_says_which_ai_model_produced_it(monkeypatch):
     assert (body["provider"], body["model"]) == ("ollama", "llama3.1:8b")
 
 
-# ═══ Day 12: chat with approval, approve, cart, check (written BEFORE the endpoints) ═══
+# ═══ Chat with approval, approve, cart, check ═══
 import pytest
 
 from repo import RepoUnavailableError

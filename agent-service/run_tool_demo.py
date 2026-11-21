@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-run_tool_demo.py - Execute Day 8 Hand-Run Tool Demo
+run_tool_demo.py - Run the tool demo by hand (no LLM)
 
-Performs an interactive, step-by-step PC build using the three Day 8 deterministic tools:
+Performs an interactive, step-by-step PC build using the three deterministic tools:
 1. search_parts (with guardrail filters: socket=AM5, ram_type=DDR5, etc.)
 2. price_total (exact catalog pricing and duplicate handling)
 3. check_compatibility (deterministic physical/electrical validation)

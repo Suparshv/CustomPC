@@ -1,5 +1,5 @@
 """
-Day 10 tests: the budget planner and the agent switches. Written BEFORE the code.
+Tests for the budget planner and the agent switches.
 """
 
 import pytest

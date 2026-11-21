@@ -1,11 +1,11 @@
 """
-agent_config.py - The agent's on/off switches (Day 10).
+agent_config.py - The agent's on/off switches.
 
 The same code runs with upgrades on or off, so before/after numbers are a fair
-comparison (Day 13 results matrix). Defaults = all upgrades on.
+comparison (the eval's results table). Defaults = all upgrades on.
 
 Environment variables (a request can still override them, see with_overrides):
-  AGENT_RETRIEVER     vector | hybrid | hybrid_rerank   (Day 9 search method)
+  AGENT_RETRIEVER     vector | hybrid | hybrid_rerank   (search method)
   AGENT_USE_TOOLS     1/0  on: code-filtered step-by-step picks; off: one AI call picks everything (v1 style)
   AGENT_USE_CHECKER   1/0  on: code checks the finished build; off: no check, answer says "not checked"
   AGENT_REPAIR_LOOPS  0..2 how many times a failed build may be repaired
@@ -27,13 +27,13 @@ def _as_bool(value: str) -> bool:
 
 @dataclass(frozen=True)
 class AgentConfig:
-    retriever: str = "hybrid_rerank"   # best on the Day 9 eval
+    retriever: str = "hybrid_rerank"   # best recall in the search eval
     use_tools: bool = True
     use_checker: bool = True
     repair_loops: int = MAX_REPAIR_LOOPS
     max_steps: int = 30                # 9 picks + up to 2 repairs x 9 re-picks fits easily
     candidates_per_pick: int = 8       # the AI sees a few good choices, never 3,000
-    # Day 10 measured run: 6,295 tokens for one full pass (5,687 in + 608 out). Two full repairs
+    # Measured: one full pass used 6,295 tokens (5,687 in + 608 out). Two full repairs
     # re-pick everything twice more (about 3 x 6,295 = 19k), so 25,000 leaves room for that, no more.
     max_tokens: int = 25_000
 

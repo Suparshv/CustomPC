@@ -1,5 +1,5 @@
 """
-safety.py - Day 12 input and output guards (plain code, no AI).
+safety.py - Input and output guards (plain code, no AI).
 
 Layers, from the outside in:
   clean_text   untrusted text (user message, scraped part names) is cleaned and capped

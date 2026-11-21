@@ -1,5 +1,5 @@
 """
-checker.py - Deterministic Code-Based Compatibility Checker (Day 7)
+checker.py - Deterministic Code-Based Compatibility Checker
 
 Evaluates PC builds against 9 physical, electrical, and budgetary compatibility rules:
 1. all_categories: All 9 required component categories are present (UNKNOWN for partial builds).
@@ -64,7 +64,7 @@ for clid, clinfo in COOLERS_TABLE.items():
     if "name" in clinfo:
         COOLERS_BY_NAME[clinfo["name"].strip().lower()] = clinfo
 
-# Explicit alias map for GPU chipsets (Issue 2: strictly no fuzzy substring fallback)
+# Explicit alias map for GPU chipsets (strictly no fuzzy substring fallback)
 GPU_TDP_ALIASES: Dict[str, str] = {
     "rtx 4060": "GeForce RTX 4060",
     "rtx 4060 ti": "GeForce RTX 4060 Ti",
@@ -130,12 +130,12 @@ REQUIRED_CATEGORIES = [
 ]
 
 
-# ─── Part Checkability Inspector (Issue 5) ────────────────────────────────────
+# ─── Part Checkability Inspector ──────────────────────────────────────────────
 def is_part_checkable(part: Dict[str, Any]) -> bool:
     """
     Check if a component has sufficient specifications/curated data to be fully verified
     without yielding UNKNOWN on any compatibility rule.
-    Used by Day 8 search/agent tools to prefer parts with verified physical/TDP data.
+    Used by the search/agent tools to prefer parts with verified physical/TDP data.
     """
     cat = part.get("category")
     if not cat:
@@ -200,7 +200,7 @@ def is_part_checkable(part: Dict[str, Any]) -> bool:
     return False
 
 
-# ─── Rule 1: All 9 Categories Present (Issue 3: Unresolved IDs) ───────────────
+# ─── Rule 1: All 9 Categories Present (and Unresolved IDs) ────────────────────
 def check_all_categories(
     parts: List[Dict[str, Any]],
     unresolved: Optional[List[str]] = None,
@@ -316,7 +316,7 @@ def check_ram_generation(parts: List[Dict[str, Any]]) -> Tuple[str, str]:
     return "PASS", f"RAM ({kit_types}, {len(rams)} kit(s)) is compatible with Motherboard ({mobo_ram_type}) and CPU."
 
 
-# ─── Rule 4: PSU Wattage & Headroom (Issue 2: Strict Exact/Alias Lookup) ──────
+# ─── Rule 4: PSU Wattage & Headroom (Strict Exact/Alias Lookup) ───────────────
 def _resolve_gpu_tdp(gpu: Dict[str, Any]) -> Optional[float]:
     """GPU TDP from the part's own specs, else an exact/alias match in gpu_tdp.json, else None."""
     gpu_tdp = gpu.get("tdp")
@@ -342,7 +342,7 @@ def _resolve_gpu_tdp(gpu: Dict[str, Any]) -> Optional[float]:
                     curated_info = v
                     break
 
-    # NOTE (Issue 2): Strict exact/alias resolution only! Substring fallback completely removed.
+    # Strict exact/alias resolution only! No substring fallback, so a similar name never lends its TDP.
     if curated_info and "tdp_w" in curated_info:
         return float(curated_info["tdp_w"])
     return None
@@ -417,7 +417,7 @@ def check_psu_headroom(parts: List[Dict[str, Any]]) -> Tuple[str, str]:
     )
 
 
-# ─── Rule 5: Motherboard Form Factor Fits Cabinet (Issue 1: Test Micro First) ─
+# ─── Rule 5: Motherboard Form Factor Fits Cabinet (Test Micro First) ──────────
 def check_formfactor_fit(parts: List[Dict[str, Any]]) -> Tuple[str, str]:
     """
     Check that Motherboard form factor fits in the Cabinet.
@@ -444,7 +444,7 @@ def check_formfactor_fit(parts: List[Dict[str, Any]]) -> Tuple[str, str]:
 
     case_type_lower = case_type.lower()
 
-    # Issue 1 Fix: Test the most specific and restrictive form factors FIRST!
+    # Test the most specific and restrictive form factors FIRST!
     # Specifically, check Mini ITX and MicroATX before generic Full/Mid Tower strings!
     if "mini itx" in case_type_lower or case_type_lower == "mini itx":
         allowed = ["Mini ITX"]
@@ -465,7 +465,7 @@ def check_formfactor_fit(parts: List[Dict[str, Any]]) -> Tuple[str, str]:
     return "FAIL", f"Motherboard ({mobo_ff}) does NOT fit in Cabinet ({case_type})."
 
 
-# ─── Rule 6: GPU Length vs Case Limit (Issue 4: Exact Match Only) ──────────────
+# ─── Rule 6: GPU Length vs Case Limit (Exact Match Only) ───────────────────────
 def check_gpu_length(parts: List[Dict[str, Any]]) -> Tuple[str, str]:
     """
     Check that GPU card length <= Cabinet maximum GPU clearance limit.
@@ -488,7 +488,7 @@ def check_gpu_length(parts: List[Dict[str, Any]]) -> Tuple[str, str]:
     if case_limit is None:
         cab_id = cab.get("id")
         cab_name = (cab.get("name") or "").strip().lower()
-        # Issue 4: Match exact ID or exact lowercase name ONLY!
+        # Match exact ID or exact lowercase name ONLY!
         curated_case = CASES_TABLE.get(cab_id) or CASES_BY_NAME.get(cab_name)
         if curated_case and "max_gpu_length_mm" in curated_case:
             case_limit = float(curated_case["max_gpu_length_mm"])
@@ -515,7 +515,7 @@ def check_gpu_length(parts: List[Dict[str, Any]]) -> Tuple[str, str]:
     return "PASS", f"GPU length ({int(longest)} mm) <= Case maximum clearance ({int(case_limit)} mm)."
 
 
-# ─── Rule 7: Cooler Height vs Case Limit (Issue 4: Exact Match Only) ───────────
+# ─── Rule 7: Cooler Height vs Case Limit (Exact Match Only) ────────────────────
 def check_cooler_height(parts: List[Dict[str, Any]]) -> Tuple[str, str]:
     """
     Check that air cooler height <= Cabinet maximum CPU cooler clearance limit.
@@ -536,7 +536,7 @@ def check_cooler_height(parts: List[Dict[str, Any]]) -> Tuple[str, str]:
     if cooler_height is None:
         cl_id = cooler.get("id")
         cl_name = (cooler.get("name") or "").strip().lower()
-        # Issue 4: Match exact ID or exact lowercase name ONLY!
+        # Match exact ID or exact lowercase name ONLY!
         curated_cl = COOLERS_TABLE.get(cl_id) or COOLERS_BY_NAME.get(cl_name)
         if curated_cl and "height_mm" in curated_cl:
             cooler_height = float(curated_cl["height_mm"])
@@ -551,7 +551,7 @@ def check_cooler_height(parts: List[Dict[str, Any]]) -> Tuple[str, str]:
     if case_limit is None:
         cab_id = cab.get("id")
         cab_name = (cab.get("name") or "").strip().lower()
-        # Issue 4: Match exact ID or exact lowercase name ONLY!
+        # Match exact ID or exact lowercase name ONLY!
         curated_case = CASES_TABLE.get(cab_id) or CASES_BY_NAME.get(cab_name)
         if curated_case and "max_cooler_height_mm" in curated_case:
             case_limit = float(curated_case["max_cooler_height_mm"])
@@ -625,10 +625,10 @@ def check_build(
         - fully_verified: bool (True if all rules returned PASS and NO unresolved parts exist)
         - fails: List of rule names that returned FAIL
         - unknowns: List of rule names that returned UNKNOWN
-        - unresolved: List of string identifiers that could not be resolved (Issue 3)
+        - unresolved: List of string identifiers that could not be resolved
         - total_price: float, or None when any part's price is unknown
-        - checkable_parts: List of part names that have full physical/electrical data (Issue 5)
-        - uncheckable_parts: List of part names that yield UNKNOWN due to missing data (Issue 5)
+        - checkable_parts: List of part names that have full physical/electrical data
+        - uncheckable_parts: List of part names that yield UNKNOWN due to missing data
     """
     parts, unresolved = normalize_build(build, part_lookup=part_lookup)
 
@@ -666,7 +666,7 @@ def check_build(
 
     total_price = compute_total_price(parts, unresolved=unresolved)
 
-    # Attach checkability status for Day 8 tools
+    # Mark each part checkable or not, so tools can prefer fully checkable parts
     checkable_parts = []
     uncheckable_parts = []
     for p in parts:

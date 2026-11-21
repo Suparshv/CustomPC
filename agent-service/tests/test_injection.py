@@ -1,5 +1,5 @@
 """
-Day 12 - prompt-injection and cap tests. Written BEFORE the guards existed.
+Prompt-injection and cap tests.
 
 We do NOT test that the model "behaves". We use an EVIL fake model that obeys every
 injected instruction it can, and assert that the guardrails still hold:
